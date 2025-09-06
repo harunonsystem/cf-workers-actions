@@ -1,1 +1,20 @@
-name: Comment
+name: 'PR Deployment Comment'
+description: 'Add deployment status comment to PR'
+
+inputs:
+  github-token:
+    description: 'GitHub Token'
+    required: true
+  deployment-url:
+    description: 'Deployment URL'
+    required: true
+  deployment-status:
+    description: 'Deployment status (true/false)'
+    required: true
+  custom-message:
+    description: 'Custom message to include'
+    required: false
+
+runs:
+  using: 'node20'
+  main: 'comment.js'

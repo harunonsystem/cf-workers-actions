@@ -1,1 +1,25 @@
-name: Deploy
+name: 'Cloudflare Preview Deploy'
+description: 'Deploy to Cloudflare Workers with PR-specific naming'
+
+inputs:
+  cloudflare-api-token:
+    description: 'Cloudflare API Token'
+    required: true
+  cloudflare-account-id:
+    description: 'Cloudflare Account ID'
+    required: true
+  worker-name-pattern:
+    description: 'Worker name pattern (use {pr_number} for PR number)'
+    required: true
+
+outputs:
+  deployment-url:
+    description: 'Deployed worker URL'
+  success:
+    description: 'Deployment success status'
+  worker-name:
+    description: 'Final worker name used'
+
+runs:
+  using: 'node20'
+  main: 'index.js'

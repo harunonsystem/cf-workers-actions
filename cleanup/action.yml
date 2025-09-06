@@ -1,1 +1,25 @@
-name: Cleanup
+name: 'Cloudflare Worker Cleanup'
+description: 'Delete Cloudflare Workers when PR is closed'
+
+inputs:
+  cloudflare-api-token:
+    description: 'Cloudflare API Token'
+    required: true
+  cloudflare-account-id:
+    description: 'Cloudflare Account ID'
+    required: true
+  worker-name-pattern:
+    description: 'Worker name pattern (use {pr_number} for PR number)'
+    required: true
+
+outputs:
+  deleted:
+    description: 'Whether worker was deleted'
+  worker-name:
+    description: 'Name of the worker processed'
+
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      run: ${{ github.action_path }}/cleanup.sh
