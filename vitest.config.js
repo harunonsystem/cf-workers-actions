@@ -5,6 +5,7 @@ export default defineConfig({
     environment: 'node',
     include: ['**/__tests__/**/*.test.js', '**/?(*.)+(spec|test).js'],
     coverage: {
+      provider: 'v8',
       include: ['shared/lib/**/*.js', 'deploy/**/*.js', 'comment/**/*.js', 'cleanup/**/*.js'],
       exclude: ['**/node_modules/**', '**/__tests__/**'],
       reporter: ['text', 'lcov', 'html']
