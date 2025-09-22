@@ -1,0 +1,69 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [1.0.0] - 2024-09-22
+
+### Added
+
+#### Deploy Action
+
+- Initial release of Cloudflare Workers deployment action
+- Support for preview and production environments
+- Configurable worker name patterns with PR number substitution
+- Environment variables and secrets support
+- Custom subdomain support for workers.dev URLs
+- Comprehensive output values (URL, worker name, deployment ID)
+- Wrangler CLI integration for reliable deployments
+
+#### Comment Action
+
+- Automated PR commenting with deployment information
+- Support for custom comment templates
+- Comment updating to avoid spam (configurable)
+- Status-aware commenting (success/failure states)
+- Markdown formatting support
+- Custom message support
+
+#### Cleanup Action
+
+- Pattern-based worker deletion with wildcard support
+- Specific worker name deletion (comma-separated list)
+- Dry-run mode for safe preview of deletions
+- Exclusion patterns to protect important workers
+- Age-based filtering (planned for future release)
+- Comprehensive deletion reporting
+
+#### Shared Libraries
+
+- **CloudflareApi**: Direct API client for Cloudflare Workers API
+- **WranglerClient**: Wrapper around Wrangler CLI for deployments
+- **URL Generator**: Utilities for generating worker names and URLs from patterns
+
+#### Development & Quality
+
+- Complete Jest test suite with >90% coverage
+- ESLint and Prettier configuration
+- GitHub Actions CI/CD pipeline
+- Comprehensive documentation and examples
+- MIT license
+
+### Technical Details
+
+- Node.js 20 runtime support
+- Full TypeScript support (JSDoc annotations)
+- Robust error handling and logging
+- GitHub Actions summary integration
+- Modular architecture for maintainability
+
+### Marketplace Features
+
+- Multiple action access patterns supported
+- Comprehensive branding and metadata
+- Professional documentation with usage examples
+- Community-friendly contribution guidelines

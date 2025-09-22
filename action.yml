@@ -1,0 +1,27 @@
+name: 'Cloudflare Actions'
+description: 'Complete suite for Cloudflare Workers deployment, PR commenting, and cleanup'
+author: 'harunonsystem'
+
+branding:
+  icon: 'cloud'
+  color: 'orange'
+
+# This is a composite action that provides access to all sub-actions
+# Users can access individual actions via:
+# - harunonsystem/cloudflare-actions/deploy@v1
+# - harunonsystem/cloudflare-actions/comment@v1
+# - harunonsystem/cloudflare-actions/cleanup@v1
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Information'
+      shell: bash
+      run: |
+        echo "🚀 Cloudflare Actions Suite"
+        echo "Available actions:"
+        echo "  - deploy:  harunonsystem/cloudflare-actions/deploy@v1"
+        echo "  - comment: harunonsystem/cloudflare-actions/comment@v1"
+        echo "  - cleanup: harunonsystem/cloudflare-actions/cleanup@v1"
+        echo ""
+        echo "📖 Documentation: https://github.com/harunonsystem/cloudflare-actions"
