@@ -1,29 +1,24 @@
-const core = require("@actions/core");
-const github = require("@actions/github");
-const path = require("path");
+import core from '@actions/core';
+import github from '@actions/github';
+// import path from 'path'; // May be needed for file path operations
 
 // Import shared libraries
-const {
-  generateWorkerName,
-  generateWorkerUrl,
-  getPrNumber,
-} = require("../shared/lib/url-generator");
-const { WranglerClient } = require("../shared/lib/wrangler");
-const { CloudflareApi } = require("../shared/lib/cloudflare-api");
+import { generateWorkerName, generateWorkerUrl, getPrNumber } from '../shared/lib/url-generator.js';
+import { WranglerClient } from '../shared/lib/wrangler.js';
+// import { CloudflareApi } from '../shared/lib/cloudflare-api.js'; // May be needed for direct API calls
 
 async function run() {
   try {
     // Get inputs
-    const environment = core.getInput("environment", { required: true });
-    const workerNamePattern =
-      core.getInput("worker-name-pattern") || "project-pr-{pr_number}";
-    const scriptPath = core.getInput("script-path") || "index.js";
-    const apiToken = core.getInput("api-token", { required: true });
-    const accountId = core.getInput("account-id", { required: true });
-    const subdomain = core.getInput("subdomain");
-    const varsInput = core.getInput("vars") || "{}";
-    const secretsInput = core.getInput("secrets") || "{}";
-    const compatibilityDate = core.getInput("compatibility-date");
+    const environment = core.getInput('environment', { required: true });
+    const workerNamePattern = core.getInput('worker-name-pattern') || 'project-pr-{pr_number}';
+    const scriptPath = core.getInput('script-path') || 'index.js';
+    const apiToken = core.getInput('api-token', { required: true });
+    const accountId = core.getInput('account-id', { required: true });
+    const subdomain = core.getInput('subdomain');
+    const varsInput = core.getInput('vars') || '{}';
+    const secretsInput = core.getInput('secrets') || '{}';
+    const compatibilityDate = core.getInput('compatibility-date');
 
     // Parse JSON inputs
     let vars = {};
@@ -43,11 +38,9 @@ async function run() {
 
     // Generate worker name
     let workerName;
-    if (environment === "production") {
+    if (environment === 'production') {
       // For production, use a simple name without PR number
-      workerName = workerNamePattern
-        .replace("-{pr_number}", "")
-        .replace("{pr_number}", "");
+      workerName = workerNamePattern.replace('-{pr_number}', '').replace('{pr_number}', '');
     } else {
       // For preview, generate from PR number
       const prNumber = getPrNumber(github.context);
@@ -62,9 +55,7 @@ async function run() {
     // Check if wrangler is available
     const wranglerAvailable = await wrangler.checkWranglerAvailable();
     if (!wranglerAvailable) {
-      throw new Error(
-        "Wrangler CLI is not available. Please install it first.",
-      );
+      throw new Error('Wrangler CLI is not available. Please install it first.');
     }
 
     // Deploy configuration
@@ -74,16 +65,14 @@ async function run() {
       environment,
       vars,
       secrets,
-      compatibility_date: compatibilityDate,
+      compatibility_date: compatibilityDate
     };
 
     // Deploy worker
     const deployResult = await wrangler.deployWorker(deployConfig);
 
     if (!deployResult.success) {
-      throw new Error(
-        `Deployment failed: ${deployResult.error || "Unknown error"}`,
-      );
+      throw new Error(`Deployment failed: ${deployResult.error || 'Unknown error'}`);
     }
 
     // Generate URL if not returned by wrangler
@@ -96,19 +85,19 @@ async function run() {
     const deploymentId = `${workerName}-${Date.now()}`;
 
     // Set outputs
-    core.setOutput("url", deploymentUrl);
-    core.setOutput("worker-name", workerName);
-    core.setOutput("success", "true");
-    core.setOutput("deployment-id", deploymentId);
+    core.setOutput('url', deploymentUrl);
+    core.setOutput('worker-name', workerName);
+    core.setOutput('success', 'true');
+    core.setOutput('deployment-id', deploymentId);
 
     // Set summary
-    core.summary.addHeading("🚀 Cloudflare Workers Deployment").addTable([
-      ["Property", "Value"],
-      ["Worker Name", workerName],
-      ["Environment", environment],
-      ["URL", `[${deploymentUrl}](${deploymentUrl})`],
-      ["Deployment ID", deploymentId],
-      ["Status", "✅ Success"],
+    core.summary.addHeading('🚀 Cloudflare Workers Deployment').addTable([
+      ['Property', 'Value'],
+      ['Worker Name', workerName],
+      ['Environment', environment],
+      ['URL', `[${deploymentUrl}](${deploymentUrl})`],
+      ['Deployment ID', deploymentId],
+      ['Status', '✅ Success']
     ]);
 
     await core.summary.write();
@@ -119,15 +108,15 @@ async function run() {
     core.error(`❌ Deployment failed: ${error.message}`);
 
     // Set failure outputs
-    core.setOutput("success", "false");
-    core.setOutput("url", "");
-    core.setOutput("worker-name", "");
-    core.setOutput("deployment-id", "");
+    core.setOutput('success', 'false');
+    core.setOutput('url', '');
+    core.setOutput('worker-name', '');
+    core.setOutput('deployment-id', '');
 
     // Set failure summary
     core.summary
-      .addHeading("❌ Cloudflare Workers Deployment Failed")
-      .addCodeBlock(error.message, "text");
+      .addHeading('❌ Cloudflare Workers Deployment Failed')
+      .addCodeBlock(error.message, 'text');
 
     await core.summary.write();
 

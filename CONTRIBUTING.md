@@ -46,8 +46,8 @@ Thank you for your interest in contributing to Cloudflare Actions! This document
 4. Ensure all tests pass:
 
    ```bash
-   npm test
-   npm run lint
+   npm test      # Run Vitest (ultra-fast testing)
+   npm run lint  # Run Oxlint (ultra-fast linting)
    ```
 
 5. Commit your changes:
@@ -77,8 +77,8 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Code Style
 
-- We use ESLint and Prettier for code formatting
-- Run `npm run lint:fix` to automatically fix linting issues
+- We use Oxlint (ultra-fast linter) and Prettier for code formatting
+- Run `npm run lint` to check code quality (10-100x faster than ESLint)
 - Run `npm run format` to format code
 
 ## 🧪 Testing
@@ -100,7 +100,7 @@ npm run test:watch
 
 - All new functionality should have corresponding tests
 - Tests are located in `__tests__/` directories
-- Use Jest for testing
+- Use Vitest for testing (50-100x faster than Jest)
 - Aim for >90% code coverage
 
 ### Test Structure

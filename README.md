@@ -11,7 +11,8 @@ A comprehensive suite of GitHub Actions for Cloudflare Workers deployment, PR co
 - **Comment**: Automatically post deployment URLs and status to PR comments
 - **Cleanup**: Clean up workers based on patterns or specific names
 - **Full TypeScript Support**: Complete type definitions for all actions
-- **Comprehensive Testing**: Full test coverage with Jest
+- **Comprehensive Testing**: Full test coverage with Vitest (50-100x faster than Jest)
+- **Ultra-Fast Linting**: Code quality checks with Oxlint (10-100x faster than ESLint)
 - **Error Handling**: Robust error handling and informative logging
 
 ## 📦 Actions
@@ -82,7 +83,7 @@ Clean up and delete Cloudflare Workers based on patterns or specific names.
 ```yaml
 - uses: harunonsystem/cloudflare-actions/cleanup@v1
   with:
-    worker-pattern: "project-pr-*"
+    worker-pattern: 'project-pr-*'
     api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
@@ -127,7 +128,7 @@ jobs:
         uses: harunonsystem/cloudflare-actions/deploy@v1
         with:
           environment: preview
-          worker-name-pattern: "myapp-pr-{pr_number}"
+          worker-name-pattern: 'myapp-pr-{pr_number}'
           api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           vars: |
@@ -171,7 +172,7 @@ jobs:
         uses: harunonsystem/cloudflare-actions/deploy@v1
         with:
           environment: production
-          worker-name-pattern: "myapp-production"
+          worker-name-pattern: 'myapp-production'
           api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           vars: |
@@ -202,10 +203,10 @@ jobs:
       - name: Cleanup Preview Worker
         uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
-          worker-pattern: "myapp-pr-${{ github.event.pull_request.number }}"
+          worker-pattern: 'myapp-pr-${{ github.event.pull_request.number }}'
           api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          confirm-deletion: "yes"
+          confirm-deletion: 'yes'
 ```
 
 ### Scheduled Cleanup
@@ -215,7 +216,7 @@ name: Weekly Cleanup
 
 on:
   schedule:
-    - cron: "0 2 * * 0" # Every Sunday at 2 AM
+    - cron: '0 2 * * 0' # Every Sunday at 2 AM
 
 jobs:
   cleanup-old-workers:
@@ -224,13 +225,13 @@ jobs:
       - name: Cleanup Old Preview Workers
         uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
-          worker-pattern: "myapp-pr-*"
-          exclude-pattern: "myapp-pr-main"
+          worker-pattern: 'myapp-pr-*'
+          exclude-pattern: 'myapp-pr-main'
           max-age-days: 7
           dry-run: false
           api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          confirm-deletion: "yes"
+          confirm-deletion: 'yes'
 ```
 
 ## 🔑 Required Secrets

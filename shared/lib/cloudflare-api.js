@@ -1,4 +1,4 @@
-const core = require("@actions/core");
+import core from '@actions/core';
 
 /**
  * Cloudflare API client wrapper
@@ -6,12 +6,12 @@ const core = require("@actions/core");
 class CloudflareApi {
   constructor(apiToken, accountId) {
     if (!apiToken || !accountId) {
-      throw new Error("API token and account ID are required");
+      throw new Error('API token and account ID are required');
     }
 
     this.apiToken = apiToken;
     this.accountId = accountId;
-    this.baseUrl = "https://api.cloudflare.com/client/v4";
+    this.baseUrl = 'https://api.cloudflare.com/client/v4';
   }
 
   /**
@@ -27,8 +27,8 @@ class CloudflareApi {
       method,
       headers: {
         Authorization: `Bearer ${this.apiToken}`,
-        "Content-Type": "application/json",
-      },
+        'Content-Type': 'application/json'
+      }
     };
 
     if (data) {
@@ -42,14 +42,12 @@ class CloudflareApi {
 
       if (!response.ok) {
         throw new Error(
-          `Cloudflare API error: ${result.errors?.[0]?.message || response.statusText}`,
+          `Cloudflare API error: ${result.errors?.[0]?.message || response.statusText}`
         );
       }
 
       if (!result.success) {
-        throw new Error(
-          `Cloudflare API error: ${result.errors?.[0]?.message || "Unknown error"}`,
-        );
+        throw new Error(`Cloudflare API error: ${result.errors?.[0]?.message || 'Unknown error'}`);
       }
 
       return result;
@@ -64,10 +62,7 @@ class CloudflareApi {
    * @returns {Promise<Array>} List of workers
    */
   async listWorkers() {
-    const response = await this.makeRequest(
-      "GET",
-      `/accounts/${this.accountId}/workers/scripts`,
-    );
+    const response = await this.makeRequest('GET', `/accounts/${this.accountId}/workers/scripts`);
     return response.result || [];
   }
 
@@ -79,15 +74,12 @@ class CloudflareApi {
   async getWorker(workerName) {
     try {
       const response = await this.makeRequest(
-        "GET",
-        `/accounts/${this.accountId}/workers/scripts/${workerName}`,
+        'GET',
+        `/accounts/${this.accountId}/workers/scripts/${workerName}`
       );
       return response.result;
     } catch (error) {
-      if (
-        error.message.includes("not found") ||
-        error.message.includes("404")
-      ) {
+      if (error.message.includes('not found') || error.message.includes('404')) {
         return null;
       }
       throw error;
@@ -101,17 +93,11 @@ class CloudflareApi {
    */
   async deleteWorker(workerName) {
     try {
-      await this.makeRequest(
-        "DELETE",
-        `/accounts/${this.accountId}/workers/scripts/${workerName}`,
-      );
+      await this.makeRequest('DELETE', `/accounts/${this.accountId}/workers/scripts/${workerName}`);
       core.info(`Successfully deleted worker: ${workerName}`);
       return true;
     } catch (error) {
-      if (
-        error.message.includes("not found") ||
-        error.message.includes("404")
-      ) {
+      if (error.message.includes('not found') || error.message.includes('404')) {
         core.warning(`Worker not found: ${workerName}`);
         return false;
       }
@@ -127,16 +113,16 @@ class CloudflareApi {
   async findWorkersByPattern(pattern) {
     const workers = await this.listWorkers();
 
-    if (!pattern || pattern === "*") {
+    if (!pattern || pattern === '*') {
       return workers.map((w) => w.id);
     }
 
     // Convert pattern to regex
-    const regexPattern = pattern.replace(/\*/g, ".*").replace(/\?/g, ".");
+    const regexPattern = pattern.replace(/\*/g, '.*').replace(/\?/g, '.');
     const regex = new RegExp(`^${regexPattern}$`);
 
     return workers.map((w) => w.id).filter((name) => regex.test(name));
   }
 }
 
-module.exports = { CloudflareApi };
+export { CloudflareApi };

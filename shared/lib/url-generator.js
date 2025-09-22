@@ -1,4 +1,4 @@
-const core = require("@actions/core");
+// import core from '@actions/core'; // Currently not used but may be needed for logging
 
 /**
  * Generate worker name from pattern and PR number
@@ -8,10 +8,10 @@ const core = require("@actions/core");
  */
 function generateWorkerName(pattern, prNumber) {
   if (!pattern || !prNumber) {
-    throw new Error("Pattern and PR number are required");
+    throw new Error('Pattern and PR number are required');
   }
 
-  return pattern.replace("{pr_number}", prNumber.toString());
+  return pattern.replace('{pr_number}', prNumber.toString());
 }
 
 /**
@@ -22,7 +22,7 @@ function generateWorkerName(pattern, prNumber) {
  */
 function generateWorkerUrl(workerName, subdomain = null) {
   if (!workerName) {
-    throw new Error("Worker name is required");
+    throw new Error('Worker name is required');
   }
 
   if (subdomain) {
@@ -38,30 +38,23 @@ function generateWorkerUrl(workerName, subdomain = null) {
  * @returns {number} PR number
  */
 function getPrNumber(context) {
-  if (context.eventName === "pull_request") {
+  if (context.eventName === 'pull_request') {
     return context.payload.pull_request.number;
   }
 
-  if (
-    context.eventName === "issue_comment" &&
-    context.payload.issue.pull_request
-  ) {
+  if (context.eventName === 'issue_comment' && context.payload.issue.pull_request) {
     return context.payload.issue.number;
   }
 
   // For workflow_run or other events, try to extract from ref
-  if (context.ref && context.ref.includes("/")) {
+  if (context.ref && context.ref.includes('/')) {
     const match = context.ref.match(/refs\/pull\/(\d+)\//);
     if (match) {
       return parseInt(match[1], 10);
     }
   }
 
-  throw new Error("Unable to determine PR number from context");
+  throw new Error('Unable to determine PR number from context');
 }
 
-module.exports = {
-  generateWorkerName,
-  generateWorkerUrl,
-  getPrNumber,
-};
+export { generateWorkerName, generateWorkerUrl, getPrNumber };

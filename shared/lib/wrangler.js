@@ -1,7 +1,7 @@
-const core = require("@actions/core");
-const { exec } = require("@actions/exec");
-const fs = require("fs").promises;
-const path = require("path");
+import core from '@actions/core';
+import { exec } from '@actions/exec';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 /**
  * Wrangler CLI wrapper for deployment operations
@@ -9,7 +9,7 @@ const path = require("path");
 class WranglerClient {
   constructor(apiToken, accountId) {
     if (!apiToken || !accountId) {
-      throw new Error("API token and account ID are required");
+      throw new Error('API token and account ID are required');
     }
 
     this.apiToken = apiToken;
@@ -17,7 +17,7 @@ class WranglerClient {
     this.env = {
       ...process.env,
       CLOUDFLARE_API_TOKEN: apiToken,
-      CLOUDFLARE_ACCOUNT_ID: accountId,
+      CLOUDFLARE_ACCOUNT_ID: accountId
     };
   }
 
@@ -28,11 +28,11 @@ class WranglerClient {
    * @returns {Promise<object>} Execution result
    */
   async execWrangler(args, options = {}) {
-    const cmd = "npx";
-    const cmdArgs = ["wrangler", ...args];
+    const cmd = 'npx';
+    const cmdArgs = ['wrangler', ...args];
 
-    let stdout = "";
-    let stderr = "";
+    let stdout = '';
+    let stderr = '';
 
     const execOptions = {
       env: this.env,
@@ -43,19 +43,19 @@ class WranglerClient {
         },
         stderr: (data) => {
           stderr += data.toString();
-        },
+        }
       },
       ignoreReturnCode: true,
-      ...options,
+      ...options
     };
 
-    core.debug(`Executing: ${cmd} ${cmdArgs.join(" ")}`);
+    core.debug(`Executing: ${cmd} ${cmdArgs.join(' ')}`);
     const exitCode = await exec(cmd, cmdArgs, execOptions);
 
     return {
       exitCode,
       stdout: stdout.trim(),
-      stderr: stderr.trim(),
+      stderr: stderr.trim()
     };
   }
 
@@ -68,17 +68,17 @@ class WranglerClient {
     const {
       workerName,
       scriptPath,
-      environment = "production",
+      environment = 'production',
       vars = {},
       secrets = {},
-      compatibility_date = new Date().toISOString().split("T")[0],
+      compatibility_date = new Date().toISOString().split('T')[0]
     } = config;
 
     // Create wrangler.toml if it doesn't exist
-    const wranglerTomlPath = path.join(process.cwd(), "wrangler.toml");
+    const wranglerTomlPath = path.join(process.cwd(), 'wrangler.toml');
     const wranglerConfig = `
 name = "${workerName}"
-main = "${scriptPath || "index.js"}"
+main = "${scriptPath || 'index.js'}"
 compatibility_date = "${compatibility_date}"
 account_id = "${this.accountId}"
 
@@ -86,7 +86,7 @@ account_id = "${this.accountId}"
 name = "${workerName}"
 ${Object.entries(vars)
   .map(([key, value]) => `vars.${key} = "${value}"`)
-  .join("\n")}
+  .join('\n')}
 `;
 
     try {
@@ -99,9 +99,9 @@ ${Object.entries(vars)
       }
 
       // Deploy
-      const deployArgs = ["deploy"];
-      if (environment !== "production") {
-        deployArgs.push("--env", environment);
+      const deployArgs = ['deploy'];
+      if (environment !== 'production') {
+        deployArgs.push('--env', environment);
       }
 
       const result = await this.execWrangler(deployArgs);
@@ -123,7 +123,7 @@ ${Object.entries(vars)
         success: true,
         workerName,
         url: deploymentUrl,
-        output: result.stdout,
+        output: result.stdout
       };
     } catch (error) {
       core.error(`Deployment failed: ${error.message}`);
@@ -133,9 +133,7 @@ ${Object.entries(vars)
       try {
         await fs.unlink(wranglerTomlPath);
       } catch (cleanupError) {
-        core.warning(
-          `Failed to clean up wrangler.toml: ${cleanupError.message}`,
-        );
+        core.warning(`Failed to clean up wrangler.toml: ${cleanupError.message}`);
       }
     }
   }
@@ -146,20 +144,18 @@ ${Object.entries(vars)
    * @param {string} value - Secret value
    * @param {string} environment - Environment name
    */
-  async setSecret(key, value, environment = "production") {
-    const args = ["secret", "put", key];
-    if (environment !== "production") {
-      args.push("--env", environment);
+  async setSecret(key, value, environment = 'production') {
+    const args = ['secret', 'put', key];
+    if (environment !== 'production') {
+      args.push('--env', environment);
     }
 
     const result = await this.execWrangler(args, {
-      input: Buffer.from(value),
+      input: Buffer.from(value)
     });
 
     if (result.exitCode !== 0) {
-      throw new Error(
-        `Failed to set secret ${key}: ${result.stderr || result.stdout}`,
-      );
+      throw new Error(`Failed to set secret ${key}: ${result.stderr || result.stdout}`);
     }
 
     core.debug(`Set secret: ${key}`);
@@ -171,12 +167,12 @@ ${Object.entries(vars)
    */
   async checkWranglerAvailable() {
     try {
-      const result = await this.execWrangler(["--version"]);
+      const result = await this.execWrangler(['--version']);
       return result.exitCode === 0;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
 }
 
-module.exports = { WranglerClient };
+export { WranglerClient };
