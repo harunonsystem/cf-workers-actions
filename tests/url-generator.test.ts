@@ -1,5 +1,10 @@
 import { describe, test, expect } from 'vitest';
-import { generateWorkerName, generateWorkerUrl, getPrNumber } from '../lib/url-generator.js';
+import {
+  generateWorkerName,
+  generateWorkerUrl,
+  getPrNumber
+} from '../src/shared/lib/url-generator';
+import { GitHubContext } from '../src/shared/types';
 
 describe('url-generator', () => {
   describe('generateWorkerName', () => {
@@ -14,11 +19,11 @@ describe('url-generator', () => {
     });
 
     test('should throw error for missing pattern', () => {
-      expect(() => generateWorkerName(null, 123)).toThrow('Pattern and PR number are required');
+      expect(() => generateWorkerName('', 123)).toThrow('Pattern and PR number are required');
     });
 
     test('should throw error for missing PR number', () => {
-      expect(() => generateWorkerName('project-pr-{pr_number}', null)).toThrow(
+      expect(() => generateWorkerName('project-pr-{pr_number}', 0)).toThrow(
         'Pattern and PR number are required'
       );
     });
@@ -36,14 +41,19 @@ describe('url-generator', () => {
     });
 
     test('should throw error for missing worker name', () => {
-      expect(() => generateWorkerUrl(null)).toThrow('Worker name is required');
+      expect(() => generateWorkerUrl('')).toThrow('Worker name is required');
     });
   });
 
   describe('getPrNumber', () => {
     test('should extract PR number from pull_request event', () => {
-      const context = {
+      const context: GitHubContext = {
         eventName: 'pull_request',
+        ref: 'refs/pull/123/merge',
+        repo: {
+          owner: 'test-owner',
+          repo: 'test-repo'
+        },
         payload: {
           pull_request: {
             number: 123
@@ -56,8 +66,13 @@ describe('url-generator', () => {
     });
 
     test('should extract PR number from issue_comment event', () => {
-      const context = {
+      const context: GitHubContext = {
         eventName: 'issue_comment',
+        ref: '',
+        repo: {
+          owner: 'test-owner',
+          repo: 'test-repo'
+        },
         payload: {
           issue: {
             number: 456,
@@ -71,9 +86,14 @@ describe('url-generator', () => {
     });
 
     test('should extract PR number from ref', () => {
-      const context = {
+      const context: GitHubContext = {
         eventName: 'workflow_run',
-        ref: 'refs/pull/789/merge'
+        ref: 'refs/pull/789/merge',
+        repo: {
+          owner: 'test-owner',
+          repo: 'test-repo'
+        },
+        payload: {}
       };
 
       const result = getPrNumber(context);
@@ -81,9 +101,14 @@ describe('url-generator', () => {
     });
 
     test('should throw error when PR number cannot be determined', () => {
-      const context = {
+      const context: GitHubContext = {
         eventName: 'push',
-        ref: 'refs/heads/main'
+        ref: 'refs/heads/main',
+        repo: {
+          owner: 'test-owner',
+          repo: 'test-repo'
+        },
+        payload: {}
       };
 
       expect(() => getPrNumber(context)).toThrow('Unable to determine PR number from context');

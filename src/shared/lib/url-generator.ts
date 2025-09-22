@@ -1,12 +1,9 @@
-// import core from '@actions/core'; // Currently not used but may be needed for logging
+import { GitHubContext } from '../types';
 
 /**
  * Generate worker name from pattern and PR number
- * @param {string} pattern - Worker name pattern (e.g., "project-pr-{pr_number}")
- * @param {number} prNumber - Pull request number
- * @returns {string} Generated worker name
  */
-function generateWorkerName(pattern, prNumber) {
+export function generateWorkerName(pattern: string, prNumber: number): string {
   if (!pattern || !prNumber) {
     throw new Error('Pattern and PR number are required');
   }
@@ -16,11 +13,8 @@ function generateWorkerName(pattern, prNumber) {
 
 /**
  * Generate worker URL from worker name
- * @param {string} workerName - Worker name
- * @param {string} subdomain - Optional custom subdomain
- * @returns {string} Worker URL
  */
-function generateWorkerUrl(workerName, subdomain = null) {
+export function generateWorkerUrl(workerName: string, subdomain?: string): string {
   if (!workerName) {
     throw new Error('Worker name is required');
   }
@@ -34,15 +28,13 @@ function generateWorkerUrl(workerName, subdomain = null) {
 
 /**
  * Extract PR number from GitHub context
- * @param {object} context - GitHub context object
- * @returns {number} PR number
  */
-function getPrNumber(context) {
-  if (context.eventName === 'pull_request') {
+export function getPrNumber(context: GitHubContext): number {
+  if (context.eventName === 'pull_request' && context.payload.pull_request) {
     return context.payload.pull_request.number;
   }
 
-  if (context.eventName === 'issue_comment' && context.payload.issue.pull_request) {
+  if (context.eventName === 'issue_comment' && context.payload.issue?.pull_request) {
     return context.payload.issue.number;
   }
 
@@ -56,5 +48,3 @@ function getPrNumber(context) {
 
   throw new Error('Unable to determine PR number from context');
 }
-
-export { generateWorkerName, generateWorkerUrl, getPrNumber };

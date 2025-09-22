@@ -1,10 +1,10 @@
-name: "Cloudflare Workers Cleanup"
-description: "Clean up and delete Cloudflare Workers based on patterns or specific names"
-author: "harunonsystem"
+name: 'Cloudflare Workers Cleanup'
+description: 'Clean up and delete Cloudflare Workers based on patterns or specific names'
+author: 'harunonsystem'
 
 branding:
-  icon: "trash-2"
-  color: "red"
+  icon: 'trash-2'
+  color: 'red'
 
 inputs:
   worker-pattern:
@@ -12,48 +12,48 @@ inputs:
     required: false
 
   worker-names:
-    description: "Specific worker names to delete (comma-separated)"
+    description: 'Specific worker names to delete (comma-separated)'
     required: false
 
   api-token:
-    description: "Cloudflare API Token"
+    description: 'Cloudflare API Token'
     required: true
 
   account-id:
-    description: "Cloudflare Account ID"
+    description: 'Cloudflare Account ID'
     required: true
 
   dry-run:
-    description: "Only list workers that would be deleted without actually deleting them"
+    description: 'Only list workers that would be deleted without actually deleting them'
     required: false
-    default: "false"
+    default: 'false'
 
   max-age-days:
-    description: "Only delete workers older than this many days"
+    description: 'Only delete workers older than this many days'
     required: false
 
   exclude-pattern:
-    description: "Pattern for workers to exclude from deletion"
+    description: 'Pattern for workers to exclude from deletion'
     required: false
 
   confirm-deletion:
     description: 'Require explicit confirmation for deletion (set to "yes" to proceed)'
     required: false
-    default: "yes"
+    default: 'yes'
 
 outputs:
   deleted-workers:
-    description: "List of deleted worker names (JSON array)"
+    description: 'List of deleted worker names (JSON array)'
 
   deleted-count:
-    description: "Number of workers deleted"
+    description: 'Number of workers deleted'
 
   skipped-workers:
-    description: "List of workers that were skipped (JSON array)"
+    description: 'List of workers that were skipped (JSON array)'
 
   dry-run-results:
-    description: "Workers that would be deleted in dry run mode (JSON array)"
+    description: 'Workers that would be deleted in dry run mode (JSON array)'
 
 runs:
-  using: "node20"
-  main: "index.js"
+  using: 'node20'
+  main: '../dist/cleanup/index.js'

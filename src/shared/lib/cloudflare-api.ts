@@ -1,29 +1,33 @@
-import core from '@actions/core';
+import * as core from '@actions/core';
+import { CloudflareApiResponse, CloudflareWorker } from '../types';
 
 /**
  * Cloudflare API client wrapper
  */
-class CloudflareApi {
-  constructor(apiToken, accountId) {
+export class CloudflareApi {
+  private apiToken: string;
+  private accountId: string;
+  private baseUrl = 'https://api.cloudflare.com/client/v4';
+
+  constructor(apiToken: string, accountId: string) {
     if (!apiToken || !accountId) {
       throw new Error('API token and account ID are required');
     }
 
     this.apiToken = apiToken;
     this.accountId = accountId;
-    this.baseUrl = 'https://api.cloudflare.com/client/v4';
   }
 
   /**
    * Make API request to Cloudflare
-   * @param {string} method - HTTP method
-   * @param {string} endpoint - API endpoint
-   * @param {object} data - Request body data
-   * @returns {Promise<object>} API response
    */
-  async makeRequest(method, endpoint, data = null) {
+  async makeRequest<T = any>(
+    method: string,
+    endpoint: string,
+    data?: Record<string, any>
+  ): Promise<CloudflareApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    const options = {
+    const options: RequestInit = {
       method,
       headers: {
         Authorization: `Bearer ${this.apiToken}`,
@@ -38,48 +42,50 @@ class CloudflareApi {
     try {
       core.debug(`Making ${method} request to ${url}`);
       const response = await fetch(url, options);
-      const result = await response.json();
+      const result: CloudflareApiResponse<T> = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          `Cloudflare API error: ${result.errors?.[0]?.message || response.statusText}`
-        );
+        const errorMessage = result.errors?.[0]?.message || response.statusText;
+        throw new Error(`Cloudflare API error: ${errorMessage}`);
       }
 
       if (!result.success) {
-        throw new Error(`Cloudflare API error: ${result.errors?.[0]?.message || 'Unknown error'}`);
+        const errorMessage = result.errors?.[0]?.message || 'Unknown error';
+        throw new Error(`Cloudflare API error: ${errorMessage}`);
       }
 
       return result;
     } catch (error) {
-      core.error(`Cloudflare API request failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      core.error(`Cloudflare API request failed: ${errorMessage}`);
       throw error;
     }
   }
 
   /**
    * List workers in account
-   * @returns {Promise<Array>} List of workers
    */
-  async listWorkers() {
-    const response = await this.makeRequest('GET', `/accounts/${this.accountId}/workers/scripts`);
+  async listWorkers(): Promise<CloudflareWorker[]> {
+    const response = await this.makeRequest<CloudflareWorker[]>(
+      'GET',
+      `/accounts/${this.accountId}/workers/scripts`
+    );
     return response.result || [];
   }
 
   /**
    * Get worker details
-   * @param {string} workerName - Worker name
-   * @returns {Promise<object>} Worker details
    */
-  async getWorker(workerName) {
+  async getWorker(workerName: string): Promise<CloudflareWorker | null> {
     try {
-      const response = await this.makeRequest(
+      const response = await this.makeRequest<CloudflareWorker>(
         'GET',
         `/accounts/${this.accountId}/workers/scripts/${workerName}`
       );
-      return response.result;
+      return response.result || null;
     } catch (error) {
-      if (error.message.includes('not found') || error.message.includes('404')) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         return null;
       }
       throw error;
@@ -88,16 +94,15 @@ class CloudflareApi {
 
   /**
    * Delete worker
-   * @param {string} workerName - Worker name to delete
-   * @returns {Promise<boolean>} Success status
    */
-  async deleteWorker(workerName) {
+  async deleteWorker(workerName: string): Promise<boolean> {
     try {
       await this.makeRequest('DELETE', `/accounts/${this.accountId}/workers/scripts/${workerName}`);
       core.info(`Successfully deleted worker: ${workerName}`);
       return true;
     } catch (error) {
-      if (error.message.includes('not found') || error.message.includes('404')) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         core.warning(`Worker not found: ${workerName}`);
         return false;
       }
@@ -107,10 +112,8 @@ class CloudflareApi {
 
   /**
    * Find workers matching pattern
-   * @param {string} pattern - Pattern to match (supports * wildcard)
-   * @returns {Promise<Array>} Matching worker names
    */
-  async findWorkersByPattern(pattern) {
+  async findWorkersByPattern(pattern: string): Promise<string[]> {
     const workers = await this.listWorkers();
 
     if (!pattern || pattern === '*') {
@@ -124,5 +127,3 @@ class CloudflareApi {
     return workers.map((w) => w.id).filter((name) => regex.test(name));
   }
 }
-
-export { CloudflareApi };

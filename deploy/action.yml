@@ -1,66 +1,66 @@
-name: "Cloudflare Workers Deploy"
-description: "Deploy applications to Cloudflare Workers with preview and production support"
-author: "harunonsystem"
+name: 'Cloudflare Workers Deploy'
+description: 'Deploy applications to Cloudflare Workers with preview and production support'
+author: 'harunonsystem'
 
 branding:
-  icon: "cloud"
-  color: "orange"
+  icon: 'cloud'
+  color: 'orange'
 
 inputs:
   environment:
-    description: "Deployment environment (preview/production)"
+    description: 'Deployment environment (preview/production)'
     required: true
-    default: "preview"
+    default: 'preview'
 
   worker-name-pattern:
-    description: "Worker name pattern (use {pr_number} for PR number)"
+    description: 'Worker name pattern (use {pr_number} for PR number)'
     required: false
-    default: "project-pr-{pr_number}"
+    default: 'project-pr-{pr_number}'
 
   script-path:
-    description: "Path to the worker script file"
+    description: 'Path to the worker script file'
     required: false
-    default: "index.js"
+    default: 'index.js'
 
   api-token:
-    description: "Cloudflare API Token"
+    description: 'Cloudflare API Token'
     required: true
 
   account-id:
-    description: "Cloudflare Account ID"
+    description: 'Cloudflare Account ID'
     required: true
 
   subdomain:
-    description: "Custom subdomain for workers.dev URL"
+    description: 'Custom subdomain for workers.dev URL'
     required: false
 
   vars:
-    description: "Environment variables (JSON format)"
+    description: 'Environment variables (JSON format)'
     required: false
-    default: "{}"
+    default: '{}'
 
   secrets:
-    description: "Worker secrets (JSON format)"
+    description: 'Worker secrets (JSON format)'
     required: false
-    default: "{}"
+    default: '{}'
 
   compatibility-date:
-    description: "Cloudflare Workers compatibility date"
+    description: 'Cloudflare Workers compatibility date'
     required: false
 
 outputs:
   url:
-    description: "Deployed worker URL"
+    description: 'Deployed worker URL'
 
   worker-name:
-    description: "Actual worker name used"
+    description: 'Actual worker name used'
 
   success:
-    description: "Deployment success status"
+    description: 'Deployment success status'
 
   deployment-id:
-    description: "Unique deployment identifier"
+    description: 'Unique deployment identifier'
 
 runs:
-  using: "node20"
-  main: "index.js"
+  using: 'node20'
+  main: '../dist/deploy/index.js'

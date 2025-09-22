@@ -3,11 +3,11 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['**/__tests__/**/*.test.js', '**/?(*.)+(spec|test).js'],
+    include: ['tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      include: ['shared/lib/**/*.js', 'deploy/**/*.js', 'comment/**/*.js', 'cleanup/**/*.js'],
-      exclude: ['**/node_modules/**', '**/__tests__/**'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts', 'src/shared/types.ts'],
       reporter: ['text', 'lcov', 'html']
     },
     setupFiles: ['./vitest.setup.js']

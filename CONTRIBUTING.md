@@ -94,13 +94,17 @@ npm run test:coverage
 
 # Run tests in watch mode
 npm run test:watch
+
+# Run tests with UI
+npm run test:ui
 ```
 
 ### Writing Tests
 
 - All new functionality should have corresponding tests
-- Tests are located in `__tests__/` directories
+- Tests are located in `tests/` directory
 - Use Vitest for testing (50-100x faster than Jest)
+- Write tests in TypeScript (`.test.ts` files)
 - Aim for >90% code coverage
 
 ### Test Structure
@@ -123,17 +127,20 @@ describe('feature-name', () => {
 
 ```
 cloudflare-actions/
-├── deploy/                 # Deploy action
-│   ├── action.yml         # Action definition
-│   ├── index.js           # Main entry point
-│   └── __tests__/         # Action-specific tests
-├── comment/               # Comment action
-├── cleanup/               # Cleanup action
-├── shared/                # Shared libraries
-│   ├── lib/               # Reusable modules
-│   └── __tests__/         # Library tests
-├── .github/               # GitHub workflows
-└── docs/                  # Additional documentation
+├── src/                   # TypeScript source code
+│   ├── deploy/           # Deploy action source
+│   ├── comment/          # Comment action source
+│   ├── cleanup/          # Cleanup action source
+│   └── shared/           # Shared libraries
+│       ├── types.ts           # TypeScript type definitions
+│       └── lib/               # Reusable modules
+├── dist/                  # Compiled JavaScript (for GitHub Actions)
+├── tests/                 # Test files (TypeScript)
+├── deploy/                # Deploy action metadata
+│   └── action.yml        # Action definition
+├── comment/               # Comment action metadata
+├── cleanup/               # Cleanup action metadata
+└── .github/               # GitHub workflows
 ```
 
 ## 🔧 Action Development Guidelines

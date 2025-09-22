@@ -1,74 +1,79 @@
-import core from '@actions/core';
-// import github from '@actions/github'; // May be needed for future GitHub integration
+import * as core from '@actions/core';
+import { CloudflareApi } from '../shared/lib/cloudflare-api';
+import { CleanupInputs } from '../shared/types';
 
-// Import shared libraries
-import { CloudflareApi } from '../shared/lib/cloudflare-api.js';
-
-async function run() {
+async function run(): Promise<void> {
   try {
     // Get inputs
-    const workerPattern = core.getInput('worker-pattern');
+    const inputs: CleanupInputs = {
+      workerPattern: core.getInput('worker-pattern') || undefined,
+      workerNames: undefined,
+      apiToken: core.getInput('api-token', { required: true }),
+      accountId: core.getInput('account-id', { required: true }),
+      dryRun: core.getInput('dry-run') === 'true',
+      maxAgeDays: core.getInput('max-age-days')
+        ? parseInt(core.getInput('max-age-days'), 10)
+        : undefined,
+      excludePattern: core.getInput('exclude-pattern') || undefined,
+      confirmDeletion: core.getInput('confirm-deletion')
+    };
+
+    // Parse worker names
     const workerNamesInput = core.getInput('worker-names');
-    const apiToken = core.getInput('api-token', { required: true });
-    const accountId = core.getInput('account-id', { required: true });
-    const dryRun = core.getInput('dry-run') === 'true';
-    const maxAgeDays = core.getInput('max-age-days');
-    const excludePattern = core.getInput('exclude-pattern');
-    const confirmDeletion = core.getInput('confirm-deletion');
+    if (workerNamesInput) {
+      inputs.workerNames = workerNamesInput
+        .split(',')
+        .map((name) => name.trim())
+        .filter(Boolean);
+    }
 
     // Validate inputs
-    if (!workerPattern && !workerNamesInput) {
+    if (!inputs.workerPattern && !inputs.workerNames) {
       throw new Error('Either worker-pattern or worker-names must be provided');
     }
 
-    if (!dryRun && confirmDeletion !== 'yes') {
+    if (!inputs.dryRun && inputs.confirmDeletion !== 'yes') {
       throw new Error('confirm-deletion must be set to "yes" to proceed with actual deletion');
     }
 
-    // Parse worker names
-    const specificWorkers = workerNamesInput
-      ? workerNamesInput
-          .split(',')
-          .map((name) => name.trim())
-          .filter(Boolean)
-      : [];
-
     // Initialize Cloudflare API client
-    const cf = new CloudflareApi(apiToken, accountId);
+    const cf = new CloudflareApi(inputs.apiToken, inputs.accountId);
 
     // Get workers to process
-    let workersToProcess = [];
+    let workersToProcess: string[] = [];
 
-    if (specificWorkers.length > 0) {
+    if (inputs.workerNames && inputs.workerNames.length > 0) {
       // Use specific worker names
-      workersToProcess = specificWorkers;
-      core.info(`Processing specific workers: ${specificWorkers.join(', ')}`);
-    } else if (workerPattern) {
+      workersToProcess = inputs.workerNames;
+      core.info(`Processing specific workers: ${inputs.workerNames.join(', ')}`);
+    } else if (inputs.workerPattern) {
       // Find workers by pattern
-      workersToProcess = await cf.findWorkersByPattern(workerPattern);
-      core.info(`Found ${workersToProcess.length} workers matching pattern: ${workerPattern}`);
+      workersToProcess = await cf.findWorkersByPattern(inputs.workerPattern);
+      core.info(
+        `Found ${workersToProcess.length} workers matching pattern: ${inputs.workerPattern}`
+      );
     }
 
     // Apply exclusion pattern if provided
-    if (excludePattern && workersToProcess.length > 0) {
+    if (inputs.excludePattern && workersToProcess.length > 0) {
       const excludeRegex = new RegExp(
-        `^${excludePattern.replace(/\*/g, '.*').replace(/\?/g, '.')}$`
+        `^${inputs.excludePattern.replace(/\*/g, '.*').replace(/\?/g, '.')}$`
       );
       const beforeExclusion = workersToProcess.length;
       workersToProcess = workersToProcess.filter((name) => !excludeRegex.test(name));
       const excluded = beforeExclusion - workersToProcess.length;
       if (excluded > 0) {
-        core.info(`Excluded ${excluded} workers matching exclude pattern: ${excludePattern}`);
+        core.info(
+          `Excluded ${excluded} workers matching exclude pattern: ${inputs.excludePattern}`
+        );
       }
     }
 
     // Apply age filter if provided
-    if (maxAgeDays && workersToProcess.length > 0) {
-      const maxAgeMs = parseInt(maxAgeDays) * 24 * 60 * 60 * 1000;
-      const _cutoffDate = new Date(Date.now() - maxAgeMs);
-
-      // Note: This is a simplified age check. In practice, you'd need to fetch
-      // worker metadata to get creation dates. For now, we'll skip this filter.
+    if (inputs.maxAgeDays && workersToProcess.length > 0) {
+      // Note: Age-based filtering would require fetching worker metadata to get creation dates.
+      // For now, we'll skip this filter as the Cloudflare API doesn't provide creation dates
+      // in the simple list workers endpoint.
       core.warning(
         'Age-based filtering is not yet implemented. All matching workers will be processed.'
       );
@@ -86,10 +91,10 @@ async function run() {
       return;
     }
 
-    const deletedWorkers = [];
-    const skippedWorkers = [];
+    const deletedWorkers: string[] = [];
+    const skippedWorkers: string[] = [];
 
-    if (dryRun) {
+    if (inputs.dryRun) {
       // Dry run mode - just list what would be deleted
       core.info(`🔍 DRY RUN MODE: Would delete ${workersToProcess.length} workers:`);
       for (const workerName of workersToProcess) {
@@ -103,7 +108,7 @@ async function run() {
       core.setOutput('dry-run-results', JSON.stringify(workersToProcess));
 
       // Set summary
-      core.summary
+      await core.summary
         .addHeading('🔍 Cloudflare Workers Cleanup (Dry Run)')
         .addTable([
           ['Property', 'Value'],
@@ -111,9 +116,8 @@ async function run() {
           ['Mode', 'Dry Run (no deletion)']
         ])
         .addHeading('Workers that would be deleted:')
-        .addList(workersToProcess);
-
-      await core.summary.write();
+        .addList(workersToProcess)
+        .write();
     } else {
       // Actual deletion mode
       core.info(`🗑️  Deleting ${workersToProcess.length} workers...`);
@@ -130,7 +134,8 @@ async function run() {
           }
         } catch (error) {
           skippedWorkers.push(workerName);
-          core.error(`❌ Failed to delete ${workerName}: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          core.error(`❌ Failed to delete ${workerName}: ${errorMessage}`);
         }
 
         // Add small delay to avoid rate limiting
@@ -144,30 +149,35 @@ async function run() {
       core.setOutput('dry-run-results', '[]');
 
       // Set summary
-      core.summary.addHeading('🗑️ Cloudflare Workers Cleanup').addTable([
+      const table = [
         ['Property', 'Value'],
         ['Workers Deleted', deletedWorkers.length.toString()],
         ['Workers Skipped', skippedWorkers.length.toString()],
         ['Total Processed', workersToProcess.length.toString()],
         ['Success Rate', `${Math.round((deletedWorkers.length / workersToProcess.length) * 100)}%`]
-      ]);
+      ];
+
+      let summaryBuilder = core.summary.addHeading('🗑️ Cloudflare Workers Cleanup').addTable(table);
 
       if (deletedWorkers.length > 0) {
-        core.summary.addHeading('✅ Successfully Deleted Workers:').addList(deletedWorkers);
+        summaryBuilder = summaryBuilder
+          .addHeading('✅ Successfully Deleted Workers:')
+          .addList(deletedWorkers);
       }
 
       if (skippedWorkers.length > 0) {
-        core.summary.addHeading('⚠️ Skipped Workers:').addList(skippedWorkers);
+        summaryBuilder = summaryBuilder.addHeading('⚠️ Skipped Workers:').addList(skippedWorkers);
       }
 
-      await core.summary.write();
+      await summaryBuilder.write();
 
       core.info(
         `✅ Cleanup completed: ${deletedWorkers.length} deleted, ${skippedWorkers.length} skipped`
       );
     }
   } catch (error) {
-    core.error(`❌ Cleanup failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    core.error(`❌ Cleanup failed: ${errorMessage}`);
 
     // Set failure outputs
     core.setOutput('deleted-workers', '[]');
@@ -176,17 +186,14 @@ async function run() {
     core.setOutput('dry-run-results', '[]');
 
     // Set failure summary
-    core.summary
+    await core.summary
       .addHeading('❌ Cloudflare Workers Cleanup Failed')
-      .addCodeBlock(error.message, 'text');
+      .addCodeBlock(errorMessage, 'text')
+      .write();
 
-    await core.summary.write();
-
-    core.setFailed(error.message);
+    core.setFailed(errorMessage);
   }
 }
 
 // Self-invoking async function to handle top-level await
-(async () => {
-  await run();
-})();
+void run();

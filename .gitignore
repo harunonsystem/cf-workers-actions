@@ -17,9 +17,6 @@ coverage/
 # nyc test coverage
 .nyc_output
 
-# Dependency directories
-node_modules/
-
 # Optional npm cache directory
 .npm
 
@@ -67,9 +64,6 @@ node_modules/
 # Temporary wrangler files
 wrangler.toml
 
-# Jest
-jest.config.local.js
-
 # IDE
 .idea/
 .vscode/
@@ -80,3 +74,8 @@ jest.config.local.js
 # OS
 .DS_Store
 Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Note: dist/ contains compiled JS for GitHub Actions - keep it committed
