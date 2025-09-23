@@ -17,8 +17,9 @@ coverage/
 # nyc test coverage
 .nyc_output
 
-# Optional npm cache directory
+# Optional package manager cache directories
 .npm
+.pnpm
 
 # Optional eslint cache
 .eslintcache
