@@ -43,27 +43,7 @@ jobs:
       - name: Run tests (Vitest)
         run: pnpm test
 
-  test-1password-integration:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment: testing
-    steps:
-      - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-
-      - name: Load secrets from 1Password
-        id: load-secrets
-        uses: ./.github/actions/load-1password-secrets
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-
-      - name: Verify 1Password integration
-        run: |
-          echo "✅ 1Password integration test completed"
-          echo "Account ID: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID != '' && '✅' || '❌' }}"
-          echo "API Token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN != '' && '✅' || '❌' }}"
-
-  validate-actions:
+   validate-actions:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
