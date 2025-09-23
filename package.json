@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "GitHub Actions for Cloudflare Workers deployment, PR commenting, and cleanup",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
