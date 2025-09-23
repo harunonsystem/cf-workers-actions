@@ -14,7 +14,7 @@ vi.mock('@actions/core', () => ({
     addTable: vi.fn().mockReturnThis(),
     addList: vi.fn().mockReturnThis(),
     addCodeBlock: vi.fn().mockReturnThis(),
-    write: vi.fn().mockResolvedValue()
+    write: vi.fn().mockResolvedValue(undefined)
   }
 }));
 

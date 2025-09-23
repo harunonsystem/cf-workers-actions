@@ -15,11 +15,11 @@ inputs:
     description: 'Specific worker names to delete (comma-separated)'
     required: false
 
-  api-token:
+  cloudflare-api-token:
     description: 'Cloudflare API Token'
     required: true
 
-  account-id:
+  cloudflare-account-id:
     description: 'Cloudflare Account ID'
     required: true
 

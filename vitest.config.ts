@@ -10,6 +10,6 @@ export default defineConfig({
       exclude: ['src/**/*.test.ts', 'src/shared/types.ts'],
       reporter: ['text', 'lcov', 'html']
     },
-    setupFiles: ['./vitest.setup.js']
+    setupFiles: ['./vitest.setup.ts']
   }
 });

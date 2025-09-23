@@ -22,11 +22,11 @@ inputs:
     required: false
     default: 'index.js'
 
-  api-token:
+  cloudflare-api-token:
     description: 'Cloudflare API Token'
     required: true
 
-  account-id:
+  cloudflare-account-id:
     description: 'Cloudflare Account ID'
     required: true
 

@@ -8,8 +8,8 @@ async function run(): Promise<void> {
     const inputs: CleanupInputs = {
       workerPattern: core.getInput('worker-pattern') || undefined,
       workerNames: undefined,
-      apiToken: core.getInput('api-token', { required: true }),
-      accountId: core.getInput('account-id', { required: true }),
+      apiToken: core.getInput('cloudflare-api-token', { required: true }),
+      accountId: core.getInput('cloudflare-account-id', { required: true }),
       dryRun: core.getInput('dry-run') === 'true',
       maxAgeDays: core.getInput('max-age-days')
         ? parseInt(core.getInput('max-age-days'), 10)
