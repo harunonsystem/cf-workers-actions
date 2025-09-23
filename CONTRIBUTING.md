@@ -6,7 +6,7 @@ Thank you for your interest in contributing to Cloudflare Actions! This document
 
 ### Prerequisites
 
-- Node.js 18 or higher
+- Node.js 20 or higher
 - pnpm
 - Git
 
@@ -43,11 +43,13 @@ Thank you for your interest in contributing to Cloudflare Actions! This document
 
 2. Make your changes
 3. Add tests for new functionality
-4. Ensure all tests pass:
+4. Ensure all checks pass:
 
    ```bash
-   pnpm test      # Run Vitest (ultra-fast testing)
-   pnpm run lint  # Run Oxlint (ultra-fast linting)
+   pnpm run typecheck  # TypeScript type checking
+   pnpm run lint       # Run Oxlint (ultra-fast linting)
+   pnpm test           # Run Vitest (ultra-fast testing)
+   pnpm build          # Build TypeScript to JavaScript
    ```
 
 5. Commit your changes:
@@ -109,7 +111,7 @@ pnpm run test:ui
 
 ### Test Structure
 
-```javascript
+```typescript
 describe('feature-name', () => {
   describe('specific-function', () => {
     test('should do something specific', () => {
@@ -123,24 +125,67 @@ describe('feature-name', () => {
 });
 ```
 
+## 🔧 TypeScript Development
+
+### Type Checking
+
+Run TypeScript type checking to ensure type safety:
+
+```bash
+pnpm run typecheck  # Check types without emitting files
+```
+
+### Building
+
+Compile TypeScript to JavaScript for GitHub Actions:
+
+```bash
+pnpm build  # Compile src/ to dist/
+```
+
+The build process:
+
+1. Compiles TypeScript files from `src/` to JavaScript in `dist/`
+2. Generates type declaration files (`.d.ts`)
+3. Optimizes for Node.js 20 runtime
+4. Maintains source maps for debugging
+
+### TypeScript Best Practices
+
+- **Interface Definitions**: Define interfaces for all input/output data structures in `shared/types.ts`
+- **Strict Mode**: All TypeScript code uses strict type checking
+- **Import/Export**: Use ES6 imports/exports consistently
+- **Error Types**: Use proper error typing with union types for error handling
+- **Generic Types**: Leverage TypeScript generics for reusable utilities
+
 ## 📁 Project Structure
 
 ```
 cloudflare-actions/
-├── src/                   # TypeScript source code
-│   ├── deploy/           # Deploy action source
-│   ├── comment/          # Comment action source
-│   ├── cleanup/          # Cleanup action source
-│   └── shared/           # Shared libraries
+├── src/                   # TypeScript source code (development)
+│   ├── deploy/           # Deploy action TypeScript source
+│   │   └── index.ts      # Deploy action entry point
+│   ├── comment/          # Comment action TypeScript source
+│   │   └── index.ts      # Comment action entry point
+│   ├── cleanup/          # Cleanup action TypeScript source
+│   │   └── index.ts      # Cleanup action entry point
+│   └── shared/           # Shared TypeScript libraries
 │       ├── types.ts           # TypeScript type definitions
-│       └── lib/               # Reusable modules
-├── dist/                  # Compiled JavaScript (for GitHub Actions)
+│       └── lib/               # Reusable TypeScript modules
+├── dist/                  # Compiled JavaScript (auto-generated for GitHub Actions)
+│   ├── deploy/
+│   │   └── index.js      # Compiled deploy action
+│   ├── comment/
+│   │   └── index.js      # Compiled comment action
+│   ├── cleanup/
+│   │   └── index.js      # Compiled cleanup action
+│   └── shared/           # Compiled shared libraries
 ├── tests/                 # Test files (TypeScript)
 ├── deploy/                # Deploy action metadata
-│   └── action.yml        # Action definition
+│   └── action.yml        # Action definition (references dist/deploy/index.js)
 ├── comment/               # Comment action metadata
 ├── cleanup/               # Cleanup action metadata
-└── .github/               # GitHub workflows
+└── .github/               # GitHub workflows and CI/CD
 ```
 
 ## 🔧 Action Development Guidelines
@@ -173,17 +218,19 @@ cloudflare-actions/
      main: 'index.js'
    ```
 
-3. Create `index.js` following the existing pattern
-4. Add comprehensive tests
-5. Update documentation
+3. Create `src/action-name/index.ts` following the existing TypeScript pattern
+4. Run `pnpm build` to compile TypeScript to JavaScript
+5. Add comprehensive tests
+6. Update documentation
 
 ### Best Practices
 
-- **Error Handling**: Always provide meaningful error messages
+- **Type Safety**: Use TypeScript interfaces for all data structures and function parameters
+- **Error Handling**: Always provide meaningful error messages with proper typing
 - **Logging**: Use `core.info()`, `core.debug()`, `core.warning()`, and `core.error()`
 - **Outputs**: Set all declared outputs, even on failure (empty strings)
-- **Validation**: Validate all inputs early in the action
-- **Documentation**: Document all parameters and use cases
+- **Validation**: Validate all inputs early in the action with type guards
+- **Documentation**: Document all parameters and use cases with TSDoc comments
 
 ### Shared Libraries
 
@@ -205,18 +252,18 @@ When adding new features:
 3. Update the feature list
 4. Document any new inputs/outputs
 
-### JSDoc Comments
+### TSDoc Comments
 
-Use JSDoc for function documentation:
+Use TSDoc for function documentation in TypeScript:
 
-```javascript
+```typescript
 /**
  * Generate worker name from pattern and PR number
- * @param {string} pattern - Worker name pattern (e.g., "project-pr-{pr_number}")
- * @param {number} prNumber - Pull request number
- * @returns {string} Generated worker name
+ * @param pattern - Worker name pattern (e.g., "project-pr-{pr_number}")
+ * @param prNumber - Pull request number
+ * @returns Generated worker name
  */
-function generateWorkerName(pattern, prNumber) {
+function generateWorkerName(pattern: string, prNumber: number): string {
   // Implementation
 }
 ```
