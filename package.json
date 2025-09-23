@@ -14,13 +14,13 @@
     "test:ui": "vitest --ui",
     "lint": "oxlint .",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run lint && npm test",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm test",
     "validate:actions": "yamllint .github/workflows/*.yml */action.yml",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "npm run build",
-    "release:check": "npm run check && echo '✅ Ready for release!'",
-    "version": "npm run build && git add dist/"
+    "prepare": "pnpm run build",
+    "release:check": "pnpm run check && echo '✅ Ready for release!'",
+    "version": "pnpm run build && git add dist/"
   },
   "keywords": [
     "github-actions",

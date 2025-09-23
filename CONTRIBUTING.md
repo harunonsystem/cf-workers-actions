@@ -7,7 +7,7 @@ Thank you for your interest in contributing to Cloudflare Actions! This document
 ### Prerequisites
 
 - Node.js 18 or higher
-- npm 9 or higher
+- pnpm
 - Git
 
 ### Setup
@@ -23,12 +23,12 @@ Thank you for your interest in contributing to Cloudflare Actions! This document
 3. Install dependencies:
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 4. Run tests to ensure everything works:
    ```bash
-   npm test
+   pnpm test
    ```
 
 ## 🏗️ Development Workflow
@@ -46,8 +46,8 @@ Thank you for your interest in contributing to Cloudflare Actions! This document
 4. Ensure all tests pass:
 
    ```bash
-   npm test      # Run Vitest (ultra-fast testing)
-   npm run lint  # Run Oxlint (ultra-fast linting)
+   pnpm test      # Run Vitest (ultra-fast testing)
+   pnpm run lint  # Run Oxlint (ultra-fast linting)
    ```
 
 5. Commit your changes:
@@ -78,8 +78,8 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 ### Code Style
 
 - We use Oxlint (ultra-fast linter) and Prettier for code formatting
-- Run `npm run lint` to check code quality (10-100x faster than ESLint)
-- Run `npm run format` to format code
+- Run `pnpm run lint` to check code quality (10-100x faster than ESLint)
+- Run `pnpm run format` to format code
 
 ## 🧪 Testing
 
@@ -87,16 +87,16 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run tests with coverage
-npm run test:coverage
+pnpm run test:coverage
 
 # Run tests in watch mode
-npm run test:watch
+pnpm run test:watch
 
 # Run tests with UI
-npm run test:ui
+pnpm run test:ui
 ```
 
 ### Writing Tests
