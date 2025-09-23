@@ -43,7 +43,7 @@ jobs:
       - name: Run tests (Vitest)
         run: pnpm test
 
-   validate-actions:
+  validate-actions:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
