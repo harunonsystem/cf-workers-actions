@@ -23,11 +23,11 @@ Deploy applications to Cloudflare Workers with support for both preview and prod
 
 ```yaml
 - uses: harunonsystem/cloudflare-actions/deploy@v1
-  id: deploy
-  with:
-    environment: preview
-    api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+   id: deploy
+   with:
+     environment: preview
+     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
 
 **Inputs:**
@@ -35,8 +35,8 @@ Deploy applications to Cloudflare Workers with support for both preview and prod
 - `environment` (required): Deployment environment (`preview` or `production`)
 - `worker-name-pattern`: Worker name pattern (default: `project-pr-{pr_number}`)
 - `script-path`: Path to worker script (default: `index.js`)
-- `api-token` (required): Cloudflare API Token
-- `account-id` (required): Cloudflare Account ID
+- `cloudflare-api-token` (required): Cloudflare API Token
+- `cloudflare-account-id` (required): Cloudflare Account ID
 - `subdomain`: Custom subdomain for workers.dev URL
 - `vars`: Environment variables (JSON format)
 - `secrets`: Worker secrets (JSON format)
@@ -82,18 +82,18 @@ Clean up and delete Cloudflare Workers based on patterns or specific names.
 
 ```yaml
 - uses: harunonsystem/cloudflare-actions/cleanup@v1
-  with:
-    worker-pattern: 'project-pr-*'
-    api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+   with:
+     worker-pattern: 'project-pr-*'
+     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
 
 **Inputs:**
 
 - `worker-pattern`: Pattern for workers to delete (supports wildcards)
 - `worker-names`: Specific worker names to delete (comma-separated)
-- `api-token` (required): Cloudflare API Token
-- `account-id` (required): Cloudflare Account ID
+- `cloudflare-api-token` (required): Cloudflare API Token
+- `cloudflare-account-id` (required): Cloudflare Account ID
 - `dry-run`: Only list workers without deleting (default: `false`)
 - `max-age-days`: Only delete workers older than specified days
 - `exclude-pattern`: Pattern for workers to exclude from deletion
@@ -168,13 +168,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Production
-        uses: harunonsystem/cloudflare-actions/deploy@v1
-        with:
-          environment: production
-          worker-name-pattern: 'myapp-production'
-          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+       - name: Deploy to Production
+         uses: harunonsystem/cloudflare-actions/deploy@v1
+         with:
+           environment: production
+           worker-name-pattern: 'myapp-production'
+           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           vars: |
             {
               "ENVIRONMENT": "production",
@@ -200,12 +200,12 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Cleanup Preview Worker
-        uses: harunonsystem/cloudflare-actions/cleanup@v1
-        with:
-          worker-pattern: 'myapp-pr-${{ github.event.pull_request.number }}'
-          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+       - name: Cleanup Preview Worker
+         uses: harunonsystem/cloudflare-actions/cleanup@v1
+         with:
+           worker-pattern: 'myapp-pr-${{ github.event.pull_request.number }}'
+           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           confirm-deletion: 'yes'
 ```
 
@@ -222,15 +222,15 @@ jobs:
   cleanup-old-workers:
     runs-on: ubuntu-latest
     steps:
-      - name: Cleanup Old Preview Workers
-        uses: harunonsystem/cloudflare-actions/cleanup@v1
-        with:
-          worker-pattern: 'myapp-pr-*'
-          exclude-pattern: 'myapp-pr-main'
-          max-age-days: 7
-          dry-run: false
-          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+       - name: Cleanup Old Preview Workers
+         uses: harunonsystem/cloudflare-actions/cleanup@v1
+         with:
+           worker-pattern: 'myapp-pr-*'
+           exclude-pattern: 'myapp-pr-main'
+           max-age-days: 7
+           dry-run: false
+           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           confirm-deletion: 'yes'
 ```
 
