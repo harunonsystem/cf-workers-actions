@@ -16,7 +16,7 @@ Thank you for your interest in contributing to Cloudflare Actions! This document
 2. Clone your fork:
 
    ```bash
-   git clone https://github.com/YOUR_USERNAME/cloudflare-actions.git
+   git clone https://github.com/harunonsystem/cloudflare-actions.git
    cd cloudflare-actions
    ```
 

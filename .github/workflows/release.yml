@@ -148,8 +148,8 @@ jobs:
             ```yaml
             - uses: harunonsystem/cloudflare-actions/deploy@TAG
               with:
-                cloudflare-api-token: ${{ secrets.CF_TOKEN }}
-                cloudflare-account-id: ${{ secrets.CF_ACCOUNT }}
+                cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+                cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
             ```
 
             ### 📚 Documentation:

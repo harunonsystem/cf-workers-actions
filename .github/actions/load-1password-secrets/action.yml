@@ -40,10 +40,9 @@ runs:
         fi
         echo "✅ All Cloudflare secrets loaded successfully from 1Password"
 
-    - name: Export secrets as environment variables (optional)
-      if: ${{ inputs.export-env == 'true' }}
+    - name: Export secrets as environment variables (SECURITY WARNING)
+      if: false # Disabled for security - use outputs instead
       shell: bash
       run: |
-        echo "Exporting Cloudflare secrets as environment variables"
-        echo "CLOUDFLARE_ACCOUNT_ID=${{ steps.op-load-secret.outputs.CLOUDFLARE_ACCOUNT_ID }}" >> $GITHUB_ENV
-        echo "CLOUDFLARE_API_TOKEN=${{ steps.op-load-secret.outputs.CLOUDFLARE_API_TOKEN }}" >> $GITHUB_ENV
+        echo "⚠️  Environment variable export disabled for security"
+        echo "Use outputs instead: steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN"
