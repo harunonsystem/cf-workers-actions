@@ -40,8 +40,8 @@ async function run(): Promise<void> {
     // Generate worker name
     let workerName: string;
     if (inputs.environment === 'production') {
-      // For production, use a simple name without PR number
-      workerName = inputs.workerNamePattern.replace('-{pr_number}', '').replace('{pr_number}', '');
+      // For production, remove PR number placeholder cleanly
+      workerName = inputs.workerNamePattern.replace(/-?\{pr_number\}/g, '');
     } else {
       // For preview, generate from PR number
       const prNumber = getPrNumber(github.context);

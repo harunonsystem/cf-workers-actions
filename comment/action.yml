@@ -1,5 +1,6 @@
+---
 name: 'Cloudflare Workers PR Comment'
-description: 'Post deployment information and preview URLs to Pull Request comments'
+description: 'Post deployment information and preview URLs to PR comments'
 author: 'harunonsystem'
 
 branding:

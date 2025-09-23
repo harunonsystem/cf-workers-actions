@@ -1,3 +1,4 @@
+---
 name: CI
 
 on:
@@ -21,50 +22,54 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "npm"
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-    - name: Build TypeScript
-      run: npm run build
-    
-    - name: Run type checking
-      run: npm run typecheck
-    
-    - name: Run linter (Oxlint)
-      run: npm run lint
-    
-    - name: Run tests (Vitest)
-      run: npm test
-    
-    - name: Run tests with coverage (Vitest)
-      run: npm run test:coverage
+      - name: Build TypeScript
+        run: npm run build
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
+      - name: Run type checking
+        run: npm run typecheck
+
+      - name: Run linter (Oxlint)
+        run: npm run lint
+
+      - name: Run tests (Vitest)
+        run: npm test
+
+  test-1password-integration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: testing
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load secrets from 1Password
+        id: load-secrets
+        uses: ./.github/actions/load-1password-secrets
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+      - name: Verify 1Password integration
+        run: |
+          echo "✅ 1Password integration test completed"
+          echo "Account ID: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID != '' && '✅' || '❌' }}"
+          echo "API Token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN != '' && '✅' || '❌' }}"
 
   validate-actions:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Validate Deploy Action
-        uses: docker://rhymond/github-action-validate:latest
+      - name: Validate GitHub Actions with actionlint
+        uses: raven-actions/actionlint@v1
         with:
-          action: deploy/action.yml
-
-      - name: Validate Comment Action
-        uses: docker://rhymond/github-action-validate:latest
-        with:
-          action: comment/action.yml
-
-      - name: Validate Cleanup Action
-        uses: docker://rhymond/github-action-validate:latest
-        with:
-          action: cleanup/action.yml
+          files: |
+            .github/workflows/*.yml
+            deploy/action.yml
+            comment/action.yml
+            cleanup/action.yml

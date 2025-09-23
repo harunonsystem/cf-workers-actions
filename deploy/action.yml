@@ -1,5 +1,6 @@
+---
 name: 'Cloudflare Workers Deploy'
-description: 'Deploy applications to Cloudflare Workers with preview and production support'
+description: 'Deploy applications to Cloudflare Workers with preview/production'
 author: 'harunonsystem'
 
 branding:

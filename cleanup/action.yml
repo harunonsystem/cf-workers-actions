@@ -1,5 +1,6 @@
+---
 name: 'Cloudflare Workers Cleanup'
-description: 'Clean up and delete Cloudflare Workers based on patterns or specific names'
+description: 'Clean up and delete Cloudflare Workers based on patterns'
 author: 'harunonsystem'
 
 branding:
@@ -8,7 +9,7 @@ branding:
 
 inputs:
   worker-pattern:
-    description: 'Pattern for workers to delete (e.g., "project-pr-*", supports wildcards)'
+    description: 'Pattern for workers to delete (e.g., "project-pr-*")'
     required: false
 
   worker-names:
@@ -24,7 +25,7 @@ inputs:
     required: true
 
   dry-run:
-    description: 'Only list workers that would be deleted without actually deleting them'
+    description: 'List workers to delete without actually deleting them'
     required: false
     default: 'false'
 
@@ -37,7 +38,7 @@ inputs:
     required: false
 
   confirm-deletion:
-    description: 'Require explicit confirmation for deletion (set to "yes" to proceed)'
+    description: 'Require explicit confirmation (set to "yes" to proceed)'
     required: false
     default: 'yes'
 

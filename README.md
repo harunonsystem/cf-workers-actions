@@ -234,13 +234,47 @@ jobs:
           confirm-deletion: 'yes'
 ```
 
-## 🔑 Required Secrets
+## 🔑 Secret Management
+
+### Option 1: GitHub Secrets (Default)
 
 Add these secrets to your repository settings:
 
 - `CLOUDFLARE_API_TOKEN`: Your Cloudflare API token with Workers permissions
 - `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare Account ID
 - `GITHUB_TOKEN`: Automatically provided by GitHub Actions (for commenting)
+
+### Option 2: 1Password Integration (Recommended)
+
+For enhanced security, use 1Password to manage your secrets:
+
+```yaml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load secrets from 1Password
+        id: load-secrets
+        uses: harunonsystem/cloudflare-actions/.github/actions/load-1password-secrets@v1
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+      - name: Deploy to Cloudflare Workers
+        uses: harunonsystem/cloudflare-actions/deploy@v1
+        with:
+          cloudflare-api-token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
+          environment: production
+```
+
+**1Password Setup:**
+
+1. Store `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in your `harunonpj` vault
+2. Add `OP_SERVICE_ACCOUNT_TOKEN` to GitHub repository secrets
+3. Use the action - vault name is pre-configured to `harunonpj`
 
 ### Getting Cloudflare Credentials
 

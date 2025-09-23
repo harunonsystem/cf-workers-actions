@@ -15,9 +15,12 @@
     "lint": "oxlint .",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run lint && npm test",
+    "validate:actions": "yamllint .github/workflows/*.yml */action.yml",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "release:check": "npm run check && echo '✅ Ready for release!'",
+    "version": "npm run build && git add dist/"
   },
   "keywords": [
     "github-actions",
