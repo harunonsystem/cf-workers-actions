@@ -14,7 +14,6 @@
     "lint": "oxlint .",
     "typecheck": "tsc --noEmit",
     "check": "pnpm run typecheck && pnpm run lint && pnpm test",
-    "validate:actions": "yamllint .github/workflows/*.yml */action.yml",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "pnpm run build",

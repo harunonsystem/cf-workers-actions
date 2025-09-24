@@ -1,0 +1,33 @@
+---
+name: 'CI Checks'
+description: 'Run common CI checks: install dependencies, build, type check, lint, and test'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: true
+    type: string
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup environment
+      uses: ./.github/actions/setup
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Build TypeScript
+      run: pnpm run build
+      shell: bash
+
+    - name: Run type checking
+      run: pnpm run typecheck
+      shell: bash
+
+    - name: Run linter (Oxlint)
+      run: pnpm run lint
+      shell: bash
+
+    - name: Run tests (Vitest)
+      run: pnpm test
+      shell: bash
