@@ -38,4 +38,3 @@ jobs:
         with:
           files: |
             .github/workflows/*.yml
-            */action.yml
