@@ -38,6 +38,4 @@ jobs:
         with:
           files: |
             .github/workflows/*.yml
-            deploy/action.yml
-            comment/action.yml
-            cleanup/action.yml
+            */action.yml
