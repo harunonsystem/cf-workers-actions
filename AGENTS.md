@@ -7,7 +7,9 @@
 - **Typecheck**: `pnpm typecheck` (tsc --noEmit)
 - **Test all**: `pnpm test` (vitest run)
 - **Test single file**: `pnpm exec vitest run tests/filename.test.ts`
+- **Test coverage**: `pnpm test:coverage`
 - **Test watch**: `pnpm test:watch`
+- **Format**: `pnpm format` (Prettier)
 - **Full check**: `pnpm check` (typecheck + lint + test)
 
 ## Code Style
