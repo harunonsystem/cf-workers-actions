@@ -1,0 +1,37 @@
+name: Cleanup Workers (Using GitHub Secrets)
+
+on:
+  pull_request:
+    types: [closed]
+  schedule:
+    # Run cleanup daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup-workers:
+    runs-on: ubuntu-latest
+    environment: preview
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cleanup closed PR worker
+        if: github.event.action == 'closed'
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Cleanup old preview workers (scheduled)
+        if: github.event_name == 'schedule'
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-pattern: 'myapp-pr-*'
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          max-age-days: '7'

@@ -16,7 +16,7 @@
 
 - **Imports**: ES6 imports, external libs first, then internal (relative paths with `../`)
 - **Formatting**: Prettier (single quotes, semicolons, 100 width, 2 spaces)
-- **Types**: Strict TypeScript, interfaces for all data structures, explicit return types
+- **Types**: Strict TypeScript, interfaces for data structures, explicit return types
 - **Naming**: camelCase variables/functions, PascalCase classes/interfaces
 - **Error handling**: `error instanceof Error ? error.message : 'Unknown error'`, use core.error/core.warning
 - **Async**: async/await with try/catch, graceful error handling

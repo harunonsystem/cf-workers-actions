@@ -1,0 +1,201 @@
+name: Advanced Cleanup Workers (Using 1Password CLI)
+
+on:
+  pull_request:
+    types: [closed]
+  schedule:
+    # Run cleanup daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no actual deletion)'
+        required: false
+        default: 'true'
+        type: boolean
+      max_age_days:
+        description: 'Maximum age in days for workers to keep'
+        required: false
+        default: '7'
+        type: string
+      emergency_cleanup:
+        description: 'Emergency cleanup - remove ALL preview workers'
+        required: false
+        default: 'false'
+        type: boolean
+      exclude_patterns:
+        description: 'Comma-separated patterns to exclude (e.g., "prod*,staging*")'
+        required: false
+        default: 'secure-app-prod*,secure-app-staging*'
+        type: string
+      custom_worker_pattern:
+        description: 'Custom worker pattern to cleanup (overrides default)'
+        required: false
+        type: string
+      audit_only:
+        description: 'Run audit only without any cleanup operations'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  setup-credentials:
+    runs-on: ubuntu-latest
+    outputs:
+      api-token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN }}
+      account-id: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install 1Password CLI
+        uses: 1password/install-cli-action@v1
+
+      - name: Load Cloudflare credentials from 1Password
+        id: load-secrets
+        uses: 1password/load-secrets-action@v1
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          CLOUDFLARE_API_TOKEN: 'op://cloudflare/preview/cloudflare-api-token'
+          CLOUDFLARE_ACCOUNT_ID: 'op://cloudflare/preview/cloudflare-account-id'
+
+  cleanup-pr-workers:
+    runs-on: ubuntu-latest
+    needs: setup-credentials
+    if: github.event.inputs.audit_only != 'true' && (github.event.action == 'closed' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cleanup specific PR worker
+        if: github.event.action == 'closed'
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-names: 'secure-app-pr-${{ github.event.pull_request.number }}'
+          cloudflare-api-token: ${{ needs.setup-credentials.outputs.api-token }}
+          cloudflare-account-id: ${{ needs.setup-credentials.outputs.account-id }}
+          dry-run: false
+          confirm-deletion: 'yes'
+
+      - name: Emergency cleanup (all preview workers)
+        if: github.event.inputs.emergency_cleanup == 'true'
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-pattern: ${{ github.event.inputs.custom_worker_pattern || 'secure-app-pr-*' }}
+          exclude-pattern: ${{ github.event.inputs.exclude_patterns }}
+          cloudflare-api-token: ${{ needs.setup-credentials.outputs.api-token }}
+          cloudflare-account-id: ${{ needs.setup-credentials.outputs.account-id }}
+          dry-run: ${{ github.event.inputs.dry_run == 'true' }}
+          confirm-deletion: ${{ github.event.inputs.dry_run == 'false' && 'yes' || 'no' }}
+
+      - name: Cleanup old preview workers (scheduled)
+        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.event.inputs.emergency_cleanup != 'true'
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-pattern: ${{ github.event.inputs.custom_worker_pattern || 'secure-app-pr-*' }}
+          exclude-pattern: ${{ github.event.inputs.exclude_patterns }}
+          cloudflare-api-token: ${{ needs.setup-credentials.outputs.api-token }}
+          cloudflare-account-id: ${{ needs.setup-credentials.outputs.account-id }}
+          max-age-days: ${{ github.event.inputs.max_age_days || '7' }}
+          dry-run: ${{ github.event.inputs.dry_run == 'true' || github.event_name == 'schedule' }}
+          confirm-deletion: ${{ github.event.inputs.dry_run == 'false' && 'yes' || 'no' }}
+
+  cleanup-orphaned-workers:
+    runs-on: ubuntu-latest
+    needs: [setup-credentials, cleanup-pr-workers]
+    if: github.event.inputs.audit_only != 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.emergency_cleanup != 'true'))
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Find and cleanup orphaned workers
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-pattern: 'secure-app-*'
+          exclude-pattern: ${{ github.event.inputs.exclude_patterns || 'secure-app-prod*,secure-app-staging*' }}
+          cloudflare-api-token: ${{ needs.setup-credentials.outputs.api-token }}
+          cloudflare-account-id: ${{ needs.setup-credentials.outputs.account-id }}
+          max-age-days: '14'
+          dry-run: ${{ github.event.inputs.dry_run == 'true' || github.event_name == 'schedule' }}
+          confirm-deletion: ${{ github.event.inputs.dry_run == 'false' && 'yes' || 'no' }}
+
+  audit-and-report:
+    runs-on: ubuntu-latest
+    needs: [setup-credentials, cleanup-pr-workers, cleanup-orphaned-workers]
+    if: always() && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Comprehensive worker audit
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-pattern: 'secure-app-*'
+          cloudflare-api-token: ${{ needs.setup-credentials.outputs.api-token }}
+          cloudflare-account-id: ${{ needs.setup-credentials.outputs.account-id }}
+          dry-run: true
+          confirm-deletion: 'no'
+
+      - name: Create comprehensive security audit summary
+        run: |
+          echo "## 🔐 Advanced Secure Worker Cleanup Audit" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Security:** 🛡️ 1Password CLI managed credentials" >> $GITHUB_STEP_SUMMARY
+          echo "**Configuration:** Advanced options enabled" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ github.event.inputs.audit_only }}" == "true" ]; then
+            echo "### 🔍 Audit-Only Mode" >> $GITHUB_STEP_SUMMARY
+            echo "**Status:** Read-only audit performed" >> $GITHUB_STEP_SUMMARY
+            echo "**No cleanup operations executed**" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.event.action }}" == "closed" ]; then
+            echo "### 🎯 PR Cleanup" >> $GITHUB_STEP_SUMMARY
+            echo "**Action:** Cleaned up PR #${{ github.event.pull_request.number }} worker" >> $GITHUB_STEP_SUMMARY
+            echo "**Worker:** secure-app-pr-${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.event.inputs.emergency_cleanup }}" == "true" ]; then
+            echo "### 🚨 Emergency Cleanup" >> $GITHUB_STEP_SUMMARY
+            echo "**Pattern:** ${{ github.event.inputs.custom_worker_pattern || 'secure-app-pr-*' }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Excluded:** ${{ github.event.inputs.exclude_patterns }}" >> $GITHUB_STEP_SUMMARY
+            echo "**⚠️ WARNING:** Emergency cleanup operation executed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⏰ Scheduled/Manual Cleanup" >> $GITHUB_STEP_SUMMARY
+            echo "**Pattern:** ${{ github.event.inputs.custom_worker_pattern || 'secure-app-pr-*' }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Max Age:** ${{ github.event.inputs.max_age_days || '7' }} days" >> $GITHUB_STEP_SUMMARY
+            echo "**Dry Run:** ${{ github.event.inputs.dry_run || 'true' }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Excluded:** ${{ github.event.inputs.exclude_patterns || 'secure-app-prod*,secure-app-staging*' }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 Advanced Features Used" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ 1Password Service Account integration" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Multi-job credential sharing" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Custom worker patterns support" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Flexible exclude patterns" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Emergency cleanup mode" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Audit-only mode" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Orphaned workers detection" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Comprehensive security audit" >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Job Status" >> $GITHUB_STEP_SUMMARY
+          echo "**Credentials Setup:** ${{ needs.setup-credentials.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**PR Workers:** ${{ needs.cleanup-pr-workers.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Orphaned Workers:** ${{ needs.cleanup-orphaned-workers.result }}" >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔒 Security Compliance" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Zero credentials in workflow files" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ 1Password Service Account authentication" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Secure credential passing between jobs" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Audit trail for all operations" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Emergency procedure documentation" >> $GITHUB_STEP_SUMMARY
