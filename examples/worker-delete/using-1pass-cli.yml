@@ -28,8 +28,8 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          CLOUDFLARE_API_TOKEN: 'op://cloudflare/preview/cloudflare-api-token'
-          CLOUDFLARE_ACCOUNT_ID: 'op://cloudflare/preview/cloudflare-account-id'
+          CLOUDFLARE_API_TOKEN: 'op://myapp/production/cloudflare-api-token'
+          CLOUDFLARE_ACCOUNT_ID: 'op://myapp/production/cloudflare-account-id'
 
       - name: Cleanup closed PR worker
         if: github.event.action == 'closed'
