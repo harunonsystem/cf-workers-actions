@@ -32,11 +32,8 @@ export interface CloudflareWorker {
 }
 export interface WranglerDeployConfig {
     workerName: string;
-    scriptPath?: string;
     environment?: string;
-    vars?: Record<string, string>;
     secrets?: Record<string, string>;
-    compatibility_date?: string;
 }
 export interface WranglerExecResult {
     exitCode: number;
@@ -52,14 +49,10 @@ export interface WranglerDeployResult {
 }
 export interface DeployInputs {
     environment: string;
-    workerNamePattern: string;
-    scriptPath: string;
+    workerName?: string;
     apiToken: string;
     accountId: string;
-    subdomain?: string;
-    vars: Record<string, string>;
     secrets: Record<string, string>;
-    compatibilityDate?: string;
 }
 export interface CommentInputs {
     deploymentUrl: string;

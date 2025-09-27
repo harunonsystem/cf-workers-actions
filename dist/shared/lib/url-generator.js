@@ -1,16 +1,51 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.sanitizeWorkerName = sanitizeWorkerName;
 exports.generateWorkerName = generateWorkerName;
 exports.generateWorkerUrl = generateWorkerUrl;
 exports.getPrNumber = getPrNumber;
 /**
- * Generate worker name from pattern and PR number
+ * Sanitize a worker name to be a valid single DNS label-ish string.
  */
-function generateWorkerName(pattern, prNumber) {
-    if (!pattern || !prNumber) {
-        throw new Error('Pattern and PR number are required');
+function sanitizeWorkerName(name) {
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 63);
+}
+/**
+ * Generate worker name from a pattern, optionally using PR number and/or branch name.
+ * - pattern supports placeholders: {pr_number}, {branch}, and wildcard '*'.
+ * - if prNumber is undefined the {pr_number} placeholder is removed.
+ * - if branch is provided it replaces {branch} and '*' (fallback).
+ */
+function generateWorkerName(pattern, prNumber, branch) {
+    if (!pattern) {
+        throw new Error('Pattern is required');
     }
-    return pattern.replace('{pr_number}', prNumber.toString());
+    let name = pattern;
+    if (prNumber != null) {
+        name = name.replace(/\{pr_number\}/g, String(prNumber));
+    }
+    else {
+        // remove optional '-{pr_number}' or '{pr_number}' segments when no PR present
+        name = name.replace(/-?\{pr_number\}/g, '');
+    }
+    if (branch) {
+        const safeBranch = branch.replace(/\//g, '-');
+        name = name.replace(/\{branch\}/g, safeBranch);
+        if (name.includes('*')) {
+            name = name.replace(/\*/g, safeBranch);
+        }
+    }
+    else {
+        // remove branch placeholders if branch not provided
+        name = name.replace(/\{branch\}/g, '');
+        name = name.replace(/\*/g, '');
+    }
+    return sanitizeWorkerName(name);
 }
 /**
  * Generate worker URL from worker name

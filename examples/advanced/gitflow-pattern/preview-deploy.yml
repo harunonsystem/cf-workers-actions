@@ -1,0 +1,63 @@
+name: Preview Deploy with GitFlow Pattern
+
+on:
+  push:
+    branches:
+      - develop
+      - staging
+  pull_request:
+    branches:
+      - develop
+      - staging
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine environment and worker name
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "environment=preview" >> $GITHUB_OUTPUT
+            echo "worker-name=my-app-pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "environment=development" >> $GITHUB_OUTPUT
+            echo "worker-name=my-app-dev" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "worker-name=my-app-staging" >> $GITHUB_OUTPUT
+          else
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "worker-name=my-app" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to Cloudflare Workers
+        uses: ./deploy
+        with:
+          # GitFlow mode: only deploy from release/* and hotfix/* branches
+          workflow-mode: 'gitflow'
+          # Exclude dependency update branches
+          exclude-branches: 'dependabot,renovate'
+          # Pattern for release branches
+          release-branch-pattern: 'release/'
+          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          environment: ${{ steps.env.outputs.environment }}
+          worker-name: ${{ steps.env.outputs.worker-name }}
+          secrets: |
+            {
+              "DATABASE_URL": "${{ secrets.DATABASE_URL }}",
+              "API_KEY": "${{ secrets.API_KEY }}"
+            }
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: ./comment
+        with:
+          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          worker-name: ${{ steps.env.outputs.worker-name }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

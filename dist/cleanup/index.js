@@ -65,6 +65,12 @@ async function run() {
         if (!inputs.dryRun && inputs.confirmDeletion !== 'yes') {
             throw new Error('confirm-deletion must be set to "yes" to proceed with actual deletion');
         }
+        // Validate max-age-days if provided
+        if (inputs.maxAgeDays !== undefined &&
+            (inputs.maxAgeDays <= 0 || !Number.isInteger(inputs.maxAgeDays))) {
+            throw new Error('max-age-days must be a positive integer');
+        }
+        // API token, account ID, and worker name validation is handled by Cloudflare API
         // Initialize Cloudflare API client
         const cf = new cloudflare_api_1.CloudflareApi(inputs.apiToken, inputs.accountId);
         // Get workers to process

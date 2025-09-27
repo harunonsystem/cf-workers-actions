@@ -32,15 +32,10 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WranglerClient = void 0;
 const core = __importStar(require("@actions/core"));
 const exec_1 = require("@actions/exec");
-const fs_1 = require("fs");
-const path_1 = __importDefault(require("path"));
 /**
  * Wrangler CLI wrapper for deployment operations
  */
@@ -94,24 +89,8 @@ class WranglerClient {
      * Deploy worker using wrangler
      */
     async deployWorker(config) {
-        const { workerName, scriptPath = 'index.js', environment = 'production', vars = {}, secrets = {}, compatibility_date = new Date().toISOString().split('T')[0] } = config;
-        // Create wrangler.toml if it doesn't exist
-        const wranglerTomlPath = path_1.default.join(process.cwd(), 'wrangler.toml');
-        const wranglerConfig = `
-name = "${workerName}"
-main = "${scriptPath}"
-compatibility_date = "${compatibility_date}"
-account_id = "${this.accountId}"
-
-[env.${environment}]
-name = "${workerName}"
-${Object.entries(vars)
-            .map(([key, value]) => `vars.${key} = "${value}"`)
-            .join('\n')}
-`;
+        const { workerName, environment = 'production', secrets = {} } = config;
         try {
-            await fs_1.promises.writeFile(wranglerTomlPath, wranglerConfig.trim());
-            core.debug(`Created wrangler.toml: ${wranglerConfig}`);
             // Set secrets if provided
             for (const [key, value] of Object.entries(secrets)) {
                 await this.setSecret(key, value, environment);
@@ -153,16 +132,6 @@ ${Object.entries(vars)
                 output: '',
                 error: errorMessage
             };
-        }
-        finally {
-            // Clean up wrangler.toml
-            try {
-                await fs_1.promises.unlink(wranglerTomlPath);
-            }
-            catch (cleanupError) {
-                const errorMessage = cleanupError instanceof Error ? cleanupError.message : 'Unknown error';
-                core.warning(`Failed to clean up wrangler.toml: ${errorMessage}`);
-            }
         }
     }
     /**
