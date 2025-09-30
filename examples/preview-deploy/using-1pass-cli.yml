@@ -65,4 +65,4 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           worker-url: ${{ steps.deploy.outputs.worker-url }}
           worker-name: ${{ steps.deploy.outputs.worker-name }}
-           deployment-status: ${{ steps.deploy.outputs.success == 'true' && 'success' || 'failure' }}
+          deployment-status: ${{ steps.deploy.outputs.success == 'true' && 'success' || 'failure' }}

@@ -8,8 +8,8 @@ async function run(): Promise<void> {
     const inputs: CleanupInputs = {
       workerPattern: core.getInput('worker-pattern') || undefined,
       workerNames: undefined,
-      apiToken: core.getInput('cloudflare-api-token', { required: true }),
-      accountId: core.getInput('cloudflare-account-id', { required: true }),
+      cloudflareApiToken: core.getInput('cloudflareApiToken', { required: true }),
+      cloudflareAccountId: core.getInput('cloudflareAccountId', { required: true }),
       dryRun: core.getInput('dry-run') === 'true',
       confirmDeletion: core.getInput('confirm-deletion'),
       exclude: core.getInput('exclude') || undefined
@@ -36,7 +36,7 @@ async function run(): Promise<void> {
     // API token, account ID, and worker name validation is handled by Cloudflare API
 
     // Initialize Cloudflare API client
-    const cf = new CloudflareApi(inputs.apiToken, inputs.accountId);
+    const cf = new CloudflareApi(inputs.cloudflareApiToken, inputs.cloudflareAccountId);
 
     // Get workers to process
     let workersToProcess: string[] = [];

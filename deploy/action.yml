@@ -13,26 +13,13 @@ inputs:
     required: true
     default: 'preview'
 
-  worker-name:
-    description: 'Worker name to deploy (automatically patches wrangler.toml for non-production environments)'
-    required: false
-
   worker-name-pattern:
     description: 'Worker name pattern for PR deployments. Supports placeholders: {pr_number} for PR number, {branch} for branch name, * for wildcard. Names are automatically sanitized (lowercase, non-alphanumeric → hyphens, max 63 chars). If pattern contains {pr_number} or is a PR event, will automatically patch wrangler.toml.'
-    required: false
-
-  worker-name-pattern-branch:
-    description: 'Worker name pattern for direct branch deployments (non-PR). Supports {branch} placeholder. If not provided, falls back to worker-name-pattern. Use this for persistent environments like "myapp-{branch}" → "myapp-develop", "myapp-staging".'
     required: false
 
   subdomain:
     description: 'Custom subdomain for worker URLs (e.g., "yourdomain" for yourdomain.workers.dev)'
     required: false
-
-  force-preview:
-    description: 'Force preview mode (patch wrangler.toml even without {pr_number} pattern)'
-    required: false
-    default: 'false'
 
   cloudflare-api-token:
     description: 'Cloudflare API Token (requires Workers:Edit permissions)'
@@ -57,20 +44,10 @@ inputs:
     required: false
     default: 'wrangler.toml'
 
-  workflow-mode:
-    description: 'Deployment workflow mode: auto (detect from branch), gitflow (release/* and hotfix/* branches), githubflow (main/master only)'
-    required: false
-    default: 'auto'
-
   exclude-branches:
     description: 'Comma-separated or JSON array of branch names to exclude from deployment (e.g., "dependabot,staging" or ["bot","test"])'
     required: false
     default: ''
-
-  release-branch-pattern:
-    description: 'Pattern for release branches (e.g., "release/" for release/* branches)'
-    required: false
-    default: 'release/'
 
 outputs:
   worker-url:

@@ -18,7 +18,7 @@ async function run(): Promise<void> {
   try {
     // Get and validate inputs
     const raw = {
-      workerUrl: core.getInput('worker-url', { required: true }),
+      deploymentUrl: core.getInput('deploymentUrl', { required: true }),
       deploymentStatus: core.getInput('deployment-status') || undefined,
       workerName: core.getInput('worker-name') || undefined,
       githubToken: core.getInput('github-token', { required: true }),

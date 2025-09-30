@@ -40,7 +40,7 @@ jobs:
         if: always()
         uses: harunonsystem/cloudflare-actions/comment@v1
         with:
-          worker-url: ${{ steps.deploy.outputs.worker-url }}
+          deployment-url: ${{ steps.deploy.outputs.worker-url }}
           deployment-status: ${{ steps.deploy.outputs.success == 'true' && 'success' || 'failure' }}
           worker-name: ${{ steps.deploy.outputs.worker-name }}
           github-token: ${{ secrets.GITHUB_TOKEN }}

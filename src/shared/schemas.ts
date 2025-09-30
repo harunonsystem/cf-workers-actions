@@ -26,15 +26,12 @@ export const DeployInputSchema = z.object({
   workerName: z.string().optional(),
   workerNamePattern: z.string().optional(),
   subdomain: z.string().optional(),
-  forcePreview: z.boolean().default(false),
   cloudflareApiToken: z.string().min(1),
   cloudflareAccountId: z.string().optional(),
   secrets: z.record(z.string(), z.string()).default({}),
   deployCommand: z.string().default('deploy'),
   wranglerFile: z.string().default('wrangler.toml'),
-  workflowMode: z.enum(['auto', 'gitflow', 'githubflow']).default('auto'),
-  excludeBranches: z.string().default(''),
-  releaseBranchPattern: z.string().default('release/')
+  excludeBranches: z.string().default('')
 });
 
 export const DeployOutputSchema = z.object({
