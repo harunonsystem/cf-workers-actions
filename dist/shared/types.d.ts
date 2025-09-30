@@ -70,7 +70,6 @@ export interface CleanupInputs {
     apiToken: string;
     accountId: string;
     dryRun: boolean;
-    maxAgeDays?: number;
-    excludePattern?: string;
     confirmDeletion: string;
+    exclude?: string;
 }

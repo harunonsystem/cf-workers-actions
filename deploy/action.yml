@@ -18,7 +18,11 @@ inputs:
     required: false
 
   worker-name-pattern:
-    description: 'Worker name pattern. Supports placeholders: {pr_number} for PR number, {branch} for branch name, * for wildcard. Names are automatically sanitized (lowercase, non-alphanumeric → hyphens, max 63 chars). If pattern contains {pr_number} or is a PR event, will automatically patch wrangler.toml.'
+    description: 'Worker name pattern for PR deployments. Supports placeholders: {pr_number} for PR number, {branch} for branch name, * for wildcard. Names are automatically sanitized (lowercase, non-alphanumeric → hyphens, max 63 chars). If pattern contains {pr_number} or is a PR event, will automatically patch wrangler.toml.'
+    required: false
+
+  worker-name-pattern-branch:
+    description: 'Worker name pattern for direct branch deployments (non-PR). Supports {branch} placeholder. If not provided, falls back to worker-name-pattern. Use this for persistent environments like "myapp-{branch}" → "myapp-develop", "myapp-staging".'
     required: false
 
   subdomain:
@@ -30,11 +34,11 @@ inputs:
     required: false
     default: 'false'
 
-  api-token:
+  cloudflare-api-token:
     description: 'Cloudflare API Token (requires Workers:Edit permissions)'
     required: true
 
-  account-id:
+  cloudflare-account-id:
     description: 'Cloudflare Account ID (found in dashboard sidebar)'
     required: false
 

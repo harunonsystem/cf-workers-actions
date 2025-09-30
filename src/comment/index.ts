@@ -16,7 +16,7 @@ async function run(): Promise<void> {
   try {
     // Get inputs
     const inputs: CommentInputs = {
-      deploymentUrl: core.getInput('deployment-url', { required: true }),
+      deploymentUrl: core.getInput('worker-url', { required: true }),
       deploymentStatus: core.getInput('deployment-status') || 'success',
       workerName: core.getInput('worker-name') || undefined,
       githubToken: core.getInput('github-token', { required: true }),
@@ -25,6 +25,29 @@ async function run(): Promise<void> {
       updateExisting: core.getInput('update-existing') === 'true',
       commentTag: core.getInput('comment-tag') || 'cloudflare-workers-deployment'
     };
+
+    // Validate deployment URL
+    try {
+      const url = new URL(inputs.deploymentUrl);
+      void url; // Use the variable to satisfy linter
+    } catch {
+      throw new Error(
+        `Invalid deployment URL: ${inputs.deploymentUrl}. Must be a valid HTTPS URL.`
+      );
+    }
+
+    if (!inputs.deploymentUrl.startsWith('https://')) {
+      throw new Error(`Deployment URL must use HTTPS: ${inputs.deploymentUrl}`);
+    }
+
+    // Validate deployment status
+    if (!['success', 'failure', 'pending'].includes(inputs.deploymentStatus)) {
+      throw new Error(
+        `Invalid deployment status: ${inputs.deploymentStatus}. Must be 'success', 'failure', or 'pending'.`
+      );
+    }
+
+    // GitHub token validation is handled by GitHub API
 
     // Get PR context
     const context = github.context as GitHubContext;

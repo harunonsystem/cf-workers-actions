@@ -56,8 +56,8 @@ GitHubのSecrets機能を使用して認証情報を管理します。
 - name: Deploy to Cloudflare
   uses: harunonsystem/cloudflare-actions/deploy@v1
   with:
-    api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
 
 ## 各機能の詳細

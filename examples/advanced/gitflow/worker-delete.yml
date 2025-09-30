@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Cleanup specific PR worker (on PR close)
         if: github.event_name == 'pull_request'
-        uses: harunonsystem/cloudflare-actions/cleanup@v2
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
           worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
           exclude: 'myapp-develop,myapp-staging,myapp-main,myapp,*-production'
@@ -23,11 +23,10 @@ jobs:
 
       - name: Cleanup old PR workers (scheduled)
         if: github.event_name == 'schedule'
-        uses: harunonsystem/cloudflare-actions/cleanup@v2
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
           worker-pattern: 'myapp-pr-*'
           exclude: 'myapp-develop,myapp-staging,myapp-main,myapp,*-production,myapp-pr-important-*'
-          max-age-days: 7
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           confirm-deletion: 'yes'

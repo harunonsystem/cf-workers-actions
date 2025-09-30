@@ -8,29 +8,29 @@ branding:
   color: 'blue'
 
 inputs:
-  deployment-url:
-    description: 'URL of the deployed preview'
+  worker-url:
+    description: 'URL of the deployed worker (must be a valid HTTPS URL)'
     required: true
 
-  deployment-status:
-    description: 'Deployment status (success/failure)'
-    required: false
-    default: 'success'
+   deployment-status:
+     description: 'Deployment status (success, failure, or pending)'
+     required: false
+     default: 'success'
 
   worker-name:
-    description: 'Name of the deployed worker'
+    description: 'Name of the deployed worker (for display purposes)'
     required: false
 
   github-token:
-    description: 'GitHub Token'
+    description: 'GitHub Token with PR comment permissions (usually secrets.GITHUB_TOKEN)'
     required: true
 
   custom-message:
-    description: 'Additional custom message'
+    description: 'Additional custom message (markdown supported)'
     required: false
 
   comment-template:
-    description: 'Custom comment template (markdown supported)'
+    description: 'Custom comment template (overrides default template, markdown supported)'
     required: false
 
   update-existing:
@@ -39,7 +39,7 @@ inputs:
     default: 'true'
 
   comment-tag:
-    description: 'Unique tag to identify comments for updates'
+    description: 'Unique tag to identify comments for updates (HTML comment format)'
     required: false
     default: 'cloudflare-workers-deployment'
 

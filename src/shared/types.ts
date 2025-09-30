@@ -38,11 +38,8 @@ export interface CloudflareWorker {
 // Wrangler Types
 export interface WranglerDeployConfig {
   workerName: string;
-  scriptPath?: string;
   environment?: string;
-  vars?: Record<string, string>;
   secrets?: Record<string, string>;
-  compatibility_date?: string;
 }
 
 export interface WranglerExecResult {
@@ -62,14 +59,10 @@ export interface WranglerDeployResult {
 // Action Input Types
 export interface DeployInputs {
   environment: string;
-  workerNamePattern: string;
-  scriptPath: string;
+  workerName?: string;
   apiToken: string;
   accountId: string;
-  subdomain?: string;
-  vars: Record<string, string>;
   secrets: Record<string, string>;
-  compatibilityDate?: string;
 }
 
 export interface CommentInputs {
@@ -89,7 +82,6 @@ export interface CleanupInputs {
   apiToken: string;
   accountId: string;
   dryRun: boolean;
-  maxAgeDays?: number;
-  excludePattern?: string;
   confirmDeletion: string;
+  exclude?: string;
 }

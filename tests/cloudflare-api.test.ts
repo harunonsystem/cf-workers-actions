@@ -105,6 +105,35 @@ describe('CloudflareApi', () => {
         'Cloudflare API error: Worker not found'
       );
     });
+
+    test('should handle network error when fetch throws', async () => {
+      (fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+      await expect(api.makeRequest('GET', '/test-endpoint')).rejects.toThrow('Network error');
+    });
+
+    test('should handle non-JSON response', async () => {
+      (fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockRejectedValueOnce(new Error('Unexpected token'))
+      });
+
+      await expect(api.makeRequest('GET', '/test-endpoint')).rejects.toThrow('Unexpected token');
+    });
+
+    test('should handle malformed error response without errors array', async () => {
+      (fetch as any).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Internal Server Error',
+        json: vi.fn().mockResolvedValueOnce({
+          success: false
+        })
+      });
+
+      await expect(api.makeRequest('GET', '/test-endpoint')).rejects.toThrow(
+        'Cloudflare API error: Internal Server Error'
+      );
+    });
   });
 
   describe('listWorkers', () => {
@@ -159,6 +188,50 @@ describe('CloudflareApi', () => {
       const result = await api.deleteWorker('non-existent-worker');
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('getWorker', () => {
+    test('should return worker when found', async () => {
+      const mockWorker = { id: 'test-worker', script: 'console.log("test")' };
+
+      (fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValueOnce({
+          success: true,
+          result: mockWorker
+        })
+      });
+
+      const result = await api.getWorker('test-worker');
+      expect(result).toEqual(mockWorker);
+    });
+
+    test('should return null for 404 error', async () => {
+      (fetch as any).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Not Found',
+        json: vi.fn().mockResolvedValueOnce({
+          errors: [{ message: 'not found' }]
+        })
+      });
+
+      const result = await api.getWorker('non-existent-worker');
+      expect(result).toBeNull();
+    });
+
+    test('should rethrow non-404 errors', async () => {
+      (fetch as any).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Unauthorized',
+        json: vi.fn().mockResolvedValueOnce({
+          errors: [{ message: 'Invalid token' }]
+        })
+      });
+
+      await expect(api.getWorker('test-worker')).rejects.toThrow(
+        'Cloudflare API error: Invalid token'
+      );
     });
   });
 

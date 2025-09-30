@@ -111,16 +111,10 @@ function shouldSkipDeploy(inputs) {
     return false;
 }
 async function generateWorkerNameFromPattern(inputs) {
-    if (!inputs.workerNamePattern) {
-        throw new Error('Worker name pattern is required');
-    }
-    // Determine if this should be treated as a preview deployment
-    const isPreviewPattern = inputs.workerNamePattern.includes('{pr_number}');
     const isPullRequest = github.context.eventName === 'pull_request';
-    const shouldPatch = isPreviewPattern || isPullRequest || inputs.forcePreview || false;
     // Get branch name (prefer PR head ref when available)
     let branchName;
-    if (github.context.eventName === 'pull_request' && github.context.payload?.pull_request) {
+    if (isPullRequest && github.context.payload?.pull_request) {
         branchName = github.context.payload.pull_request.head?.ref || undefined;
     }
     else if (github.context.ref && github.context.ref.startsWith('refs/heads/')) {
@@ -134,8 +128,37 @@ async function generateWorkerNameFromPattern(inputs) {
     catch {
         prNumber = undefined;
     }
+    // Choose pattern based on context
+    let pattern;
+    let shouldPatch;
+    if (isPullRequest) {
+        // PR deployment: use worker-name-pattern
+        if (!inputs.workerNamePattern) {
+            throw new Error('worker-name-pattern is required for PR deployments');
+        }
+        pattern = inputs.workerNamePattern;
+        shouldPatch = true;
+        core.info('🔀 PR deployment detected, using worker-name-pattern');
+    }
+    else {
+        // Direct branch deployment: use worker-name-pattern-branch if available
+        if (inputs.workerNamePatternBranch) {
+            pattern = inputs.workerNamePatternBranch;
+            shouldPatch = true;
+            core.info('🌿 Branch deployment detected, using worker-name-pattern-branch');
+        }
+        else if (inputs.workerNamePattern) {
+            pattern = inputs.workerNamePattern;
+            const isPreviewPattern = pattern.includes('{pr_number}');
+            shouldPatch = isPreviewPattern || inputs.forcePreview || false;
+            core.info('🌿 Branch deployment detected, using worker-name-pattern (fallback)');
+        }
+        else {
+            throw new Error('Either worker-name-pattern or worker-name-pattern-branch is required');
+        }
+    }
     // Generate worker name
-    const workerName = (0, url_generator_1.generateWorkerName)(inputs.workerNamePattern, prNumber, branchName);
+    const workerName = (0, url_generator_1.generateWorkerName)(pattern, prNumber, branchName);
     return {
         workerName,
         shouldPatch
@@ -150,10 +173,11 @@ async function run() {
             environment: core.getInput('environment', { required: true }),
             workerName: core.getInput('worker-name') || undefined,
             workerNamePattern: core.getInput('worker-name-pattern') || undefined,
+            workerNamePatternBranch: core.getInput('worker-name-pattern-branch') || undefined,
             subdomain: core.getInput('subdomain') || undefined,
             forcePreview: core.getInput('force-preview') === 'true',
-            apiToken: core.getInput('api-token', { required: true }),
-            accountId: core.getInput('account-id') || '',
+            apiToken: core.getInput('cloudflare-api-token', { required: true }),
+            accountId: core.getInput('cloudflare-account-id') || '',
             secrets: {},
             deployCommand: core.getInput('deploy-command') || 'deploy',
             wranglerFile: core.getInput('wrangler-file') || 'wrangler.toml',

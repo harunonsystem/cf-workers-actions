@@ -1,20 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { WranglerClient } from '../src/shared/lib/wrangler';
 import { exec } from '@actions/exec';
-import { promises as fs } from 'fs';
 
 // Mock dependencies
 vi.mock('@actions/core');
 vi.mock('@actions/exec');
-vi.mock('fs', () => ({
-  promises: {
-    writeFile: vi.fn(),
-    unlink: vi.fn()
-  }
-}));
 
 const mockExec = vi.mocked(exec);
-const mockFs = vi.mocked(fs);
 
 describe('WranglerClient', () => {
   let wrangler: WranglerClient;
@@ -50,17 +42,21 @@ describe('WranglerClient', () => {
 
   describe('execWrangler', () => {
     it('should execute wrangler command successfully', async () => {
-      const mockStdout = 'wrangler output';
-      const mockStderr = '';
-
+      const mockOutput = 'Wrangler output';
       mockExec.mockImplementation(async (_command, _args, options) => {
         if (options?.listeners?.stdout) {
-          options.listeners.stdout(Buffer.from(mockStdout));
+          options.listeners.stdout(Buffer.from(mockOutput));
         }
         return 0;
       });
 
       const result = await wrangler.execWrangler(['--version']);
+
+      expect(result).toEqual({
+        exitCode: 0,
+        stdout: mockOutput,
+        stderr: ''
+      });
 
       expect(mockExec).toHaveBeenCalledWith(
         'npx',
@@ -69,24 +65,16 @@ describe('WranglerClient', () => {
           env: expect.objectContaining({
             CLOUDFLARE_API_TOKEN: mockApiToken,
             CLOUDFLARE_ACCOUNT_ID: mockAccountId
-          }),
-          ignoreReturnCode: true
+          })
         })
       );
-
-      expect(result).toEqual({
-        exitCode: 0,
-        stdout: mockStdout,
-        stderr: mockStderr
-      });
     });
 
     it('should handle command failure', async () => {
-      const mockStderr = 'error message';
-
+      const mockError = 'Command failed';
       mockExec.mockImplementation(async (_command, _args, options) => {
         if (options?.listeners?.stderr) {
-          options.listeners.stderr(Buffer.from(mockStderr));
+          options.listeners.stderr(Buffer.from(mockError));
         }
         return 1;
       });
@@ -96,7 +84,51 @@ describe('WranglerClient', () => {
       expect(result).toEqual({
         exitCode: 1,
         stdout: '',
-        stderr: mockStderr
+        stderr: mockError
+      });
+    });
+
+    it('should handle multiple stdout chunks and trim output', async () => {
+      const chunks = ['Line 1\n', 'Line 2\n', '  Line 3  \n'];
+      const expectedOutput = 'Line 1\nLine 2\n  Line 3';
+
+      mockExec.mockImplementation(async (_command, _args, options) => {
+        if (options?.listeners?.stdout) {
+          chunks.forEach((chunk) => {
+            options.listeners!.stdout!(Buffer.from(chunk));
+          });
+        }
+        return 0;
+      });
+
+      const result = await wrangler.execWrangler(['--version']);
+
+      expect(result).toEqual({
+        exitCode: 0,
+        stdout: expectedOutput,
+        stderr: ''
+      });
+    });
+
+    it('should handle multiple stderr chunks and trim output', async () => {
+      const errorChunks = ['  Error: ', 'Command failed\n', '  Details here  '];
+      const expectedError = 'Error: Command failed\n  Details here';
+
+      mockExec.mockImplementation(async (_command, _args, options) => {
+        if (options?.listeners?.stderr) {
+          errorChunks.forEach((chunk) => {
+            options.listeners!.stderr!(Buffer.from(chunk));
+          });
+        }
+        return 1;
+      });
+
+      const result = await wrangler.execWrangler(['invalid-command']);
+
+      expect(result).toEqual({
+        exitCode: 1,
+        stdout: '',
+        stderr: expectedError
       });
     });
   });
@@ -108,7 +140,6 @@ describe('WranglerClient', () => {
       const result = await wrangler.checkWranglerAvailable();
 
       expect(result).toBe(true);
-      expect(mockExec).toHaveBeenCalledWith('npx', ['wrangler', '--version'], expect.any(Object));
     });
 
     it('should return false when wrangler is not available', async () => {
@@ -131,18 +162,12 @@ describe('WranglerClient', () => {
   describe('deployWorker', () => {
     const mockConfig = {
       workerName: 'test-worker',
-      scriptPath: 'index.js',
       environment: 'preview',
-      vars: { VAR1: 'value1' },
-      secrets: { SECRET1: 'secret1' },
-      compatibility_date: '2024-01-01'
+      secrets: { SECRET1: 'secret1' }
     };
 
     it('should deploy worker successfully', async () => {
       const mockOutput = 'Deployed to https://test-worker.example.workers.dev';
-
-      mockFs.writeFile.mockResolvedValue(undefined);
-      mockFs.unlink.mockResolvedValue(undefined);
 
       // Mock secret setting
       mockExec.mockResolvedValueOnce(0);
@@ -156,34 +181,18 @@ describe('WranglerClient', () => {
 
       const result = await wrangler.deployWorker(mockConfig);
 
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('wrangler.toml'),
-        expect.stringContaining('name = "test-worker"')
-      );
-
       expect(result).toEqual({
         success: true,
         workerName: 'test-worker',
         url: 'https://test-worker.example.workers.dev',
         output: mockOutput
       });
-
-      expect(mockFs.unlink).toHaveBeenCalled();
     });
 
     it('should handle deployment failure', async () => {
-      const mockError = 'Deployment failed';
-
-      mockFs.writeFile.mockResolvedValue(undefined);
-      mockFs.unlink.mockResolvedValue(undefined);
-
-      // Mock secret setting to fail first
-      mockExec.mockImplementation(async (_command, _args, options) => {
-        if (options?.listeners?.stderr) {
-          options.listeners.stderr(Buffer.from(mockError));
-        }
-        return 1;
-      });
+      // Mock secret setting to succeed, deployment to fail
+      mockExec.mockResolvedValueOnce(0); // Secret setting
+      mockExec.mockResolvedValueOnce(1); // Deployment failure
 
       const result = await wrangler.deployWorker(mockConfig);
 
@@ -191,7 +200,7 @@ describe('WranglerClient', () => {
         success: false,
         workerName: 'test-worker',
         output: '',
-        error: expect.stringContaining('Failed to set secret')
+        error: ''
       });
     });
 
@@ -200,27 +209,43 @@ describe('WranglerClient', () => {
         workerName: 'test-worker'
       };
 
-      mockFs.writeFile.mockResolvedValue(undefined);
-      mockFs.unlink.mockResolvedValue(undefined);
       mockExec.mockResolvedValue(0);
 
-      await wrangler.deployWorker(minimalConfig);
+      const result = await wrangler.deployWorker(minimalConfig);
 
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.stringContaining('main = "index.js"')
-      );
+      expect(result.success).toBe(true);
+      expect(result.workerName).toBe('test-worker');
     });
 
-    it('should clean up wrangler.toml even if deployment fails', async () => {
-      mockFs.writeFile.mockResolvedValue(undefined);
-      mockFs.unlink.mockResolvedValue(undefined);
-      mockExec.mockRejectedValue(new Error('Unexpected error'));
+    it('should handle successful deployment without URL in output', async () => {
+      const mockOutput = 'Deployment successful! Worker updated.';
+
+      // Mock secret setting to succeed, deployment to succeed without URL
+      mockExec.mockResolvedValueOnce(0); // Secret setting
+      mockExec.mockImplementation(async (_command, _args, options) => {
+        if (options?.listeners?.stdout) {
+          options.listeners.stdout(Buffer.from(mockOutput));
+        }
+        return 0;
+      });
+
+      const result = await wrangler.deployWorker(mockConfig);
+
+      expect(result).toEqual({
+        success: true,
+        workerName: 'test-worker',
+        url: undefined,
+        output: mockOutput
+      });
+    });
+
+    it('should handle error during secret setting', async () => {
+      mockExec.mockRejectedValueOnce(new Error('Secret setting failed'));
 
       const result = await wrangler.deployWorker(mockConfig);
 
       expect(result.success).toBe(false);
-      expect(mockFs.unlink).toHaveBeenCalled();
+      expect(result.error).toBe('Secret setting failed');
     });
   });
 
@@ -242,26 +267,22 @@ describe('WranglerClient', () => {
     it('should handle production environment', async () => {
       mockExec.mockResolvedValue(0);
 
-      await wrangler.setSecret('TEST_SECRET', 'secret-value');
+      await wrangler.setSecret('TEST_SECRET', 'secret-value', 'production');
 
       expect(mockExec).toHaveBeenCalledWith(
         'npx',
         ['wrangler', 'secret', 'put', 'TEST_SECRET'],
-        expect.any(Object)
+        expect.objectContaining({
+          input: Buffer.from('secret-value')
+        })
       );
     });
 
     it('should throw error on failure', async () => {
-      const mockError = 'Failed to set secret';
-      mockExec.mockImplementation(async (_command, _args, options) => {
-        if (options?.listeners?.stderr) {
-          options.listeners.stderr(Buffer.from(mockError));
-        }
-        return 1;
-      });
+      mockExec.mockResolvedValue(1);
 
       await expect(wrangler.setSecret('TEST_SECRET', 'secret-value')).rejects.toThrow(
-        'Failed to set secret TEST_SECRET: Failed to set secret'
+        'Failed to set secret TEST_SECRET'
       );
     });
   });

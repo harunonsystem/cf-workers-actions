@@ -44,6 +44,5 @@ jobs:
         uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
           worker-pattern: 'secure-app-pr-*'
-          cloudflare-api-token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN }}
-          cloudflare-account-id: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
-          max-age-days: '7'
+           cloudflare-api-token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN }}
+           cloudflare-account-id: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}

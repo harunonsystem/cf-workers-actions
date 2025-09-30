@@ -1,7 +1,5 @@
 import * as core from '@actions/core';
 import { exec } from '@actions/exec';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { WranglerDeployConfig, WranglerExecResult, WranglerDeployResult } from '../types';
 
 /**
@@ -71,34 +69,9 @@ export class WranglerClient {
    * Deploy worker using wrangler
    */
   async deployWorker(config: WranglerDeployConfig): Promise<WranglerDeployResult> {
-    const {
-      workerName,
-      scriptPath = 'index.js',
-      environment = 'production',
-      vars = {},
-      secrets = {},
-      compatibility_date = new Date().toISOString().split('T')[0]
-    } = config;
-
-    // Create wrangler.toml if it doesn't exist
-    const wranglerTomlPath = path.join(process.cwd(), 'wrangler.toml');
-    const wranglerConfig = `
-name = "${workerName}"
-main = "${scriptPath}"
-compatibility_date = "${compatibility_date}"
-account_id = "${this.accountId}"
-
-[env.${environment}]
-name = "${workerName}"
-${Object.entries(vars)
-  .map(([key, value]) => `vars.${key} = "${value}"`)
-  .join('\n')}
-`;
+    const { workerName, environment = 'production', secrets = {} } = config;
 
     try {
-      await fs.writeFile(wranglerTomlPath, wranglerConfig.trim());
-      core.debug(`Created wrangler.toml: ${wranglerConfig}`);
-
       // Set secrets if provided
       for (const [key, value] of Object.entries(secrets)) {
         await this.setSecret(key, value, environment);
@@ -145,14 +118,6 @@ ${Object.entries(vars)
         output: '',
         error: errorMessage
       };
-    } finally {
-      // Clean up wrangler.toml
-      try {
-        await fs.unlink(wranglerTomlPath);
-      } catch (cleanupError) {
-        const errorMessage = cleanupError instanceof Error ? cleanupError.message : 'Unknown error';
-        core.warning(`Failed to clean up wrangler.toml: ${errorMessage}`);
-      }
     }
   }
 

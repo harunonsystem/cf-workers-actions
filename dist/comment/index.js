@@ -39,7 +39,7 @@ async function run() {
     try {
         // Get inputs
         const inputs = {
-            deploymentUrl: core.getInput('deployment-url', { required: true }),
+            deploymentUrl: core.getInput('worker-url', { required: true }),
             deploymentStatus: core.getInput('deployment-status') || 'success',
             workerName: core.getInput('worker-name') || undefined,
             githubToken: core.getInput('github-token', { required: true }),

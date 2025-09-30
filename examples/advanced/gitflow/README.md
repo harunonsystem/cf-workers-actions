@@ -61,7 +61,7 @@ Removes PR preview workers when PRs are closed, and cleans up old workers on sch
 **Key features:**
 
 - **On PR close**: Uses `worker-names` to delete specific PR worker (e.g., `myapp-pr-123`)
-- **On schedule**: Uses `worker-pattern` with `max-age-days: 7` to clean old workers
+- **On schedule**: Uses `worker-pattern` to clean old workers
 - `exclude` protects persistent environments (develop/staging/production)
 - Dual-trigger design following standard GitHub Actions patterns
 
@@ -172,7 +172,7 @@ If you want different preview patterns per base branch:
       echo "pattern=myapp-pr-{pr_number}" >> $GITHUB_OUTPUT
     fi
 
-- uses: harunonsystem/cloudflare-actions/deploy@v2
+- uses: harunonsystem/cloudflare-actions/deploy@v1
   with:
     worker-name-pattern: ${{ steps.pattern.outputs.pattern }}
 ```

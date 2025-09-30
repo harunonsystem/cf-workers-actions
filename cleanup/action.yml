@@ -29,13 +29,10 @@ inputs:
     required: false
     default: 'false'
 
-  max-age-days:
-    description: 'Only delete workers older than this many days'
+   exclude:
+    description: 'Comma-separated list of worker names or patterns to exclude from deletion. Supports exact names (e.g., "myapp-develop,myapp-staging") and glob patterns (e.g., "*-develop,*-staging,*-production"). Excluded workers will never be deleted even if they match worker-pattern.'
     required: false
-
-  exclude-pattern:
-    description: 'Pattern for workers to exclude from deletion'
-    required: false
+    default: ''
 
   confirm-deletion:
     description: 'Require explicit confirmation (set to "yes" to proceed)'

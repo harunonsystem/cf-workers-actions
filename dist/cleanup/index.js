@@ -44,11 +44,8 @@ async function run() {
             apiToken: core.getInput('cloudflare-api-token', { required: true }),
             accountId: core.getInput('cloudflare-account-id', { required: true }),
             dryRun: core.getInput('dry-run') === 'true',
-            maxAgeDays: core.getInput('max-age-days')
-                ? parseInt(core.getInput('max-age-days'), 10)
-                : undefined,
-            excludePattern: core.getInput('exclude-pattern') || undefined,
-            confirmDeletion: core.getInput('confirm-deletion')
+            confirmDeletion: core.getInput('confirm-deletion'),
+            exclude: core.getInput('exclude') || undefined
         };
         // Parse worker names
         const workerNamesInput = core.getInput('worker-names');
@@ -65,11 +62,6 @@ async function run() {
         if (!inputs.dryRun && inputs.confirmDeletion !== 'yes') {
             throw new Error('confirm-deletion must be set to "yes" to proceed with actual deletion');
         }
-        // Validate max-age-days if provided
-        if (inputs.maxAgeDays !== undefined &&
-            (inputs.maxAgeDays <= 0 || !Number.isInteger(inputs.maxAgeDays))) {
-            throw new Error('max-age-days must be a positive integer');
-        }
         // API token, account ID, and worker name validation is handled by Cloudflare API
         // Initialize Cloudflare API client
         const cf = new cloudflare_api_1.CloudflareApi(inputs.apiToken, inputs.accountId);
@@ -85,22 +77,55 @@ async function run() {
             workersToProcess = await cf.findWorkersByPattern(inputs.workerPattern);
             core.info(`Found ${workersToProcess.length} workers matching pattern: ${inputs.workerPattern}`);
         }
-        // Apply exclusion pattern if provided
-        if (inputs.excludePattern && workersToProcess.length > 0) {
-            const excludeRegex = new RegExp(`^${inputs.excludePattern.replace(/\*/g, '.*').replace(/\?/g, '.')}$`);
-            const beforeExclusion = workersToProcess.length;
-            workersToProcess = workersToProcess.filter((name) => !excludeRegex.test(name));
-            const excluded = beforeExclusion - workersToProcess.length;
-            if (excluded > 0) {
-                core.info(`Excluded ${excluded} workers matching exclude pattern: ${inputs.excludePattern}`);
+        // Apply exclusion filter (supports both exact names and patterns)
+        const excludeExactNames = new Set();
+        const excludePatternsRegex = [];
+        if (inputs.exclude) {
+            const items = inputs.exclude
+                .split(',')
+                .map((item) => item.trim())
+                .filter(Boolean);
+            const exactNames = [];
+            const patterns = [];
+            for (const item of items) {
+                if (item.includes('*') || item.includes('?')) {
+                    patterns.push(item);
+                    excludePatternsRegex.push(new RegExp(`^${item.replace(/\*/g, '.*').replace(/\?/g, '.')}$`));
+                }
+                else {
+                    exactNames.push(item);
+                    excludeExactNames.add(item);
+                }
+            }
+            if (exactNames.length > 0) {
+                core.info(`⏭️  Excluded workers (exact): ${exactNames.join(', ')}`);
+            }
+            if (patterns.length > 0) {
+                core.info(`⏭️  Excluded patterns: ${patterns.join(', ')}`);
             }
         }
-        // Apply age filter if provided
-        if (inputs.maxAgeDays && workersToProcess.length > 0) {
-            // Note: Age-based filtering would require fetching worker metadata to get creation dates.
-            // For now, we'll skip this filter as the Cloudflare API doesn't provide creation dates
-            // in the simple list workers endpoint.
-            core.warning('Age-based filtering is not yet implemented. All matching workers will be processed.');
+        // Filter out excluded workers
+        if (workersToProcess.length > 0) {
+            const beforeExclusion = workersToProcess.length;
+            workersToProcess = workersToProcess.filter((name) => {
+                // Check exact excluded names
+                if (excludeExactNames.has(name)) {
+                    core.info(`⏭️  Excluded: ${name} (exact match)`);
+                    return false;
+                }
+                // Check excluded patterns
+                for (const pattern of excludePatternsRegex) {
+                    if (pattern.test(name)) {
+                        core.info(`⏭️  Excluded: ${name} (matches pattern)`);
+                        return false;
+                    }
+                }
+                return true;
+            });
+            const excluded = beforeExclusion - workersToProcess.length;
+            if (excluded > 0) {
+                core.info(`⏭️  Total excluded workers: ${excluded}`);
+            }
         }
         if (workersToProcess.length === 0) {
             core.info('No workers found to process');

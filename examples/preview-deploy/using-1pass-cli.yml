@@ -51,8 +51,8 @@ jobs:
           environment: preview
           worker-name-pattern: 'my-app-pr-{pr_number}'
           subdomain: harunonsystem
-          api-token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN }}
-          account-id: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
+           cloudflare-api-token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN }}
+           cloudflare-account-id: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
           secrets: |
             {
               "API_KEY": "${{ steps.load-secrets.outputs.STG_API_KEY }}"
@@ -65,5 +65,4 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           worker-url: ${{ steps.deploy.outputs.worker-url }}
           worker-name: ${{ steps.deploy.outputs.worker-name }}
-          deployment-success: ${{ steps.deploy.outputs.success }}
-          deployment-error: ${{ steps.deploy.outputs.error-message || '' }}
+           deployment-status: ${{ steps.deploy.outputs.success == 'true' && 'success' || 'failure' }}
