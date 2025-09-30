@@ -12,10 +12,10 @@ inputs:
     description: 'URL of the deployed worker (must be a valid HTTPS URL)'
     required: true
 
-   deployment-status:
-     description: 'Deployment status (success, failure, or pending)'
-     required: false
-     default: 'success'
+  deployment-status:
+    description: 'Deployment status (success, failure, or pending)'
+    required: false
+    default: 'success'
 
   worker-name:
     description: 'Name of the deployed worker (for display purposes)'
