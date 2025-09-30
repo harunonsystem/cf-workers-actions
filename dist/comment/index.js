@@ -35,19 +35,24 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(require("@actions/core"));
 const github = __importStar(require("@actions/github"));
+const schemas_1 = require("../shared/schemas");
+const validation_1 = require("../shared/validation");
 async function run() {
     try {
-        // Get inputs
-        const inputs = {
-            deploymentUrl: core.getInput('worker-url', { required: true }),
-            deploymentStatus: core.getInput('deployment-status') || 'success',
+        // Get and validate inputs
+        const raw = {
+            workerUrl: core.getInput('worker-url', { required: true }),
+            deploymentStatus: core.getInput('deployment-status') || undefined,
             workerName: core.getInput('worker-name') || undefined,
             githubToken: core.getInput('github-token', { required: true }),
             customMessage: core.getInput('custom-message') || undefined,
             commentTemplate: core.getInput('comment-template') || undefined,
             updateExisting: core.getInput('update-existing') === 'true',
-            commentTag: core.getInput('comment-tag') || 'cloudflare-workers-deployment'
+            commentTag: core.getInput('comment-tag') || undefined
         };
+        const inputs = (0, validation_1.parseInputs)(schemas_1.CommentInputSchema, raw);
+        if (!inputs)
+            return;
         // Validate deployment URL
         try {
             const url = new URL(inputs.deploymentUrl);
@@ -129,9 +134,11 @@ async function run() {
             commentUrl = createResponse.data.html_url;
             core.info(`Created new comment: ${commentUrl}`);
         }
-        // Set outputs
-        core.setOutput('comment-id', commentId.toString());
-        core.setOutput('comment-url', commentUrl);
+        // Set validated outputs
+        (0, validation_1.setOutputsValidated)(schemas_1.CommentOutputSchema, {
+            commentId: commentId.toString(),
+            commentUrl: commentUrl
+        });
         // Set summary
         await core.summary
             .addHeading('💬 PR Comment Posted')

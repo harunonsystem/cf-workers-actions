@@ -1,6 +1,8 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { CommentInputs, GitHubContext } from '../shared/types';
+import { GitHubContext } from '../shared/types';
+import { CommentInputSchema, CommentOutputSchema } from '../shared/schemas';
+import { parseInputs, setOutputsValidated } from '../shared/validation';
 
 interface CommentGenerationParams {
   deploymentUrl: string;
@@ -14,17 +16,20 @@ interface CommentGenerationParams {
 
 async function run(): Promise<void> {
   try {
-    // Get inputs
-    const inputs: CommentInputs = {
-      deploymentUrl: core.getInput('worker-url', { required: true }),
-      deploymentStatus: core.getInput('deployment-status') || 'success',
+    // Get and validate inputs
+    const raw = {
+      workerUrl: core.getInput('worker-url', { required: true }),
+      deploymentStatus: core.getInput('deployment-status') || undefined,
       workerName: core.getInput('worker-name') || undefined,
       githubToken: core.getInput('github-token', { required: true }),
       customMessage: core.getInput('custom-message') || undefined,
       commentTemplate: core.getInput('comment-template') || undefined,
       updateExisting: core.getInput('update-existing') === 'true',
-      commentTag: core.getInput('comment-tag') || 'cloudflare-workers-deployment'
+      commentTag: core.getInput('comment-tag') || undefined
     };
+
+    const inputs = parseInputs(CommentInputSchema, raw);
+    if (!inputs) return;
 
     // Validate deployment URL
     try {
@@ -127,9 +132,11 @@ async function run(): Promise<void> {
       core.info(`Created new comment: ${commentUrl}`);
     }
 
-    // Set outputs
-    core.setOutput('comment-id', commentId.toString());
-    core.setOutput('comment-url', commentUrl);
+    // Set validated outputs
+    setOutputsValidated(CommentOutputSchema, {
+      commentId: commentId.toString(),
+      commentUrl: commentUrl
+    });
 
     // Set summary
     await core.summary
