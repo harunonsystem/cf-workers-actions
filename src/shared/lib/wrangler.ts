@@ -1,4 +1,6 @@
 import * as core from '@actions/core';
+import * as fs from 'fs';
+import * as path from 'path';
 import { exec } from '@actions/exec';
 import { WranglerDeployConfig, WranglerExecResult, WranglerDeployResult } from '../types';
 
@@ -151,5 +153,142 @@ export class WranglerClient {
     } catch {
       return false;
     }
+  }
+}
+
+// Wrangler TOML backup and modification utilities
+export interface BackupInfo {
+  originalPath: string;
+  backupPath: string;
+  wasModified: boolean;
+}
+
+export async function backupAndModifyWranglerToml(
+  wranglerFile: string,
+  environment: string,
+  workerName: string
+): Promise<BackupInfo> {
+  const originalPath = path.resolve(wranglerFile);
+  const timestamp = Date.now();
+  const backupPath = `${originalPath}.bak-${timestamp}`;
+
+  core.info(`📝 Backing up ${originalPath} to ${backupPath}`);
+
+  try {
+    // Read original file
+    const originalContent = await fs.promises.readFile(originalPath, 'utf8');
+
+    // Create backup
+    await fs.promises.writeFile(backupPath, originalContent, 'utf8');
+
+    // Modify content
+    const modifiedContent = modifyWranglerTomlContent(originalContent, environment, workerName);
+
+    // Write modified file
+    await fs.promises.writeFile(originalPath, modifiedContent, 'utf8');
+
+    core.info(
+      `✅ Modified ${wranglerFile} for environment [${environment}] with worker name: ${workerName}`
+    );
+
+    return {
+      originalPath,
+      backupPath,
+      wasModified: true
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`Failed to backup/modify wrangler.toml: ${errorMessage}`, { cause: error });
+  }
+}
+
+export function modifyWranglerTomlContent(
+  content: string,
+  environment: string,
+  workerName: string
+): string {
+  const lines = content.split('\n');
+  const result: string[] = [];
+  let inTargetEnv = false;
+  let envSectionFound = false;
+  let nameUpdated = false;
+
+  const targetSection = `[env.${environment}]`;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Check if we're entering the target environment section
+    if (line === targetSection) {
+      inTargetEnv = true;
+      envSectionFound = true;
+      result.push(lines[i]);
+      continue;
+    }
+
+    // Check if we're entering a different environment section
+    if (line.startsWith('[env.') && line !== targetSection) {
+      inTargetEnv = false;
+    }
+
+    // Check if we're entering any other section
+    if (line.startsWith('[') && !line.startsWith('[env.')) {
+      inTargetEnv = false;
+    }
+
+    // If we're in the target environment and find a name line, replace it
+    if (inTargetEnv && line.startsWith('name ')) {
+      result.push(`name = "${workerName}"`);
+      nameUpdated = true;
+      continue;
+    }
+
+    result.push(lines[i]);
+  }
+
+  // If environment section wasn't found, add it
+  if (!envSectionFound) {
+    result.push('');
+    result.push(`# Added by deploy action`);
+    result.push(targetSection);
+    result.push(`name = "${workerName}"`);
+    nameUpdated = true;
+  }
+
+  // If environment section was found but no name was updated, add name
+  if (envSectionFound && !nameUpdated) {
+    // Find the target section and add name after it
+    const modifiedResult: string[] = [];
+    let addedName = false;
+
+    for (let i = 0; i < result.length; i++) {
+      modifiedResult.push(result[i]);
+
+      if (result[i].trim() === targetSection && !addedName) {
+        modifiedResult.push(`name = "${workerName}"`);
+        addedName = true;
+      }
+    }
+
+    return modifiedResult.join('\n');
+  }
+
+  return result.join('\n');
+}
+
+export async function restoreWranglerToml(backupInfo: BackupInfo): Promise<void> {
+  try {
+    core.info(`🔄 Restoring ${backupInfo.originalPath} from backup`);
+
+    const backupContent = await fs.promises.readFile(backupInfo.backupPath, 'utf8');
+    await fs.promises.writeFile(backupInfo.originalPath, backupContent, 'utf8');
+
+    // Clean up backup file
+    await fs.promises.unlink(backupInfo.backupPath);
+
+    core.info(`✅ Restored wrangler.toml successfully`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    core.warning(`Failed to restore wrangler.toml: ${errorMessage}`);
   }
 }

@@ -27,17 +27,12 @@ inputs:
   dry-run:
     description: 'List workers to delete without actually deleting them'
     required: false
-    default: 'false'
+    default: 'true'
 
   exclude:
     description: 'Comma-separated list of worker names or patterns to exclude from deletion. Supports exact names (e.g., "myapp-develop,myapp-staging") and glob patterns (e.g., "*-develop,*-staging,*-production"). Excluded workers will never be deleted even if they match worker-pattern.'
     required: false
     default: ''
-
-  confirm-deletion:
-    description: 'Require explicit confirmation (set to "yes" to proceed)'
-    required: false
-    default: 'yes'
 
 outputs:
   deleted-workers:

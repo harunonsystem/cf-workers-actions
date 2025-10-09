@@ -1,193 +1,80 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
+import * as core from '@actions/core';
 import { CloudflareApi } from '../src/shared/lib/cloudflare-api';
 
 global.fetch = vi.fn();
 
-describe('Cleanup - Protected Workers', () => {
-  let api: CloudflareApi;
-  const mockApiToken = 'test-token';
-  const mockAccountId = 'test-account';
+// Mock @actions/core
+vi.mock('@actions/core', () => ({
+  getInput: vi.fn(),
+  setOutput: vi.fn(),
+  setFailed: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+  summary: {
+    addHeading: vi.fn().mockReturnThis(),
+    addTable: vi.fn().mockReturnThis(),
+    addList: vi.fn().mockReturnThis(),
+    addCodeBlock: vi.fn().mockReturnThis(),
+    write: vi.fn()
+  }
+}));
 
+// Mock CloudflareApi
+vi.mock('../src/shared/lib/cloudflare-api');
+
+describe('cleanup action integration', () => {
   beforeEach(() => {
-    api = new CloudflareApi(mockApiToken, mockAccountId);
     vi.clearAllMocks();
   });
 
-  describe('findWorkersByPattern with protection', () => {
-    test('should exclude protected workers from pattern match', async () => {
-      const mockWorkers = [
-        'myapp-pr-123',
-        'myapp-pr-456',
-        'myapp-develop',
-        'myapp-staging',
-        'myapp-production'
-      ];
+  test('should require either worker-pattern or worker-names', async () => {
+    const mockCf = {
+      findWorkersByPattern: vi.fn(),
+      deleteWorker: vi.fn()
+    };
+    (CloudflareApi as any).mockImplementation(() => mockCf);
 
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValueOnce({
-          success: true,
-          result: mockWorkers.map((name) => ({ id: name, script: name }))
-        })
-      });
-
-      const allWorkers = await api.findWorkersByPattern('myapp-*');
-      expect(allWorkers).toHaveLength(5);
-      expect(allWorkers).toEqual(mockWorkers);
-
-      const protectedSet = new Set(['myapp-develop', 'myapp-staging', 'myapp-production']);
-      const filtered = allWorkers.filter((name) => !protectedSet.has(name));
-
-      expect(filtered).toHaveLength(2);
-      expect(filtered).toEqual(['myapp-pr-123', 'myapp-pr-456']);
+    (core.getInput as any).mockImplementation((name: string) => {
+      if (name === 'cloudflare-api-token') return 'token';
+      if (name === 'cloudflare-account-id') return 'account';
+      return '';
     });
 
-    test('should protect workers matching pattern', async () => {
-      const mockWorkers = [
-        'myapp-pr-123',
-        'myapp-develop-feature',
-        'myapp-staging-test',
-        'myapp-production'
-      ];
+    vi.resetModules();
+    await import('../src/cleanup/index');
 
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValueOnce({
-          success: true,
-          result: mockWorkers.map((name) => ({ id: name, script: name }))
-        })
-      });
-
-      const allWorkers = await api.findWorkersByPattern('myapp-*');
-
-      const protectedPatterns = [/^.*-develop.*$/, /^.*-staging.*$/, /^.*-production$/];
-
-      const filtered = allWorkers.filter((name) => {
-        for (const pattern of protectedPatterns) {
-          if (pattern.test(name)) {
-            return false;
-          }
-        }
-        return true;
-      });
-
-      expect(filtered).toHaveLength(1);
-      expect(filtered).toEqual(['myapp-pr-123']);
-    });
-
-    test('should handle wildcard protection patterns', async () => {
-      const mockWorkers = ['myapp-pr-123', 'myapp-pr-456', 'project-develop', 'project-staging'];
-
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValueOnce({
-          success: true,
-          result: mockWorkers.map((name) => ({ id: name, script: name }))
-        })
-      });
-
-      const allWorkers = await api.findWorkersByPattern('*');
-
-      const protectedPattern = /^.*-(develop|staging)$/;
-      const filtered = allWorkers.filter((name) => !protectedPattern.test(name));
-
-      expect(filtered).toHaveLength(2);
-      expect(filtered).toEqual(['myapp-pr-123', 'myapp-pr-456']);
-    });
-
-    test('should combine protected workers and patterns', async () => {
-      const mockWorkers = [
-        'myapp-pr-100',
-        'myapp-pr-200',
-        'myapp-develop',
-        'myapp-staging',
-        'special-worker',
-        'test-develop-branch'
-      ];
-
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValueOnce({
-          success: true,
-          result: mockWorkers.map((name) => ({ id: name, script: name }))
-        })
-      });
-
-      const allWorkers = await api.findWorkersByPattern('*');
-
-      const protectedSet = new Set(['myapp-develop', 'myapp-staging', 'special-worker']);
-      const protectedPattern = /^.*-develop.*$/;
-
-      const filtered = allWorkers.filter((name) => {
-        if (protectedSet.has(name)) return false;
-        if (protectedPattern.test(name)) return false;
-        return true;
-      });
-
-      expect(filtered).toHaveLength(2);
-      expect(filtered).toEqual(['myapp-pr-100', 'myapp-pr-200']);
-    });
-
-    test('should handle empty protection lists', async () => {
-      const mockWorkers = ['myapp-pr-123', 'myapp-develop'];
-
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValueOnce({
-          success: true,
-          result: mockWorkers.map((name) => ({ id: name, script: name }))
-        })
-      });
-
-      const allWorkers = await api.findWorkersByPattern('myapp-*');
-
-      const protectedSet = new Set<string>();
-      const filtered = allWorkers.filter((name) => !protectedSet.has(name));
-
-      expect(filtered).toHaveLength(2);
-      expect(filtered).toEqual(mockWorkers);
-    });
+    expect(core.setFailed).toHaveBeenCalledWith(
+      expect.stringContaining('Either worker-pattern or worker-names must be provided')
+    );
   });
 
-  describe('Pattern matching edge cases', () => {
-    test('should handle workers with similar names', async () => {
-      const mockWorkers = ['app-develop', 'app-developer', 'app-development', 'app-pr-1'];
+  test('should process specific worker names', async () => {
+    const mockCf = {
+      findWorkersByPattern: vi.fn(),
+      deleteWorker: vi.fn()
+    };
+    (CloudflareApi as any).mockImplementation(() => mockCf);
 
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValueOnce({
-          success: true,
-          result: mockWorkers.map((name) => ({ id: name, script: name }))
-        })
-      });
-
-      const allWorkers = await api.findWorkersByPattern('app-*');
-
-      const protectedPattern = /^app-develop$/;
-      const filtered = allWorkers.filter((name) => !protectedPattern.test(name));
-
-      expect(filtered).toHaveLength(3);
-      expect(filtered).toEqual(['app-developer', 'app-development', 'app-pr-1']);
+    (core.getInput as any).mockImplementation((name: string) => {
+      if (name === 'worker-names') return 'worker1,worker2';
+      if (name === 'cloudflare-api-token') return 'token';
+      if (name === 'cloudflare-account-id') return 'account';
+      if (name === 'dry-run') return 'true';
+      return '';
     });
 
-    test('should protect exact match only', async () => {
-      const mockWorkers = ['myapp-staging', 'myapp-staging-old', 'myapp-staging-v2'];
+    mockCf.findWorkersByPattern.mockResolvedValue([]);
 
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValueOnce({
-          success: true,
-          result: mockWorkers.map((name) => ({ id: name, script: name }))
-        })
-      });
+    vi.resetModules();
+    await import('../src/cleanup/index');
 
-      const allWorkers = await api.findWorkersByPattern('myapp-*');
-
-      const protectedSet = new Set(['myapp-staging']);
-      const filtered = allWorkers.filter((name) => !protectedSet.has(name));
-
-      expect(filtered).toHaveLength(2);
-      expect(filtered).toEqual(['myapp-staging-old', 'myapp-staging-v2']);
-    });
+    expect(core.info).toHaveBeenCalledWith('Processing specific workers: worker1, worker2');
+    expect(core.setOutput).toHaveBeenCalledWith(
+      'dry-run-results',
+      JSON.stringify(['worker1', 'worker2'])
+    );
   });
 });

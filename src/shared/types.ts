@@ -82,6 +82,5 @@ export interface CleanupInputs {
   cloudflareApiToken: string;
   cloudflareAccountId: string;
   dryRun: boolean;
-  confirmDeletion: string;
   exclude?: string;
 }

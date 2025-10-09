@@ -79,3 +79,7 @@ Thumbs.db
 wrkflw
 index.js
 todo.md
+
+# wip
+dist/
+examples/

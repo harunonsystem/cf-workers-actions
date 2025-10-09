@@ -1,12 +1,18 @@
-import * as core from '@actions/core';
-import * as github from '@actions/github';
+import { getInput, info, summary, warning } from '@actions/core';
+import { context as githubContext, getOctokit } from '@actions/github';
 import { GitHubContext } from '../shared/types';
 import { CommentInputSchema, CommentOutputSchema } from '../shared/schemas';
 import { parseInputs, setOutputsValidated } from '../shared/validation';
+import { handleActionError, COMMENT_ERROR_OUTPUTS } from '../shared/lib/error-handler';
+import {
+  COMMENT_DEFAULT_TAG,
+  COMMENT_STATUS_METADATA,
+  CommentDeploymentStatus
+} from './constants';
 
 interface CommentGenerationParams {
   deploymentUrl: string;
-  deploymentStatus: string;
+  deploymentStatus: CommentDeploymentStatus;
   workerName?: string;
   customMessage?: string;
   commentTemplate?: string;
@@ -18,59 +24,34 @@ async function run(): Promise<void> {
   try {
     // Get and validate inputs
     const raw = {
-      deploymentUrl: core.getInput('deploymentUrl', { required: true }),
-      deploymentStatus: core.getInput('deployment-status') || undefined,
-      workerName: core.getInput('worker-name') || undefined,
-      githubToken: core.getInput('github-token', { required: true }),
-      customMessage: core.getInput('custom-message') || undefined,
-      commentTemplate: core.getInput('comment-template') || undefined,
-      updateExisting: core.getInput('update-existing') === 'true',
-      commentTag: core.getInput('comment-tag') || undefined
+      deploymentUrl: getInput('deployment-url', { required: true }),
+      deploymentStatus: getInput('deployment-status') || undefined,
+      workerName: getInput('worker-name') || undefined,
+      githubToken: getInput('github-token', { required: true }),
+      customMessage: getInput('custom-message') || undefined,
+      commentTemplate: getInput('comment-template') || undefined,
+      updateExisting: getInput('update-existing') === 'true',
+      commentTag: getInput('comment-tag') || undefined
     };
 
     const inputs = parseInputs(CommentInputSchema, raw);
     if (!inputs) return;
 
-    // Validate deployment URL
-    try {
-      const url = new URL(inputs.deploymentUrl);
-      void url; // Use the variable to satisfy linter
-    } catch {
-      throw new Error(
-        `Invalid deployment URL: ${inputs.deploymentUrl}. Must be a valid HTTPS URL.`
-      );
-    }
-
-    if (!inputs.deploymentUrl.startsWith('https://')) {
-      throw new Error(`Deployment URL must use HTTPS: ${inputs.deploymentUrl}`);
-    }
-
-    // Validate deployment status
-    if (!['success', 'failure', 'pending'].includes(inputs.deploymentStatus)) {
-      throw new Error(
-        `Invalid deployment status: ${inputs.deploymentStatus}. Must be 'success', 'failure', or 'pending'.`
-      );
-    }
-
-    // GitHub token validation is handled by GitHub API
-
     // Get PR context
-    const context = github.context as GitHubContext;
+    const context = githubContext as GitHubContext;
     if (context.eventName !== 'pull_request' && context.eventName !== 'issue_comment') {
       throw new Error('This action can only be used on pull_request or issue_comment events');
     }
 
-    const prNumber =
-      context.eventName === 'pull_request' && context.payload.pull_request
-        ? context.payload.pull_request.number
-        : context.payload.issue?.number;
-
+    const prNumber = getPullRequestNumber(context);
     if (!prNumber) {
       throw new Error('Unable to determine PR number from context');
     }
 
+    const commentTag = sanitizeCommentTag(inputs.commentTag ?? COMMENT_DEFAULT_TAG);
+
     // Initialize GitHub client
-    const octokit = github.getOctokit(inputs.githubToken);
+    const octokit = getOctokit(inputs.githubToken);
 
     // Generate comment content
     const commentContent = generateCommentContent({
@@ -79,58 +60,20 @@ async function run(): Promise<void> {
       workerName: inputs.workerName,
       customMessage: inputs.customMessage,
       commentTemplate: inputs.commentTemplate,
-      commentTag: inputs.commentTag,
+      commentTag,
       prNumber
     });
 
-    let commentId: number;
-    let commentUrl: string;
+    const { commentId, commentUrl, action } = await upsertComment({
+      octokit,
+      context,
+      prNumber,
+      commentContent,
+      commentTag,
+      updateExisting: inputs.updateExisting
+    });
 
-    if (inputs.updateExisting) {
-      // Try to find existing comment
-      const existingComment = await findExistingComment(octokit, context, inputs.commentTag);
-
-      if (existingComment) {
-        // Update existing comment
-        const updateResponse = await octokit.rest.issues.updateComment({
-          owner: context.repo.owner,
-          repo: context.repo.repo,
-          comment_id: existingComment.id,
-          body: commentContent
-        });
-
-        commentId = updateResponse.data.id;
-        commentUrl = updateResponse.data.html_url;
-
-        core.info(`Updated existing comment: ${commentUrl}`);
-      } else {
-        // Create new comment if no existing one found
-        const createResponse = await octokit.rest.issues.createComment({
-          owner: context.repo.owner,
-          repo: context.repo.repo,
-          issue_number: prNumber,
-          body: commentContent
-        });
-
-        commentId = createResponse.data.id;
-        commentUrl = createResponse.data.html_url;
-
-        core.info(`Created new comment: ${commentUrl}`);
-      }
-    } else {
-      // Always create new comment
-      const createResponse = await octokit.rest.issues.createComment({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: prNumber,
-        body: commentContent
-      });
-
-      commentId = createResponse.data.id;
-      commentUrl = createResponse.data.html_url;
-
-      core.info(`Created new comment: ${commentUrl}`);
-    }
+    info(`${action === 'updated' ? 'Updated existing' : 'Created new'} comment: ${commentUrl}`);
 
     // Set validated outputs
     setOutputsValidated(CommentOutputSchema, {
@@ -139,34 +82,37 @@ async function run(): Promise<void> {
     });
 
     // Set summary
-    await core.summary
+    const statusSummary = COMMENT_STATUS_METADATA[inputs.deploymentStatus].summary;
+
+    await summary
       .addHeading('💬 PR Comment Posted')
       .addTable([
         ['Property', 'Value'],
         ['Comment ID', commentId.toString()],
         ['Comment URL', `[View Comment](${commentUrl})`],
         ['Deployment URL', `[${inputs.deploymentUrl}](${inputs.deploymentUrl})`],
-        ['Status', inputs.deploymentStatus === 'success' ? '✅ Success' : '❌ Failed']
+        ['Status', statusSummary]
       ])
       .write();
 
-    core.info(`✅ Successfully posted comment to PR #${prNumber}`);
+    info(`✅ Successfully posted comment to PR #${prNumber}`);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    core.error(`❌ Failed to post comment: ${errorMessage}`);
-
-    // Set failure outputs
-    core.setOutput('comment-id', '');
-    core.setOutput('comment-url', '');
-
-    // Set failure summary
-    await core.summary
-      .addHeading('❌ PR Comment Failed')
-      .addCodeBlock(errorMessage, 'text')
-      .write();
-
-    core.setFailed(errorMessage);
+    await handleActionError(error, {
+      summaryTitle: 'PR Comment Failed',
+      outputs: COMMENT_ERROR_OUTPUTS
+    });
   }
+}
+
+/**
+ * Sanitize user input to prevent script injection in markdown
+ */
+function sanitizeMarkdown(input: string): string {
+  return input
+    .replace(/[<>]/g, '') // Remove HTML tags
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Strip markdown links
+    .replace(/`/g, '\\`') // Escape backticks
+    .replace(/\$/g, '\\$'); // Escape dollar signs
 }
 
 /**
@@ -184,45 +130,51 @@ function generateCommentContent(params: CommentGenerationParams): string {
   } = params;
 
   if (commentTemplate) {
-    // Use custom template
+    // Use custom template with sanitized user inputs
     return commentTemplate
       .replace('{deployment_url}', deploymentUrl)
       .replace('{deployment_status}', deploymentStatus)
-      .replace('{worker_name}', workerName || 'N/A')
-      .replace('{custom_message}', customMessage || '')
+      .replace('{worker_name}', sanitizeMarkdown(workerName || 'N/A'))
+      .replace('{custom_message}', sanitizeMarkdown(customMessage || ''))
       .replace('{comment_tag}', commentTag)
       .replace('{pr_number}', prNumber.toString());
   }
 
-  // Default template
-  const statusIcon = deploymentStatus === 'success' ? '✅' : '❌';
-  const statusText = deploymentStatus === 'success' ? 'Success' : 'Failed';
+  // Default template with sanitized user inputs
+  const statusDetails = COMMENT_STATUS_METADATA[deploymentStatus];
 
   let content = `<!-- ${commentTag} -->\n\n`;
-  content += `## ${statusIcon} Cloudflare Workers Deployment ${statusText}\n\n`;
+  content += `## ${statusDetails.icon} Cloudflare Workers Deployment ${statusDetails.label}\n\n`;
 
   if (deploymentStatus === 'success') {
     content += `🚀 **Preview URL**: [${deploymentUrl}](${deploymentUrl})\n\n`;
 
     if (workerName) {
-      content += `📦 **Worker Name**: \`${workerName}\`\n\n`;
+      content += `📦 **Worker Name**: \`${sanitizeMarkdown(workerName)}\`\n\n`;
     }
 
     content += `🔍 **Environment**: Preview\n`;
     content += `📅 **Deployed**: ${new Date().toISOString()}\n\n`;
 
     if (customMessage) {
-      content += `💬 **Additional Notes**:\n${customMessage}\n\n`;
+      content += `💬 **Additional Notes**:\n${sanitizeMarkdown(customMessage)}\n\n`;
     }
 
     content += `---\n`;
     content += `*Deployment powered by [Cloudflare Workers](https://workers.cloudflare.com/)*`;
-  } else {
+  } else if (deploymentStatus === 'failure') {
     content += `❌ **Deployment failed**\n\n`;
     content += `Please check the deployment logs for more details.\n\n`;
 
     if (customMessage) {
-      content += `**Error Details**:\n${customMessage}\n\n`;
+      content += `**Error Details**:\n${sanitizeMarkdown(customMessage)}\n\n`;
+    }
+  } else {
+    content += `⏳ **Deployment pending**\n\n`;
+    content += `The deployment is still in progress. Please check back later for updates.\n\n`;
+
+    if (customMessage) {
+      content += `**Notes**:\n${sanitizeMarkdown(customMessage)}\n\n`;
     }
   }
 
@@ -233,19 +185,11 @@ function generateCommentContent(params: CommentGenerationParams): string {
  * Find existing comment with the specified tag
  */
 async function findExistingComment(
-  octokit: ReturnType<typeof github.getOctokit>,
+  octokit: ReturnType<typeof getOctokit>,
   context: GitHubContext,
-  commentTag: string
+  commentTag: string,
+  prNumber: number
 ): Promise<{ id: number } | undefined> {
-  const prNumber =
-    context.eventName === 'pull_request' && context.payload.pull_request
-      ? context.payload.pull_request.number
-      : context.payload.issue?.number;
-
-  if (!prNumber) {
-    return undefined;
-  }
-
   try {
     const comments = await octokit.rest.issues.listComments({
       owner: context.repo.owner,
@@ -258,9 +202,70 @@ async function findExistingComment(
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    core.warning(`Failed to fetch existing comments: ${errorMessage}`);
+    warning(`Failed to fetch existing comments: ${errorMessage}`);
     return undefined;
   }
+}
+
+function getPullRequestNumber(context: GitHubContext): number | undefined {
+  if (context.eventName === 'pull_request' && context.payload.pull_request) {
+    return context.payload.pull_request.number;
+  }
+
+  if (context.eventName === 'issue_comment' && context.payload.issue) {
+    return context.payload.issue.number;
+  }
+
+  return undefined;
+}
+
+function sanitizeCommentTag(tag: string): string {
+  const trimmed = tag.trim().replace(/-->/g, '');
+  const safeTag = trimmed.replace(/[^A-Za-z0-9:_\-\.]+/g, '-');
+  return safeTag.length > 0 ? safeTag : COMMENT_DEFAULT_TAG;
+}
+
+async function upsertComment(params: {
+  octokit: ReturnType<typeof getOctokit>;
+  context: GitHubContext;
+  prNumber: number;
+  commentContent: string;
+  commentTag: string;
+  updateExisting: boolean;
+}): Promise<{ commentId: number; commentUrl: string; action: 'created' | 'updated' }> {
+  const { octokit, context, prNumber, commentContent, commentTag, updateExisting } = params;
+
+  if (updateExisting) {
+    const existingComment = await findExistingComment(octokit, context, commentTag, prNumber);
+
+    if (existingComment) {
+      const updateResponse = await octokit.rest.issues.updateComment({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        comment_id: existingComment.id,
+        body: commentContent
+      });
+
+      return {
+        commentId: updateResponse.data.id,
+        commentUrl: updateResponse.data.html_url,
+        action: 'updated'
+      };
+    }
+  }
+
+  const createResponse = await octokit.rest.issues.createComment({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    issue_number: prNumber,
+    body: commentContent
+  });
+
+  return {
+    commentId: createResponse.data.id,
+    commentUrl: createResponse.data.html_url,
+    action: 'created'
+  };
 }
 
 // Self-invoking async function to handle top-level await

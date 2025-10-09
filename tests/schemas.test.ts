@@ -4,14 +4,17 @@ import { parseInputs, setOutputsValidated } from '../src/shared/validation';
 import * as core from '@actions/core';
 
 vi.mock('@actions/core', () => ({
-  setFailed: vi.fn()
+  setFailed: vi.fn(),
+  setOutput: vi.fn()
 }));
 
 const mockSetFailed = vi.mocked(core.setFailed);
+const mockSetOutput = vi.mocked(core.setOutput);
 
 describe('Schemas', () => {
   beforeEach(() => {
     mockSetFailed.mockClear();
+    mockSetOutput.mockClear();
   });
 
   describe('CommentInputSchema', () => {
