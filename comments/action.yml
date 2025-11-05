@@ -1,5 +1,5 @@
-name: 'PR Comment Poster'
-description: 'Post deployment result comment to Pull Request'
+name: 'Deployment Comments'
+description: 'Post deployment results as Pull Request comments'
 author: 'harunonsystem'
 
 branding:

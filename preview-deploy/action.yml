@@ -1,5 +1,5 @@
-name: 'Cloudflare Workers Preview Deploy (Complete)'
-description: 'Deploy preview environment with wrangler.toml update and PR comment'
+name: 'Preview Deployment'
+description: 'Deploy preview environment to Cloudflare Workers'
 author: 'harunonsystem'
 
 branding:

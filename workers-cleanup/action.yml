@@ -1,5 +1,5 @@
-name: 'Cloudflare Workers Cleanup (Composite)'
-description: 'Delete Cloudflare Workers (PR-linked, manual, or batch mode)'
+name: 'Workers Cleanup'
+description: 'Delete Cloudflare Workers with flexible cleanup modes'
 author: 'harunonsystem'
 
 branding:

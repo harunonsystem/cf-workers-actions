@@ -6,7 +6,7 @@ This directory contains example workflows demonstrating how to use the Cloudflar
 
 ### Composite Actions Examples
 
-- **[preview-complete.yml](./workflows/preview-complete.yml)** - All-in-one preview deployment using `preview-deploy-complete`
+- **[preview-complete.yml](./workflows/preview-complete.yml)** - All-in-one preview deployment using `preview-deploy`
 - **[preview-modular.yml](./workflows/preview-modular.yml)** - Modular preview deployment using individual actions
 - **[cleanup-pr.yml](./workflows/cleanup-pr.yml)** - Automatic cleanup when PR is closed
 - **[cleanup-manual.yml](./workflows/cleanup-manual.yml)** - Manual worker cleanup with confirmation
@@ -41,7 +41,7 @@ Refer to the action documentation in the main README for all available inputs.
 
 ## 💡 Tips
 
-- **Complete vs Modular**: Use `preview-deploy-complete` for simplicity, or modular actions for more control
+- **Complete vs Modular**: Use `preview-deploy` for simplicity, or modular actions for more control
 - **Branch Filtering**: Adjust `branch-patterns` and `exclude-branches` to match your workflow
 - **Cleanup Strategy**: Choose between PR-linked, manual, or age-based cleanup depending on your needs
 - **Dry Run**: Always test cleanup operations with `dry-run: true` first

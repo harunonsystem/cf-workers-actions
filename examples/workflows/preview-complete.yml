@@ -19,7 +19,7 @@ jobs:
 
       # 完結型アクション: wrangler.toml更新 + デプロイ + PRコメント投稿を一括処理
       - name: Deploy preview
-        uses: harunonsystem/cloudflare-actions/preview-deploy-complete@v1
+        uses: harunonsystem/cloudflare-actions/preview-deploy@v1
         with:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

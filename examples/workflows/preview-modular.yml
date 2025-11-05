@@ -21,7 +21,7 @@ jobs:
       # Step 1: wrangler.toml更新
       - name: Update wrangler.toml
         id: update-toml
-        uses: harunonsystem/cloudflare-actions/wrangler-toml-updater@v1
+        uses: harunonsystem/cloudflare-actions/preview-setup@v1
         with:
           environment-name: 'preview'
           worker-name: '2048-game-preview-${{ github.event.pull_request.number }}'
@@ -37,7 +37,7 @@ jobs:
 
       # Step 3: PRコメント投稿
       - name: Post PR comment
-        uses: harunonsystem/cloudflare-actions/pr-comment-poster@v1
+        uses: harunonsystem/cloudflare-actions/comments@v1
         if: always()
         with:
           worker-name: '2048-game-preview-${{ github.event.pull_request.number }}'

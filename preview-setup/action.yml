@@ -1,5 +1,5 @@
-name: 'Wrangler TOML Updater'
-description: 'Update wrangler.toml with dynamic worker name'
+name: 'Preview Environment Setup'
+description: 'Setup preview environment configuration for Cloudflare Workers'
 author: 'harunonsystem'
 
 branding:

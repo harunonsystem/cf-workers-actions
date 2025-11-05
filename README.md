@@ -21,7 +21,7 @@ A comprehensive suite of GitHub Actions for Cloudflare Workers deployment, PR co
 This repository provides two types of actions:
 
 1. **Node.js Actions** - Fast, feature-rich TypeScript implementations
-2. **Composite Actions** - Shell-based, flexible actions for wrangler.toml manipulation
+2. **Composite Actions** - Shell-based, flexible actions for Preview environment setup
 
 ### Node.js Actions
 
@@ -120,12 +120,12 @@ Clean up and delete Cloudflare Workers based on patterns or specific names.
 
 Composite Actions provide shell-based implementations that are ideal for workflows requiring `wrangler.toml` manipulation and flexible deployment patterns.
 
-#### Preview Deploy Complete (`preview-deploy-complete`)
+#### Preview Deployment (`preview-deploy`)
 
 Complete workflow for preview deployments: updates `wrangler.toml`, deploys to Cloudflare, and posts PR comments.
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/preview-deploy-complete@v1
+- uses: harunonsystem/cloudflare-actions/preview-deploy@v1
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -157,12 +157,12 @@ Complete workflow for preview deployments: updates `wrangler.toml`, deploys to C
 - `deployment-id`: Cloudflare deployment ID
 - `deployed`: Whether deployment was executed
 
-#### Wrangler TOML Updater (`wrangler-toml-updater`)
+#### Preview Setup (`preview-setup`)
 
 Dynamically update `wrangler.toml` configuration.
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/wrangler-toml-updater@v1
+- uses: harunonsystem/cloudflare-actions/preview-setup@v1
   id: update-toml
   with:
     environment-name: 'preview'
@@ -183,12 +183,12 @@ Dynamically update `wrangler.toml` configuration.
 - `backup-path`: Path to backup file
 - `updated`: Whether file was updated
 
-#### PR Comment Poster (`pr-comment-poster`)
+#### Deployment Comments (`comments`)
 
 Post deployment results as PR comments.
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/pr-comment-poster@v1
+- uses: harunonsystem/cloudflare-actions/comments@v1
   with:
     worker-name: 'myapp-preview-123'
     worker-url: 'https://myapp-preview-123.workers.dev'
@@ -213,12 +213,12 @@ Post deployment results as PR comments.
 - `comment-id`: Posted comment ID
 - `comment-url`: Posted comment URL
 
-#### Workers Cleanup Composite (`workers-cleanup-composite`)
+#### Workers Cleanup (`workers-cleanup`)
 
 Flexible worker deletion with multiple modes: PR-linked, manual, batch, and age-based.
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/workers-cleanup-composite@v1
+- uses: harunonsystem/cloudflare-actions/workers-cleanup@v1
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -407,7 +407,7 @@ jobs:
 
       # One action does it all: wrangler.toml update + deploy + PR comment
       - name: Deploy preview
-        uses: harunonsystem/cloudflare-actions/preview-deploy-complete@v1
+        uses: harunonsystem/cloudflare-actions/preview-deploy@v1
         with:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -437,7 +437,7 @@ jobs:
       # Step 1: Update wrangler.toml
       - name: Update wrangler.toml
         id: update-toml
-        uses: harunonsystem/cloudflare-actions/wrangler-toml-updater@v1
+        uses: harunonsystem/cloudflare-actions/preview-setup@v1
         with:
           environment-name: 'preview'
           worker-name: 'myapp-preview-${{ github.event.pull_request.number }}'
@@ -453,7 +453,7 @@ jobs:
 
       # Step 3: Post PR comment
       - name: Post PR comment
-        uses: harunonsystem/cloudflare-actions/pr-comment-poster@v1
+        uses: harunonsystem/cloudflare-actions/comments@v1
         if: always()
         with:
           worker-name: 'myapp-preview-${{ github.event.pull_request.number }}'
@@ -484,7 +484,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Delete preview worker
-        uses: harunonsystem/cloudflare-actions/workers-cleanup-composite@v1
+        uses: harunonsystem/cloudflare-actions/workers-cleanup@v1
         with:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -516,7 +516,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Batch delete old workers
-        uses: harunonsystem/cloudflare-actions/workers-cleanup-composite@v1
+        uses: harunonsystem/cloudflare-actions/workers-cleanup@v1
         with:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -568,10 +568,10 @@ cloudflare-actions/
 │       └── __tests__/                   # Shared library tests
 │
 ├── Composite Actions (Shell-based)
-│   ├── preview-deploy-complete/         # All-in-one preview deployment
-│   ├── wrangler-toml-updater/           # wrangler.toml manipulation
-│   ├── pr-comment-poster/               # PR comment posting
-│   └── workers-cleanup-composite/       # Flexible worker cleanup
+│   ├── preview-deploy/         # Preview deployment workflow
+│   ├── preview-setup/           # Preview environment setup
+│   ├── comments/               # Deployment comments
+│   └── workers-cleanup/       # Flexible worker cleanup
 │
 └── examples/
     └── workflows/                        # Example workflow files
