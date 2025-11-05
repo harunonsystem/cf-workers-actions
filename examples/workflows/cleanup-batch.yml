@@ -1,0 +1,31 @@
+name: Batch Cleanup Old Previews
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # 毎週日曜日
+  workflow_dispatch:
+    inputs:
+      max-age-days:
+        description: 'Delete workers older than N days'
+        required: false
+        default: '14'
+      dry-run:
+        description: 'Dry run mode (true/false)'
+        required: false
+        default: 'false'
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Batch delete old workers
+        uses: harunonsystem/cloudflare-actions/workers-cleanup-composite@v1
+        with:
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          cleanup-mode: 'batch-by-age'
+          max-age-days: ${{ github.event.inputs.max-age-days || '14' }}
+          dry-run: ${{ github.event.inputs.dry-run || 'false' }}
+          require-confirmation: 'false'

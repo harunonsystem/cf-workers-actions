@@ -1,0 +1,29 @@
+name: Deploy Preview (Complete)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      # 完結型アクション: wrangler.toml更新 + デプロイ + PRコメント投稿を一括処理
+      - name: Deploy preview
+        uses: harunonsystem/cloudflare-actions/preview-deploy-complete@v1
+        with:
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          worker-name-prefix: '2048-game-preview'
+          branch-patterns: 'feature/*,bugfix/*'
+          exclude-branches: 'develop,staging'
+          build-command: 'npm run build'

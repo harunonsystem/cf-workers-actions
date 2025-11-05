@@ -1,0 +1,26 @@
+name: Manual Worker Cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      worker-names:
+        description: 'Worker names to delete (comma-separated)'
+        required: true
+      confirmation:
+        description: 'Type DELETE to confirm'
+        required: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Delete workers
+        uses: harunonsystem/cloudflare-actions/workers-cleanup-composite@v1
+        with:
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          cleanup-mode: 'manual'
+          worker-names: ${{ github.event.inputs.worker-names }}
+          require-confirmation: 'true'

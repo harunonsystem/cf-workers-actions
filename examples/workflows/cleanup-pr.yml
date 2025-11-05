@@ -1,0 +1,20 @@
+name: Cleanup Preview on PR Close
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Delete preview worker
+        uses: harunonsystem/cloudflare-actions/workers-cleanup-composite@v1
+        with:
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          cleanup-mode: 'pr-linked'
+          pr-number: ${{ github.event.pull_request.number }}
+          worker-name-prefix: '2048-game-preview'

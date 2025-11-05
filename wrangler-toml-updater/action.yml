@@ -1,0 +1,105 @@
+name: 'Wrangler TOML Updater'
+description: 'Update wrangler.toml with dynamic worker name'
+author: 'harunonsystem'
+
+branding:
+  icon: 'edit'
+  color: 'purple'
+
+inputs:
+  wrangler-toml-path:
+    description: 'Path to wrangler.toml'
+    required: false
+    default: 'wrangler.toml'
+
+  environment-name:
+    description: 'Environment name in wrangler.toml'
+    required: true
+
+  worker-name:
+    description: 'Worker name to set'
+    required: true
+
+  create-backup:
+    description: 'Create backup before modification'
+    required: false
+    default: 'true'
+
+  # 追加設定 (オプション)
+  update-vars:
+    description: 'JSON object of environment variables to update (e.g., {"ENVIRONMENT": "preview"})'
+    required: false
+
+  update-routes:
+    description: 'JSON array of routes to set (e.g., ["example.com/*"])'
+    required: false
+
+outputs:
+  backup-path:
+    description: 'Path to backup file (if created)'
+    value: ${{ steps.update.outputs.backup-path }}
+  updated:
+    description: 'Whether file was updated'
+    value: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Update wrangler.toml
+      id: update
+      shell: bash
+      run: |
+        TOML_PATH="${{ inputs.wrangler-toml-path }}"
+        ENV_NAME="${{ inputs.environment-name }}"
+        WORKER_NAME="${{ inputs.worker-name }}"
+
+        # バックアップ作成
+        if [[ "${{ inputs.create-backup }}" == "true" ]]; then
+          BACKUP_PATH="${TOML_PATH}.backup.$(date +%s)"
+          cp "$TOML_PATH" "$BACKUP_PATH"
+          echo "backup-path=$BACKUP_PATH" >> $GITHUB_OUTPUT
+          echo "Created backup: $BACKUP_PATH"
+        fi
+
+        # 環境セクション更新
+        if grep -q "^\[env\.$ENV_NAME\]" "$TOML_PATH"; then
+          # name更新
+          sed -i "/^\[env\.$ENV_NAME\]/,/^\[/ s/^name = .*/name = \"$WORKER_NAME\"/" "$TOML_PATH"
+        else
+          # 新規セクション追加
+          cat >> "$TOML_PATH" << EOF
+
+        [env.$ENV_NAME]
+        name = "$WORKER_NAME"
+        EOF
+        fi
+
+        # 環境変数更新 (オプション)
+        if [[ -n "${{ inputs.update-vars }}" ]]; then
+          echo "Updating environment variables..."
+          # jqが利用可能な場合の環境変数更新
+          if command -v jq &> /dev/null; then
+            VARS='${{ inputs.update-vars }}'
+            # TOMLフォーマットで環境変数セクションを追加
+            echo "[env.$ENV_NAME.vars]" >> "$TOML_PATH"
+            echo "$VARS" | jq -r 'to_entries | .[] | "\(.key) = \"\(.value)\""' >> "$TOML_PATH"
+          else
+            echo "Warning: jq not available, skipping vars update"
+          fi
+        fi
+
+        # ルート更新 (オプション)
+        if [[ -n "${{ inputs.update-routes }}" ]]; then
+          echo "Updating routes..."
+          if command -v jq &> /dev/null; then
+            ROUTES='${{ inputs.update-routes }}'
+            # TOMLフォーマットでルートを追加
+            echo "[[env.$ENV_NAME.routes]]" >> "$TOML_PATH"
+            echo "$ROUTES" | jq -r '.[] | "pattern = \"\(.)\"" ' >> "$TOML_PATH"
+          else
+            echo "Warning: jq not available, skipping routes update"
+          fi
+        fi
+
+        echo "✅ Updated wrangler.toml:"
+        cat "$TOML_PATH"

@@ -1,0 +1,53 @@
+name: Deploy Preview (Modular)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      # Step 1: wrangler.toml更新
+      - name: Update wrangler.toml
+        id: update-toml
+        uses: harunonsystem/cloudflare-actions/wrangler-toml-updater@v1
+        with:
+          environment-name: 'preview'
+          worker-name: '2048-game-preview-${{ github.event.pull_request.number }}'
+
+      # Step 2: Cloudflareへデプロイ (公式Action)
+      - name: Deploy to Cloudflare
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          environment: 'preview'
+
+      # Step 3: PRコメント投稿
+      - name: Post PR comment
+        uses: harunonsystem/cloudflare-actions/pr-comment-poster@v1
+        if: always()
+        with:
+          worker-name: '2048-game-preview-${{ github.event.pull_request.number }}'
+          worker-url: ${{ steps.deploy.outputs.deployment-url }}
+          deployment-status: ${{ steps.deploy.outcome == 'success' && 'success' || 'failure' }}
+
+      # wrangler.tomlリストア
+      - name: Restore wrangler.toml
+        if: always()
+        run: |
+          if [[ -f "${{ steps.update-toml.outputs.backup-path }}" ]]; then
+            mv "${{ steps.update-toml.outputs.backup-path }}" wrangler.toml
+          fi
