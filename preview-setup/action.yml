@@ -36,39 +36,10 @@ inputs:
 outputs:
   backup-path:
     description: 'Path to backup file (if created)'
-    value: ${{ steps.setup.outputs.backup-path }}
+
   updated:
     description: 'Whether file was updated'
-    value: 'true'
 
 runs:
-  using: 'composite'
-  steps:
-    - name: Setup preview environment
-      id: setup
-      shell: bash
-      run: |
-        # Make script executable
-        chmod +x "${{ github.action_path }}/scripts/setup.sh"
-
-        # Source the script to use its functions
-        source "${{ github.action_path }}/scripts/setup.sh"
-
-        # Run main function
-        BACKUP_PATH=$(main \
-          "${{ inputs.wrangler-toml-path }}" \
-          "${{ inputs.environment-name }}" \
-          "${{ inputs.worker-name }}" \
-          "${{ inputs.create-backup }}" \
-          "${{ inputs.update-vars }}" \
-          "${{ inputs.update-routes }}")
-
-        # Set output
-        if [[ -n "$BACKUP_PATH" ]]; then
-          echo "backup-path=$BACKUP_PATH" >> $GITHUB_OUTPUT
-        fi
-
-        echo "✅ Preview environment setup completed"
-        echo ""
-        echo "Updated wrangler.toml:"
-        cat "${{ inputs.wrangler-toml-path }}"
+  using: 'node20'
+  main: '../dist/preview-setup/src/index.js'

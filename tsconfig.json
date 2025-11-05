@@ -7,7 +7,6 @@
     "strict": true,
     "declaration": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
@@ -15,6 +14,12 @@
     "types": ["node"],
     "moduleDetection": "auto"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts"]
+  "include": [
+    "src/**/*",
+    "preview-setup/src/**/*",
+    "workers-cleanup/src/**/*",
+    "preview-deploy/src/**/*",
+    "comments/src/**/*"
+  ],
+  "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts", "**/tests/**"]
 }

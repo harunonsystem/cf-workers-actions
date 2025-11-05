@@ -50,66 +50,13 @@ inputs:
 outputs:
   deleted-workers:
     description: 'JSON array of deleted worker names'
-    value: ${{ steps.cleanup.outputs.deleted-workers }}
+
   deleted-count:
     description: 'Number of deleted workers'
-    value: ${{ steps.cleanup.outputs.deleted-count }}
+
   skipped-count:
     description: 'Number of skipped workers'
-    value: ${{ steps.cleanup.outputs.skipped-count }}
 
 runs:
-  using: 'composite'
-  steps:
-    - name: Cleanup workers
-      id: cleanup
-      shell: bash
-      env:
-        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare-api-token }}
-        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare-account-id }}
-        PR_NUMBER: ${{ inputs.pr-number }}
-        WORKER_NAME_PREFIX: ${{ inputs.worker-name-prefix }}
-        WORKER_NAMES: ${{ inputs.worker-names }}
-        BATCH_PATTERN: ${{ inputs.batch-pattern }}
-        EXCLUDE_WORKERS: ${{ inputs.exclude-workers }}
-        DRY_RUN: ${{ inputs.dry-run }}
-      run: |
-        # Make script executable
-        chmod +x "${{ github.action_path }}/scripts/cleanup.sh"
-
-        # Source the cleanup script
-        source "${{ github.action_path }}/scripts/cleanup.sh"
-
-        # Run cleanup and capture JSON result
-        RESULT=$(main "${{ inputs.cleanup-mode }}")
-
-        # Parse result and set outputs
-        if command -v jq &> /dev/null; then
-          DELETED_COUNT=$(echo "$RESULT" | jq -r '.deleted')
-          SKIPPED_COUNT=$(echo "$RESULT" | jq -r '.skipped')
-          DELETED_NAMES=$(echo "$RESULT" | jq -c '.deleted_names')
-          ERROR_COUNT=$(echo "$RESULT" | jq -r '.error_count')
-        else
-          # Fallback if jq is not available
-          DELETED_COUNT=$(echo "$RESULT" | grep -oP '"deleted":\K\d+' || echo "0")
-          SKIPPED_COUNT=$(echo "$RESULT" | grep -oP '"skipped":\K\d+' || echo "0")
-          DELETED_NAMES="[]"
-          ERROR_COUNT="0"
-        fi
-
-        # Set GitHub Actions outputs
-        echo "deleted-count=$DELETED_COUNT" >> $GITHUB_OUTPUT
-        echo "skipped-count=$SKIPPED_COUNT" >> $GITHUB_OUTPUT
-        echo "deleted-workers=$DELETED_NAMES" >> $GITHUB_OUTPUT
-
-        # Print summary
-        echo ""
-        echo "=== Cleanup Summary ==="
-        echo "Deleted: $DELETED_COUNT"
-        echo "Skipped: $SKIPPED_COUNT"
-        echo "Errors: $ERROR_COUNT"
-
-        # Exit with error if there were errors
-        if [[ "$ERROR_COUNT" -gt 0 ]]; then
-          exit 1
-        fi
+  using: 'node20'
+  main: '../dist/workers-cleanup/src/index.js'
