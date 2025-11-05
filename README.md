@@ -585,24 +585,36 @@ cloudflare-actions/
 
 ## 🧪 Testing
 
-Run the test suite:
+This project includes comprehensive tests for both Node.js and composite actions.
+
+### Run All Tests
 
 ```bash
+./run-tests.sh
+```
+
+### Run Specific Tests
+
+```bash
+# Node.js tests (Vitest)
 pnpm test
-```
 
-Run tests with coverage:
-
-```bash
+# Node.js tests with coverage
 pnpm run test:coverage
+
+# Composite action tests
+bash preview-setup/tests/setup.test.sh
+bash workers-cleanup/tests/cleanup.test.sh
 ```
+
+### Test Coverage
 
 The project includes comprehensive tests for:
 
-- All shared library functions
-- API client functionality
-- URL generation logic
-- Error handling scenarios
+- **Node.js Actions**: All shared library functions, API client, URL generation, error handling
+- **Composite Actions**: Shell script functions, business logic, integration scenarios
+
+For detailed testing information, see [TESTING.md](./TESTING.md).
 
 ## 🤝 Contributing
 

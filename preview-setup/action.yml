@@ -25,7 +25,6 @@ inputs:
     required: false
     default: 'true'
 
-  # 追加設定 (オプション)
   update-vars:
     description: 'JSON object of environment variables to update (e.g., {"ENVIRONMENT": "preview"})'
     required: false
@@ -37,7 +36,7 @@ inputs:
 outputs:
   backup-path:
     description: 'Path to backup file (if created)'
-    value: ${{ steps.update.outputs.backup-path }}
+    value: ${{ steps.setup.outputs.backup-path }}
   updated:
     description: 'Whether file was updated'
     value: 'true'
@@ -45,61 +44,31 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Update wrangler.toml
-      id: update
+    - name: Setup preview environment
+      id: setup
       shell: bash
       run: |
-        TOML_PATH="${{ inputs.wrangler-toml-path }}"
-        ENV_NAME="${{ inputs.environment-name }}"
-        WORKER_NAME="${{ inputs.worker-name }}"
+        # Make script executable
+        chmod +x "${{ github.action_path }}/scripts/setup.sh"
 
-        # バックアップ作成
-        if [[ "${{ inputs.create-backup }}" == "true" ]]; then
-          BACKUP_PATH="${TOML_PATH}.backup.$(date +%s)"
-          cp "$TOML_PATH" "$BACKUP_PATH"
+        # Source the script to use its functions
+        source "${{ github.action_path }}/scripts/setup.sh"
+
+        # Run main function
+        BACKUP_PATH=$(main \
+          "${{ inputs.wrangler-toml-path }}" \
+          "${{ inputs.environment-name }}" \
+          "${{ inputs.worker-name }}" \
+          "${{ inputs.create-backup }}" \
+          "${{ inputs.update-vars }}" \
+          "${{ inputs.update-routes }}")
+
+        # Set output
+        if [[ -n "$BACKUP_PATH" ]]; then
           echo "backup-path=$BACKUP_PATH" >> $GITHUB_OUTPUT
-          echo "Created backup: $BACKUP_PATH"
         fi
 
-        # 環境セクション更新
-        if grep -q "^\[env\.$ENV_NAME\]" "$TOML_PATH"; then
-          # name更新
-          sed -i "/^\[env\.$ENV_NAME\]/,/^\[/ s/^name = .*/name = \"$WORKER_NAME\"/" "$TOML_PATH"
-        else
-          # 新規セクション追加
-          cat >> "$TOML_PATH" << EOF
-
-        [env.$ENV_NAME]
-        name = "$WORKER_NAME"
-        EOF
-        fi
-
-        # 環境変数更新 (オプション)
-        if [[ -n "${{ inputs.update-vars }}" ]]; then
-          echo "Updating environment variables..."
-          # jqが利用可能な場合の環境変数更新
-          if command -v jq &> /dev/null; then
-            VARS='${{ inputs.update-vars }}'
-            # TOMLフォーマットで環境変数セクションを追加
-            echo "[env.$ENV_NAME.vars]" >> "$TOML_PATH"
-            echo "$VARS" | jq -r 'to_entries | .[] | "\(.key) = \"\(.value)\""' >> "$TOML_PATH"
-          else
-            echo "Warning: jq not available, skipping vars update"
-          fi
-        fi
-
-        # ルート更新 (オプション)
-        if [[ -n "${{ inputs.update-routes }}" ]]; then
-          echo "Updating routes..."
-          if command -v jq &> /dev/null; then
-            ROUTES='${{ inputs.update-routes }}'
-            # TOMLフォーマットでルートを追加
-            echo "[[env.$ENV_NAME.routes]]" >> "$TOML_PATH"
-            echo "$ROUTES" | jq -r '.[] | "pattern = \"\(.)\"" ' >> "$TOML_PATH"
-          else
-            echo "Warning: jq not available, skipping routes update"
-          fi
-        fi
-
-        echo "✅ Updated wrangler.toml:"
-        cat "$TOML_PATH"
+        echo "✅ Preview environment setup completed"
+        echo ""
+        echo "Updated wrangler.toml:"
+        cat "${{ inputs.wrangler-toml-path }}"

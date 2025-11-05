@@ -31,3 +31,9 @@ runs:
     - name: Run tests (Vitest)
       run: pnpm test
       shell: bash
+
+    - name: Run composite action tests
+      run: |
+        echo "Testing composite actions..."
+        ./run-tests.sh
+      shell: bash

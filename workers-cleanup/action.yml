@@ -14,26 +14,26 @@ inputs:
     description: 'Cloudflare Account ID'
     required: true
 
-  # 削除モード
+  # Cleanup mode
   cleanup-mode:
-    description: 'Cleanup mode: pr-linked, manual, batch, batch-by-age'
+    description: 'Cleanup mode: pr-linked, manual, batch'
     required: true
 
-  # PR連動モード用
+  # PR-linked mode options
   pr-number:
     description: 'PR number for PR-linked mode'
     required: false
   worker-name-prefix:
-    description: 'Worker name prefix (e.g., "2048-game-preview")'
+    description: 'Worker name prefix (e.g., "preview")'
     required: false
     default: 'preview'
 
-  # 手動モード用
+  # Manual mode options
   worker-names:
     description: 'Comma-separated worker names to delete (manual mode)'
     required: false
 
-  # バッチモード用
+  # Batch mode options
   batch-pattern:
     description: 'Worker name pattern for batch deletion (e.g., "preview-*")'
     required: false
@@ -41,20 +41,7 @@ inputs:
     description: 'Comma-separated worker names to exclude from batch deletion'
     required: false
 
-  # 期限ベースバッチ削除用
-  max-age-days:
-    description: 'Delete workers older than N days (batch-by-age mode)'
-    required: false
-
-  # 安全設定
-  require-confirmation:
-    description: 'Require manual confirmation (workflow_dispatch only)'
-    required: false
-    default: 'true'
-  confirmation-keyword:
-    description: 'Confirmation keyword for manual execution'
-    required: false
-    default: 'DELETE'
+  # Safety options
   dry-run:
     description: 'Dry run mode (list workers but do not delete)'
     required: false
@@ -70,268 +57,59 @@ outputs:
   skipped-count:
     description: 'Number of skipped workers'
     value: ${{ steps.cleanup.outputs.skipped-count }}
-  errors:
-    description: 'Errors encountered during deletion'
-    value: ${{ steps.cleanup.outputs.errors }}
 
 runs:
   using: 'composite'
   steps:
-    # 確認チェック (workflow_dispatch時のみ)
-    - name: Confirmation check
-      if: |
-        github.event_name == 'workflow_dispatch' &&
-        inputs.require-confirmation == 'true'
-      shell: bash
-      run: |
-        CONFIRMATION="${{ github.event.inputs.confirmation }}"
-        REQUIRED="${{ inputs.confirmation-keyword }}"
-
-        if [[ "$CONFIRMATION" != "$REQUIRED" ]]; then
-          echo "❌ Confirmation failed. Expected '$REQUIRED', got '$CONFIRMATION'"
-          exit 1
-        fi
-
-        echo "✅ Confirmation verified"
-
-    # 削除対象リスト作成
-    - name: Build deletion list
-      id: build-list
-      shell: bash
-      env:
-        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare-api-token }}
-        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare-account-id }}
-      run: |
-        MODE="${{ inputs.cleanup-mode }}"
-        WORKERS_TO_DELETE=()
-
-        case "$MODE" in
-          pr-linked)
-            PR_NUM="${{ inputs.pr-number }}"
-            if [[ -z "$PR_NUM" ]]; then
-              echo "Error: pr-number is required for pr-linked mode"
-              exit 1
-            fi
-            WORKER_NAME="${{ inputs.worker-name-prefix }}-${PR_NUM}"
-            WORKERS_TO_DELETE+=("$WORKER_NAME")
-            ;;
-
-          manual)
-            if [[ -z "${{ inputs.worker-names }}" ]]; then
-              echo "Error: worker-names is required for manual mode"
-              exit 1
-            fi
-            IFS=',' read -ra WORKERS <<< "${{ inputs.worker-names }}"
-            for worker in "${WORKERS[@]}"; do
-              WORKERS_TO_DELETE+=("$(echo "$worker" | xargs)")
-            done
-            ;;
-
-          batch)
-            PATTERN="${{ inputs.batch-pattern }}"
-            if [[ -z "$PATTERN" ]]; then
-              echo "Error: batch-pattern is required for batch mode"
-              exit 1
-            fi
-
-            # Cloudflare APIでワーカー一覧取得
-            ALL_WORKERS=$(curl -s -X GET \
-              "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts" \
-              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-              | jq -r '.result[].id')
-
-            # パターンマッチング
-            for worker in $ALL_WORKERS; do
-              if [[ "$worker" == $PATTERN ]]; then
-                WORKERS_TO_DELETE+=("$worker")
-              fi
-            done
-
-            # 除外リスト適用
-            if [[ -n "${{ inputs.exclude-workers }}" ]]; then
-              IFS=',' read -ra EXCLUDED <<< "${{ inputs.exclude-workers }}"
-              TEMP_WORKERS=()
-              for worker in "${WORKERS_TO_DELETE[@]}"; do
-                EXCLUDE_THIS=false
-                for exclude in "${EXCLUDED[@]}"; do
-                  exclude=$(echo "$exclude" | xargs)
-                  if [[ "$worker" == "$exclude" ]]; then
-                    EXCLUDE_THIS=true
-                    break
-                  fi
-                done
-                if [[ "$EXCLUDE_THIS" == "false" ]]; then
-                  TEMP_WORKERS+=("$worker")
-                fi
-              done
-              WORKERS_TO_DELETE=("${TEMP_WORKERS[@]}")
-            fi
-            ;;
-
-          batch-by-age)
-            MAX_AGE="${{ inputs.max-age-days }}"
-            if [[ -z "$MAX_AGE" ]]; then
-              echo "Error: max-age-days is required for batch-by-age mode"
-              exit 1
-            fi
-
-            CUTOFF_DATE=$(date -d "$MAX_AGE days ago" +%s)
-
-            # 古いワーカーを検出 (メタデータから作成日時取得)
-            ALL_WORKERS=$(curl -s -X GET \
-              "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts" \
-              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
-
-            # jqで期限切れワーカーをフィルタ
-            if command -v jq &> /dev/null; then
-              OLD_WORKERS=$(echo "$ALL_WORKERS" | jq -r \
-                --arg cutoff "$CUTOFF_DATE" \
-                '.result[] | select(.created_on | fromdateiso8601 < ($cutoff | tonumber)) | .id')
-
-              for worker in $OLD_WORKERS; do
-                WORKERS_TO_DELETE+=("$worker")
-              done
-            else
-              echo "Error: jq is required for batch-by-age mode"
-              exit 1
-            fi
-            ;;
-
-          *)
-            echo "Error: Invalid cleanup-mode: $MODE"
-            exit 1
-            ;;
-        esac
-
-        # 削除リストを出力変数に保存
-        if command -v jq &> /dev/null; then
-          WORKERS_JSON=$(printf '%s\n' "${WORKERS_TO_DELETE[@]}" | jq -R . | jq -s .)
-        else
-          # jqがない場合の簡易的なJSON生成
-          WORKERS_JSON="["
-          for i in "${!WORKERS_TO_DELETE[@]}"; do
-            if [[ $i -gt 0 ]]; then
-              WORKERS_JSON="${WORKERS_JSON},"
-            fi
-            WORKERS_JSON="${WORKERS_JSON}\"${WORKERS_TO_DELETE[$i]}\""
-          done
-          WORKERS_JSON="${WORKERS_JSON}]"
-        fi
-
-        echo "workers=$WORKERS_JSON" >> $GITHUB_OUTPUT
-        echo "count=${#WORKERS_TO_DELETE[@]}" >> $GITHUB_OUTPUT
-
-        echo "Found ${#WORKERS_TO_DELETE[@]} workers to delete:"
-        printf '%s\n' "${WORKERS_TO_DELETE[@]}"
-
-    # 削除実行
-    - name: Delete workers
+    - name: Cleanup workers
       id: cleanup
       shell: bash
       env:
         CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare-api-token }}
         CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare-account-id }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        WORKER_NAME_PREFIX: ${{ inputs.worker-name-prefix }}
+        WORKER_NAMES: ${{ inputs.worker-names }}
+        BATCH_PATTERN: ${{ inputs.batch-pattern }}
+        EXCLUDE_WORKERS: ${{ inputs.exclude-workers }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
-        WORKERS_JSON='${{ steps.build-list.outputs.workers }}'
+        # Make script executable
+        chmod +x "${{ github.action_path }}/scripts/cleanup.sh"
 
+        # Source the cleanup script
+        source "${{ github.action_path }}/scripts/cleanup.sh"
+
+        # Run cleanup and capture JSON result
+        RESULT=$(main "${{ inputs.cleanup-mode }}")
+
+        # Parse result and set outputs
         if command -v jq &> /dev/null; then
-          WORKERS=$(echo "$WORKERS_JSON" | jq -r '.[]')
+          DELETED_COUNT=$(echo "$RESULT" | jq -r '.deleted')
+          SKIPPED_COUNT=$(echo "$RESULT" | jq -r '.skipped')
+          DELETED_NAMES=$(echo "$RESULT" | jq -c '.deleted_names')
+          ERROR_COUNT=$(echo "$RESULT" | jq -r '.error_count')
         else
-          # jqがない場合の簡易的なパース
-          WORKERS=$(echo "$WORKERS_JSON" | tr -d '[]"' | tr ',' '\n')
+          # Fallback if jq is not available
+          DELETED_COUNT=$(echo "$RESULT" | grep -oP '"deleted":\K\d+' || echo "0")
+          SKIPPED_COUNT=$(echo "$RESULT" | grep -oP '"skipped":\K\d+' || echo "0")
+          DELETED_NAMES="[]"
+          ERROR_COUNT="0"
         fi
 
-        DRY_RUN="${{ inputs.dry-run }}"
+        # Set GitHub Actions outputs
+        echo "deleted-count=$DELETED_COUNT" >> $GITHUB_OUTPUT
+        echo "skipped-count=$SKIPPED_COUNT" >> $GITHUB_OUTPUT
+        echo "deleted-workers=$DELETED_NAMES" >> $GITHUB_OUTPUT
 
-        DELETED=0
-        SKIPPED=0
-        ERRORS=()
-        DELETED_NAMES=()
-
-        for worker in $WORKERS; do
-          echo "Processing: $worker"
-
-          if [[ "$DRY_RUN" == "true" ]]; then
-            echo "  [DRY RUN] Would delete: $worker"
-            DELETED=$((DELETED + 1))
-            DELETED_NAMES+=("$worker")
-            continue
-          fi
-
-          # Worker存在確認
-          RESPONSE=$(curl -s -X GET \
-            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${worker}" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
-
-          if command -v jq &> /dev/null; then
-            if echo "$RESPONSE" | jq -e '.success == false' > /dev/null; then
-              echo "  ⚠️  Worker not found, skipping"
-              SKIPPED=$((SKIPPED + 1))
-              continue
-            fi
-          fi
-
-          # 削除実行
-          DELETE_RESPONSE=$(curl -s -X DELETE \
-            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${worker}" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
-
-          if command -v jq &> /dev/null; then
-            if echo "$DELETE_RESPONSE" | jq -e '.success == true' > /dev/null; then
-              echo "  ✅ Deleted successfully"
-              DELETED=$((DELETED + 1))
-              DELETED_NAMES+=("$worker")
-            else
-              ERROR_MSG=$(echo "$DELETE_RESPONSE" | jq -r '.errors[0].message // "Unknown error"')
-              echo "  ❌ Deletion failed: $ERROR_MSG"
-              ERRORS+=("$worker: $ERROR_MSG")
-            fi
-          else
-            # jqがない場合は成功と見なす
-            echo "  ✅ Delete request sent"
-            DELETED=$((DELETED + 1))
-            DELETED_NAMES+=("$worker")
-          fi
-        done
-
-        # 結果サマリー
+        # Print summary
         echo ""
         echo "=== Cleanup Summary ==="
-        echo "Deleted: $DELETED"
-        echo "Skipped: $SKIPPED"
-        echo "Errors: ${#ERRORS[@]}"
+        echo "Deleted: $DELETED_COUNT"
+        echo "Skipped: $SKIPPED_COUNT"
+        echo "Errors: $ERROR_COUNT"
 
-        if [[ ${#ERRORS[@]} -gt 0 ]]; then
-          echo ""
-          echo "Error details:"
-          printf '%s\n' "${ERRORS[@]}"
-        fi
-
-        # 出力
-        if command -v jq &> /dev/null; then
-          DELETED_JSON=$(printf '%s\n' "${DELETED_NAMES[@]}" | jq -R . | jq -s .)
-        else
-          # jqがない場合の簡易的なJSON生成
-          DELETED_JSON="["
-          for i in "${!DELETED_NAMES[@]}"; do
-            if [[ $i -gt 0 ]]; then
-              DELETED_JSON="${DELETED_JSON},"
-            fi
-            DELETED_JSON="${DELETED_JSON}\"${DELETED_NAMES[$i]}\""
-          done
-          DELETED_JSON="${DELETED_JSON}]"
-        fi
-
-        echo "deleted-workers=$DELETED_JSON" >> $GITHUB_OUTPUT
-        echo "deleted-count=$DELETED" >> $GITHUB_OUTPUT
-        echo "skipped-count=$SKIPPED" >> $GITHUB_OUTPUT
-
-        if [[ ${#ERRORS[@]} -gt 0 ]]; then
-          if command -v jq &> /dev/null; then
-            ERRORS_JSON=$(printf '%s\n' "${ERRORS[@]}" | jq -R . | jq -s .)
-          else
-            ERRORS_JSON="[]"
-          fi
-          echo "errors=$ERRORS_JSON" >> $GITHUB_OUTPUT
+        # Exit with error if there were errors
+        if [[ "$ERROR_COUNT" -gt 0 ]]; then
           exit 1
         fi
