@@ -23,7 +23,7 @@ jobs:
         with:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          worker-name-prefix: '2048-game-preview'
+          worker-name-prefix: 'myapp-pr'
           branch-patterns: 'feature/*,bugfix/*'
           exclude-branches: 'develop,staging'
           build-command: 'npm run build'

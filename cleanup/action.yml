@@ -1,6 +1,5 @@
----
-name: 'Cloudflare Workers Cleanup'
-description: 'Clean up and delete Cloudflare Workers based on patterns'
+name: 'Workers Cleanup'
+description: 'Delete Cloudflare Workers with flexible cleanup modes'
 author: 'harunonsystem'
 
 branding:
@@ -8,52 +7,60 @@ branding:
   color: 'red'
 
 inputs:
-  worker-pattern:
-    description: 'Pattern for workers to delete (e.g., "project-pr-*")'
-    required: false
-
-  worker-names:
-    description: 'Specific worker names to delete (comma-separated)'
-    required: false
-
   cloudflare-api-token:
     description: 'Cloudflare API Token'
     required: true
-
   cloudflare-account-id:
     description: 'Cloudflare Account ID'
     required: true
 
+  # Cleanup mode
+  cleanup-mode:
+    description: 'Cleanup mode: pr-linked, manual, batch, batch-by-age'
+    required: true
+
+  # PR-linked mode options
+  pr-number:
+    description: 'PR number for PR-linked mode'
+    required: false
+  worker-name-prefix:
+    description: 'Worker name prefix (e.g., "preview")'
+    required: false
+    default: 'preview'
+
+  # Manual mode options
+  worker-names:
+    description: 'Comma-separated worker names to delete (manual mode)'
+    required: false
+
+  # Batch mode options
+  batch-pattern:
+    description: 'Worker name pattern for batch deletion (e.g., "preview-*")'
+    required: false
+  exclude-workers:
+    description: 'Comma-separated worker names to exclude from batch deletion'
+    required: false
+
+  # Batch-by-age mode options
+  max-age-days:
+    description: 'Delete workers older than N days (batch-by-age mode)'
+    required: false
+
+  # Safety options
   dry-run:
-    description: 'List workers to delete without actually deleting them'
+    description: 'Dry run mode (list workers but do not delete)'
     required: false
     default: 'false'
 
-  max-age-days:
-    description: 'Only delete workers older than this many days'
-    required: false
-
-  exclude-pattern:
-    description: 'Pattern for workers to exclude from deletion'
-    required: false
-
-  confirm-deletion:
-    description: 'Require explicit confirmation (set to "yes" to proceed)'
-    required: false
-    default: 'yes'
-
 outputs:
   deleted-workers:
-    description: 'List of deleted worker names (JSON array)'
+    description: 'JSON array of deleted worker names'
 
   deleted-count:
-    description: 'Number of workers deleted'
+    description: 'Number of deleted workers'
 
-  skipped-workers:
-    description: 'List of workers that were skipped (JSON array)'
-
-  dry-run-results:
-    description: 'Workers that would be deleted in dry run mode (JSON array)'
+  skipped-count:
+    description: 'Number of skipped workers'
 
 runs:
   using: 'node20'

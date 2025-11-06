@@ -15,11 +15,7 @@
     "moduleDetection": "auto"
   },
   "include": [
-    "src/**/*",
-    "preview-setup/src/**/*",
-    "workers-cleanup/src/**/*",
-    "preview-deploy/src/**/*",
-    "comments/src/**/*"
+    "src/**/*"
   ],
   "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts", "**/tests/**"]
 }

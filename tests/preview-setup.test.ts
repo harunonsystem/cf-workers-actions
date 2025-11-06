@@ -8,7 +8,7 @@ import {
   updateEnvVars,
   updateRoutes,
   setupPreviewEnvironment,
-} from '../preview-setup/src/setup';
+} from '../src/preview-setup/setup';
 
 describe('preview-setup', () => {
   let testDir: string;

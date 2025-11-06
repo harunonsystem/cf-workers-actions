@@ -24,7 +24,7 @@ jobs:
         uses: harunonsystem/cloudflare-actions/preview-setup@v1
         with:
           environment-name: 'preview'
-          worker-name: '2048-game-preview-${{ github.event.pull_request.number }}'
+          worker-name: 'myapp-pr-${{ github.event.pull_request.number }}'
 
       # Step 2: Cloudflareへデプロイ (公式Action)
       - name: Deploy to Cloudflare
@@ -37,10 +37,10 @@ jobs:
 
       # Step 3: PRコメント投稿
       - name: Post PR comment
-        uses: harunonsystem/cloudflare-actions/comments@v1
+        uses: harunonsystem/cloudflare-actions/comment@v1
         if: always()
         with:
-          worker-name: '2048-game-preview-${{ github.event.pull_request.number }}'
+          worker-name: 'myapp-pr-${{ github.event.pull_request.number }}'
           worker-url: ${{ steps.deploy.outputs.deployment-url }}
           deployment-status: ${{ steps.deploy.outcome == 'success' && 'success' || 'failure' }}
 

@@ -1,5 +1,5 @@
 export interface CleanupOptions {
-  mode: 'pr-linked' | 'manual' | 'batch';
+  mode: 'pr-linked' | 'manual' | 'batch' | 'batch-by-age';
   accountId: string;
   apiToken: string;
 
@@ -13,6 +13,9 @@ export interface CleanupOptions {
   // Batch mode
   batchPattern?: string;
   excludeWorkers?: string[];
+
+  // Batch-by-age mode
+  maxAgeDays?: number;
 
   // Options
   dryRun?: boolean;
@@ -77,12 +80,51 @@ export function buildBatchList(
 }
 
 /**
- * Fetch all workers from Cloudflare API
+ * Build list of workers to delete for batch-by-age mode
  */
-export async function fetchAllWorkers(
+export function buildBatchByAgeList(
+  allWorkers: CloudflareWorker[],
+  maxAgeDays: number,
+  batchPattern?: string,
+  excludeList: string[] = []
+): string[] {
+  const now = new Date();
+  const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
+
+  // Filter workers by age
+  let matched = allWorkers.filter(worker => {
+    const createdDate = new Date(worker.created_on);
+    const age = now.getTime() - createdDate.getTime();
+    return age > maxAgeMs;
+  });
+
+  // Apply pattern filter if provided
+  if (batchPattern) {
+    const regexPattern = batchPattern
+      .replace(/\*/g, '.*')
+      .replace(/\?/g, '.')
+      .replace(/\[/g, '\\[')
+      .replace(/\]/g, '\\]');
+    const regex = new RegExp(`^${regexPattern}$`);
+    matched = matched.filter(worker => regex.test(worker.id));
+  }
+
+  // Apply exclusion list
+  if (excludeList.length > 0) {
+    const excludeSet = new Set(excludeList.map(name => name.trim()));
+    matched = matched.filter(worker => !excludeSet.has(worker.id));
+  }
+
+  return matched.map(worker => worker.id);
+}
+
+/**
+ * Fetch all workers from Cloudflare API (with metadata)
+ */
+export async function fetchAllWorkersWithMetadata(
   accountId: string,
   apiToken: string
-): Promise<string[]> {
+): Promise<CloudflareWorker[]> {
   const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts`;
 
   const response = await fetch(url, {
@@ -101,7 +143,18 @@ export async function fetchAllWorkers(
     throw new Error('Cloudflare API returned error');
   }
 
-  return data.result.map((worker: CloudflareWorker) => worker.id);
+  return data.result as CloudflareWorker[];
+}
+
+/**
+ * Fetch all workers from Cloudflare API (names only)
+ */
+export async function fetchAllWorkers(
+  accountId: string,
+  apiToken: string
+): Promise<string[]> {
+  const workers = await fetchAllWorkersWithMetadata(accountId, apiToken);
+  return workers.map(worker => worker.id);
 }
 
 /**
@@ -228,6 +281,7 @@ export async function cleanupWorkers(
     workerNamePrefix = 'preview',
     workerNames,
     batchPattern,
+    maxAgeDays,
     excludeWorkers = [],
     dryRun = false,
   } = options;
@@ -255,6 +309,15 @@ export async function cleanupWorkers(
       }
       const allWorkers = await fetchAllWorkers(accountId, apiToken);
       workersList = buildBatchList(allWorkers, batchPattern, excludeWorkers);
+      break;
+
+    case 'batch-by-age':
+      if (!maxAgeDays || maxAgeDays <= 0) {
+        throw new Error('max-age-days must be a positive number for batch-by-age mode');
+      }
+      const allWorkersWithMetadata = await fetchAllWorkersWithMetadata(accountId, apiToken);
+      workersList = buildBatchByAgeList(allWorkersWithMetadata, maxAgeDays, batchPattern, excludeWorkers);
+      console.log(`Filtering workers older than ${maxAgeDays} days${batchPattern ? ` matching pattern: ${batchPattern}` : ''}`);
       break;
 
     default:

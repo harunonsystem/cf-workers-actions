@@ -1,6 +1,5 @@
----
-name: 'Cloudflare Workers PR Comment'
-description: 'Post deployment information and preview URLs to PR comments'
+name: 'Deployment Comments'
+description: 'Post deployment results as Pull Request comments'
 author: 'harunonsystem'
 
 branding:
@@ -8,48 +7,132 @@ branding:
   color: 'blue'
 
 inputs:
-  deployment-url:
-    description: 'URL of the deployed preview'
+  github-token:
+    description: 'GitHub token'
     required: true
+    default: ${{ github.token }}
 
+  # デプロイ情報
+  worker-name:
+    description: 'Deployed worker name'
+    required: true
+  worker-url:
+    description: 'Deployed worker URL'
+    required: true
   deployment-status:
     description: 'Deployment status (success/failure)'
-    required: false
-    default: 'success'
-
-  worker-name:
-    description: 'Name of the deployed worker'
-    required: false
-
-  github-token:
-    description: 'GitHub Token'
     required: true
 
-  custom-message:
-    description: 'Additional custom message'
+  # コメント設定
+  comment-mode:
+    description: 'Comment posting mode: create, update, create-or-update'
+    required: false
+    default: 'create-or-update'
+
+  comment-identifier:
+    description: 'Unique identifier for finding existing comments'
+    required: false
+    default: 'preview-deployment'
+
+  # テンプレート
+  success-template:
+    description: 'Comment template for successful deployment'
+    required: false
+  failure-template:
+    description: 'Comment template for failed deployment'
     required: false
 
-  comment-template:
-    description: 'Custom comment template (markdown supported)'
+  # 追加情報
+  additional-info:
+    description: 'Additional information to include in comment (markdown)'
     required: false
-
-  update-existing:
-    description: 'Update existing comment instead of creating new one'
-    required: false
-    default: 'true'
-
-  comment-tag:
-    description: 'Unique tag to identify comments for updates'
-    required: false
-    default: 'cloudflare-workers-deployment'
 
 outputs:
   comment-id:
-    description: 'ID of the created/updated comment'
-
+    description: 'Posted comment ID'
+    value: ${{ steps.post-comment.outputs.comment-id }}
   comment-url:
-    description: 'URL of the comment'
+    description: 'Posted comment URL'
+    value: ${{ steps.post-comment.outputs.comment-url }}
 
 runs:
-  using: 'node20'
-  main: '../dist/comment/index.js'
+  using: 'composite'
+  steps:
+    - name: Post comment
+      id: post-comment
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const workerName = '${{ inputs.worker-name }}';
+          const workerUrl = '${{ inputs.worker-url }}';
+          const status = '${{ inputs.deployment-status }}';
+          const identifier = '${{ inputs.comment-identifier }}';
+          const mode = '${{ inputs.comment-mode }}';
+          const additionalInfo = `${{ inputs.additional-info }}`;
+
+          // テンプレート選択
+          let template;
+          if (status === 'success') {
+            template = `${{ inputs.success-template }}` || `### ✅ Preview Environment Deployed
+
+          **Worker**: \`${workerName}\`
+          **URL**: ${workerUrl}
+          **Status**: Deployed successfully
+
+          ${additionalInfo}
+
+          ---
+          <!-- ${identifier} -->`;
+          } else {
+            template = `${{ inputs.failure-template }}` || `### ❌ Deployment Failed
+
+          **Worker**: \`${workerName}\`
+          **Status**: Failed
+
+          Please check the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+
+          ${additionalInfo}
+
+          ---
+          <!-- ${identifier} -->`;
+          }
+
+          // 既存コメント検索
+          let existingComment = null;
+          if (mode === 'update' || mode === 'create-or-update') {
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            existingComment = comments.data.find(comment =>
+              comment.body.includes(`<!-- ${identifier} -->`)
+            );
+          }
+
+          // コメント投稿/更新
+          let result;
+          if (existingComment && (mode === 'update' || mode === 'create-or-update')) {
+            result = await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existingComment.id,
+              body: template
+            });
+            console.log('Updated existing comment');
+          } else if (mode === 'create' || mode === 'create-or-update') {
+            result = await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: template
+            });
+            console.log('Created new comment');
+          }
+
+          if (result) {
+            core.setOutput('comment-id', result.data.id);
+            core.setOutput('comment-url', result.data.html_url);
+          }

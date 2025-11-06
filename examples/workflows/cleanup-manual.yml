@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Delete workers
-        uses: harunonsystem/cloudflare-actions/workers-cleanup@v1
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

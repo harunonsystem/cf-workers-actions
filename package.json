@@ -17,9 +17,13 @@
     "check": "pnpm run typecheck && pnpm run lint && pnpm test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "pnpm run build",
+    "prepare": "lefthook install && pnpm run build",
     "release:check": "pnpm run check && echo '✅ Ready for release!'",
-    "version": "pnpm run build && git add dist/"
+    "version": "pnpm run build && git add dist/",
+    "actions:pin": "npx pinact .github/workflows/*.yml",
+    "actions:permissions": "npx @pkgdeps/update-github-actions-permissions .github/workflows/*.yml",
+    "actions:lint": "ghalint run .github/workflows/",
+    "actions:optimize": "pnpm run actions:pin && pnpm run actions:permissions && pnpm run actions:lint"
   },
   "keywords": [
     "github-actions",
@@ -39,6 +43,7 @@
     "@types/node": "^20.9.0",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
+    "lefthook": "^1.10.4",
     "oxlint": "^1.16.0",
     "prettier": "^3.1.0",
     "tsx": "^4.6.0",

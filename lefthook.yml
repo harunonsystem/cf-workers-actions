@@ -1,0 +1,51 @@
+# Lefthook configuration for GitHub Actions optimization
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    # Pin GitHub Actions to commit SHA for security
+    pinact:
+      glob: ".github/workflows/*.{yml,yaml}"
+      run: npx -y pinact .github/workflows/*.yml --no-write-check
+
+    # Optimize GitHub Actions permissions
+    gh-actions-permissions:
+      glob: ".github/workflows/*.{yml,yaml}"
+      run: npx -y @pkgdeps/update-github-actions-permissions .github/workflows/*.yml
+
+    # Lint GitHub Actions workflows
+    ghalint:
+      glob: ".github/workflows/*.{yml,yaml}"
+      run: |
+        if ! command -v ghalint &> /dev/null; then
+          echo "⚠️  ghalint not installed. Install with: go install github.com/rhysd/actionlint/cmd/actionlint@latest"
+          exit 0
+        fi
+        ghalint run .github/workflows/
+
+    # Type check
+    typecheck:
+      glob: "*.{ts,tsx}"
+      run: pnpm typecheck
+
+    # Lint
+    lint:
+      glob: "*.{ts,tsx,js,jsx}"
+      run: pnpm lint
+
+    # Format check
+    format:
+      glob: "*.{ts,tsx,js,jsx,json,yml,yaml,md}"
+      run: pnpm format:check
+
+pre-push:
+  parallel: false
+  commands:
+    # Run all tests before push
+    test:
+      run: pnpm test
+
+    # Build to ensure it compiles
+    build:
+      run: pnpm build

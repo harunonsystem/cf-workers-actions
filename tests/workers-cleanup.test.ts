@@ -1,14 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   buildPRLinkedList,
   buildManualList,
   buildBatchList,
+  buildBatchByAgeList,
   fetchAllWorkers,
+  fetchAllWorkersWithMetadata,
   workerExists,
   deleteWorker,
   processDeleteions,
   cleanupWorkers,
-} from '../workers-cleanup/src/cleanup';
+} from '../src/cleanup/cleanup';
 
 // Mock fetch globally
 global.fetch = vi.fn();
@@ -74,6 +76,70 @@ describe('workers-cleanup', () => {
     it('should return empty array for non-matching pattern', () => {
       const result = buildBatchList(allWorkers, 'nonexistent-*');
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('buildBatchByAgeList', () => {
+    const now = new Date('2024-02-01T00:00:00Z');
+
+    // Mock Date.now() for consistent testing
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(now);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const allWorkersWithMetadata = [
+      { id: 'old-worker-1', created_on: '2024-01-01T00:00:00Z' }, // 31 days old
+      { id: 'old-worker-2', created_on: '2024-01-05T00:00:00Z' }, // 27 days old
+      { id: 'recent-worker-1', created_on: '2024-01-25T00:00:00Z' }, // 7 days old
+      { id: 'recent-worker-2', created_on: '2024-01-30T00:00:00Z' }, // 2 days old
+    ];
+
+    it('should filter workers older than max age', () => {
+      const result = buildBatchByAgeList(allWorkersWithMetadata, 14);
+      expect(result).toEqual(['old-worker-1', 'old-worker-2']);
+    });
+
+    it('should filter workers with pattern', () => {
+      const workersWithPattern = [
+        { id: 'preview-old-1', created_on: '2024-01-01T00:00:00Z' },
+        { id: 'preview-old-2', created_on: '2024-01-05T00:00:00Z' },
+        { id: 'production-old', created_on: '2024-01-01T00:00:00Z' },
+      ];
+
+      const result = buildBatchByAgeList(workersWithPattern, 14, 'preview-*');
+      expect(result).toEqual(['preview-old-1', 'preview-old-2']);
+    });
+
+    it('should exclude specified workers', () => {
+      const result = buildBatchByAgeList(allWorkersWithMetadata, 14, undefined, ['old-worker-2']);
+      expect(result).toEqual(['old-worker-1']);
+    });
+
+    it('should return empty array if no workers are old enough', () => {
+      const result = buildBatchByAgeList(allWorkersWithMetadata, 60);
+      expect(result).toEqual([]);
+    });
+
+    it('should combine pattern and exclude filters', () => {
+      const workersWithPattern = [
+        { id: 'preview-old-1', created_on: '2024-01-01T00:00:00Z' },
+        { id: 'preview-old-2', created_on: '2024-01-05T00:00:00Z' },
+        { id: 'preview-old-3', created_on: '2024-01-03T00:00:00Z' },
+        { id: 'production-old', created_on: '2024-01-01T00:00:00Z' },
+      ];
+
+      const result = buildBatchByAgeList(
+        workersWithPattern,
+        14,
+        'preview-*',
+        ['preview-old-2']
+      );
+      expect(result).toEqual(['preview-old-1', 'preview-old-3']);
     });
   });
 
@@ -386,6 +452,107 @@ describe('workers-cleanup', () => {
       expect(result.deletedNames).toEqual(['preview-pr-1', 'preview-pr-2']);
     });
 
+    it('should cleanup in batch-by-age mode', async () => {
+      const now = new Date('2024-02-01T00:00:00Z');
+      vi.useFakeTimers();
+      vi.setSystemTime(now);
+
+      // Mock fetchAllWorkersWithMetadata
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          result: [
+            { id: 'old-worker-1', created_on: '2024-01-01T00:00:00Z' }, // 31 days old
+            { id: 'old-worker-2', created_on: '2024-01-05T00:00:00Z' }, // 27 days old
+            { id: 'recent-worker', created_on: '2024-01-25T00:00:00Z' }, // 7 days old
+          ],
+        }),
+      });
+
+      // Mock worker existence and deletion for old workers
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        });
+
+      const result = await cleanupWorkers({
+        mode: 'batch-by-age',
+        accountId: 'test-account',
+        apiToken: 'test-token',
+        maxAgeDays: 14,
+      });
+
+      expect(result.deleted).toBe(2);
+      expect(result.deletedNames).toEqual(['old-worker-1', 'old-worker-2']);
+
+      vi.useRealTimers();
+    });
+
+    it('should cleanup in batch-by-age mode with pattern', async () => {
+      const now = new Date('2024-02-01T00:00:00Z');
+      vi.useFakeTimers();
+      vi.setSystemTime(now);
+
+      // Mock fetchAllWorkersWithMetadata
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          result: [
+            { id: 'myapp-pr-1', created_on: '2024-01-01T00:00:00Z' }, // 31 days old
+            { id: 'myapp-pr-2', created_on: '2024-01-05T00:00:00Z' }, // 27 days old
+            { id: 'production-old', created_on: '2024-01-01T00:00:00Z' }, // 31 days old but different pattern
+          ],
+        }),
+      });
+
+      // Mock worker existence and deletion for matched workers
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        });
+
+      const result = await cleanupWorkers({
+        mode: 'batch-by-age',
+        accountId: 'test-account',
+        apiToken: 'test-token',
+        maxAgeDays: 14,
+        batchPattern: 'myapp-pr-*',
+      });
+
+      expect(result.deleted).toBe(2);
+      expect(result.deletedNames).toEqual(['myapp-pr-1', 'myapp-pr-2']);
+
+      vi.useRealTimers();
+    });
+
     it('should throw error for missing required parameters', async () => {
       await expect(
         cleanupWorkers({
@@ -410,6 +577,14 @@ describe('workers-cleanup', () => {
           apiToken: 'test-token',
         })
       ).rejects.toThrow('Batch pattern is required');
+
+      await expect(
+        cleanupWorkers({
+          mode: 'batch-by-age',
+          accountId: 'test-account',
+          apiToken: 'test-token',
+        })
+      ).rejects.toThrow('max-age-days must be a positive number');
     });
   });
 });
