@@ -5,11 +5,10 @@ import {
   buildBatchList,
   buildBatchByAgeList,
   fetchAllWorkers,
-  fetchAllWorkersWithMetadata,
   workerExists,
   deleteWorker,
   processDeleteions,
-  cleanupWorkers,
+  cleanupWorkers
 } from '../src/cleanup/cleanup';
 
 // Mock fetch globally
@@ -34,12 +33,7 @@ describe('workers-cleanup', () => {
 
   describe('buildManualList', () => {
     it('should trim and filter worker names', () => {
-      const result = buildManualList([
-        ' worker1 ',
-        'worker2',
-        '  worker3  ',
-        '',
-      ]);
+      const result = buildManualList([' worker1 ', 'worker2', '  worker3  ', '']);
       expect(result).toEqual(['worker1', 'worker2', 'worker3']);
     });
 
@@ -55,7 +49,7 @@ describe('workers-cleanup', () => {
       'preview-pr-2',
       'preview-pr-3',
       'production-main',
-      'staging-develop',
+      'staging-develop'
     ];
 
     it('should match pattern with wildcard', () => {
@@ -96,7 +90,7 @@ describe('workers-cleanup', () => {
       { id: 'old-worker-1', created_on: '2024-01-01T00:00:00Z' }, // 31 days old
       { id: 'old-worker-2', created_on: '2024-01-05T00:00:00Z' }, // 27 days old
       { id: 'recent-worker-1', created_on: '2024-01-25T00:00:00Z' }, // 7 days old
-      { id: 'recent-worker-2', created_on: '2024-01-30T00:00:00Z' }, // 2 days old
+      { id: 'recent-worker-2', created_on: '2024-01-30T00:00:00Z' } // 2 days old
     ];
 
     it('should filter workers older than max age', () => {
@@ -108,7 +102,7 @@ describe('workers-cleanup', () => {
       const workersWithPattern = [
         { id: 'preview-old-1', created_on: '2024-01-01T00:00:00Z' },
         { id: 'preview-old-2', created_on: '2024-01-05T00:00:00Z' },
-        { id: 'production-old', created_on: '2024-01-01T00:00:00Z' },
+        { id: 'production-old', created_on: '2024-01-01T00:00:00Z' }
       ];
 
       const result = buildBatchByAgeList(workersWithPattern, 14, 'preview-*');
@@ -130,15 +124,10 @@ describe('workers-cleanup', () => {
         { id: 'preview-old-1', created_on: '2024-01-01T00:00:00Z' },
         { id: 'preview-old-2', created_on: '2024-01-05T00:00:00Z' },
         { id: 'preview-old-3', created_on: '2024-01-03T00:00:00Z' },
-        { id: 'production-old', created_on: '2024-01-01T00:00:00Z' },
+        { id: 'production-old', created_on: '2024-01-01T00:00:00Z' }
       ];
 
-      const result = buildBatchByAgeList(
-        workersWithPattern,
-        14,
-        'preview-*',
-        ['preview-old-2']
-      );
+      const result = buildBatchByAgeList(workersWithPattern, 14, 'preview-*', ['preview-old-2']);
       expect(result).toEqual(['preview-old-1', 'preview-old-3']);
     });
   });
@@ -149,13 +138,13 @@ describe('workers-cleanup', () => {
         success: true,
         result: [
           { id: 'worker1', created_on: '2024-01-01' },
-          { id: 'worker2', created_on: '2024-01-02' },
-        ],
+          { id: 'worker2', created_on: '2024-01-02' }
+        ]
       };
 
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockResponse,
+        json: async () => mockResponse
       });
 
       const result = await fetchAllWorkers('test-account', 'test-token');
@@ -165,8 +154,8 @@ describe('workers-cleanup', () => {
         'https://api.cloudflare.com/client/v4/accounts/test-account/workers/scripts',
         {
           headers: {
-            Authorization: 'Bearer test-token',
-          },
+            Authorization: 'Bearer test-token'
+          }
         }
       );
     });
@@ -174,23 +163,23 @@ describe('workers-cleanup', () => {
     it('should throw error on API failure', async () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
-        statusText: 'Unauthorized',
+        statusText: 'Unauthorized'
       });
 
-      await expect(
-        fetchAllWorkers('test-account', 'bad-token')
-      ).rejects.toThrow('Failed to fetch workers: Unauthorized');
+      await expect(fetchAllWorkers('test-account', 'bad-token')).rejects.toThrow(
+        'Failed to fetch workers: Unauthorized'
+      );
     });
 
     it('should throw error on unsuccessful response', async () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: false }),
+        json: async () => ({ success: false })
       });
 
-      await expect(
-        fetchAllWorkers('test-account', 'test-token')
-      ).rejects.toThrow('Cloudflare API returned error');
+      await expect(fetchAllWorkers('test-account', 'test-token')).rejects.toThrow(
+        'Cloudflare API returned error'
+      );
     });
   });
 
@@ -198,7 +187,7 @@ describe('workers-cleanup', () => {
     it('should return true if worker exists', async () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true }),
+        json: async () => ({ success: true })
       });
 
       const result = await workerExists('worker1', 'test-account', 'test-token');
@@ -207,7 +196,7 @@ describe('workers-cleanup', () => {
 
     it('should return false if worker does not exist', async () => {
       (global.fetch as any).mockResolvedValueOnce({
-        ok: false,
+        ok: false
       });
 
       const result = await workerExists('worker1', 'test-account', 'test-token');
@@ -217,7 +206,7 @@ describe('workers-cleanup', () => {
     it('should return false on unsuccessful response', async () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: false }),
+        json: async () => ({ success: false })
       });
 
       const result = await workerExists('worker1', 'test-account', 'test-token');
@@ -229,20 +218,18 @@ describe('workers-cleanup', () => {
     it('should delete worker successfully', async () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true }),
+        json: async () => ({ success: true })
       });
 
-      await expect(
-        deleteWorker('worker1', 'test-account', 'test-token')
-      ).resolves.toBeUndefined();
+      await expect(deleteWorker('worker1', 'test-account', 'test-token')).resolves.toBeUndefined();
 
       expect(global.fetch).toHaveBeenCalledWith(
         'https://api.cloudflare.com/client/v4/accounts/test-account/workers/scripts/worker1',
         {
           method: 'DELETE',
           headers: {
-            Authorization: 'Bearer test-token',
-          },
+            Authorization: 'Bearer test-token'
+          }
         }
       );
     });
@@ -252,13 +239,13 @@ describe('workers-cleanup', () => {
         ok: false,
         statusText: 'Not Found',
         json: async () => ({
-          errors: [{ message: 'Worker not found' }],
-        }),
+          errors: [{ message: 'Worker not found' }]
+        })
       });
 
-      await expect(
-        deleteWorker('worker1', 'test-account', 'test-token')
-      ).rejects.toThrow('Worker not found');
+      await expect(deleteWorker('worker1', 'test-account', 'test-token')).rejects.toThrow(
+        'Worker not found'
+      );
     });
 
     it('should throw error on unsuccessful response', async () => {
@@ -266,13 +253,13 @@ describe('workers-cleanup', () => {
         ok: true,
         json: async () => ({
           success: false,
-          errors: [{ message: 'Deletion failed' }],
-        }),
+          errors: [{ message: 'Deletion failed' }]
+        })
       });
 
-      await expect(
-        deleteWorker('worker1', 'test-account', 'test-token')
-      ).rejects.toThrow('Deletion failed');
+      await expect(deleteWorker('worker1', 'test-account', 'test-token')).rejects.toThrow(
+        'Deletion failed'
+      );
     });
   });
 
@@ -280,18 +267,13 @@ describe('workers-cleanup', () => {
     it('should process deletions in dry run mode', async () => {
       const workersList = ['worker1', 'worker2', 'worker3'];
 
-      const result = await processDeleteions(
-        workersList,
-        'test-account',
-        'test-token',
-        true
-      );
+      const result = await processDeleteions(workersList, 'test-account', 'test-token', true);
 
       expect(result).toEqual({
         deleted: 3,
         skipped: 0,
         deletedNames: ['worker1', 'worker2', 'worker3'],
-        errors: [],
+        errors: []
       });
 
       expect(global.fetch).not.toHaveBeenCalled();
@@ -304,22 +286,17 @@ describe('workers-cleanup', () => {
       (global.fetch as any)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
-          ok: false,
+          ok: false
         });
 
-      const result = await processDeleteions(
-        workersList,
-        'test-account',
-        'test-token',
-        false
-      );
+      const result = await processDeleteions(workersList, 'test-account', 'test-token', false);
 
       expect(result.deleted).toBe(1);
       expect(result.skipped).toBe(1);
@@ -333,21 +310,16 @@ describe('workers-cleanup', () => {
       (global.fetch as any)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: false,
           json: async () => ({
-            errors: [{ message: 'Permission denied' }],
-          }),
+            errors: [{ message: 'Permission denied' }]
+          })
         });
 
-      const result = await processDeleteions(
-        workersList,
-        'test-account',
-        'test-token',
-        false
-      );
+      const result = await processDeleteions(workersList, 'test-account', 'test-token', false);
 
       expect(result.deleted).toBe(0);
       expect(result.errors).toEqual(['worker1: Permission denied']);
@@ -359,11 +331,11 @@ describe('workers-cleanup', () => {
       (global.fetch as any)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         });
 
       const result = await cleanupWorkers({
@@ -371,7 +343,7 @@ describe('workers-cleanup', () => {
         accountId: 'test-account',
         apiToken: 'test-token',
         prNumber: 123,
-        workerNamePrefix: 'myapp-preview',
+        workerNamePrefix: 'myapp-preview'
       });
 
       expect(result.deleted).toBe(1);
@@ -382,26 +354,26 @@ describe('workers-cleanup', () => {
       (global.fetch as any)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         });
 
       const result = await cleanupWorkers({
         mode: 'manual',
         accountId: 'test-account',
         apiToken: 'test-token',
-        workerNames: ['worker1', 'worker2'],
+        workerNames: ['worker1', 'worker2']
       });
 
       expect(result.deleted).toBe(2);
@@ -414,38 +386,34 @@ describe('workers-cleanup', () => {
         ok: true,
         json: async () => ({
           success: true,
-          result: [
-            { id: 'preview-pr-1' },
-            { id: 'preview-pr-2' },
-            { id: 'production-main' },
-          ],
-        }),
+          result: [{ id: 'preview-pr-1' }, { id: 'preview-pr-2' }, { id: 'production-main' }]
+        })
       });
 
       // Mock worker existence and deletion for matched workers
       (global.fetch as any)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         });
 
       const result = await cleanupWorkers({
         mode: 'batch',
         accountId: 'test-account',
         apiToken: 'test-token',
-        batchPattern: 'preview-*',
+        batchPattern: 'preview-*'
       });
 
       expect(result.deleted).toBe(2);
@@ -465,35 +433,35 @@ describe('workers-cleanup', () => {
           result: [
             { id: 'old-worker-1', created_on: '2024-01-01T00:00:00Z' }, // 31 days old
             { id: 'old-worker-2', created_on: '2024-01-05T00:00:00Z' }, // 27 days old
-            { id: 'recent-worker', created_on: '2024-01-25T00:00:00Z' }, // 7 days old
-          ],
-        }),
+            { id: 'recent-worker', created_on: '2024-01-25T00:00:00Z' } // 7 days old
+          ]
+        })
       });
 
       // Mock worker existence and deletion for old workers
       (global.fetch as any)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         });
 
       const result = await cleanupWorkers({
         mode: 'batch-by-age',
         accountId: 'test-account',
         apiToken: 'test-token',
-        maxAgeDays: 14,
+        maxAgeDays: 14
       });
 
       expect(result.deleted).toBe(2);
@@ -515,28 +483,28 @@ describe('workers-cleanup', () => {
           result: [
             { id: 'myapp-pr-1', created_on: '2024-01-01T00:00:00Z' }, // 31 days old
             { id: 'myapp-pr-2', created_on: '2024-01-05T00:00:00Z' }, // 27 days old
-            { id: 'production-old', created_on: '2024-01-01T00:00:00Z' }, // 31 days old but different pattern
-          ],
-        }),
+            { id: 'production-old', created_on: '2024-01-01T00:00:00Z' } // 31 days old but different pattern
+          ]
+        })
       });
 
       // Mock worker existence and deletion for matched workers
       (global.fetch as any)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ success: true }),
+          json: async () => ({ success: true })
         });
 
       const result = await cleanupWorkers({
@@ -544,7 +512,7 @@ describe('workers-cleanup', () => {
         accountId: 'test-account',
         apiToken: 'test-token',
         maxAgeDays: 14,
-        batchPattern: 'myapp-pr-*',
+        batchPattern: 'myapp-pr-*'
       });
 
       expect(result.deleted).toBe(2);
@@ -558,7 +526,7 @@ describe('workers-cleanup', () => {
         cleanupWorkers({
           mode: 'pr-linked',
           accountId: 'test-account',
-          apiToken: 'test-token',
+          apiToken: 'test-token'
         })
       ).rejects.toThrow('PR number is required');
 
@@ -566,7 +534,7 @@ describe('workers-cleanup', () => {
         cleanupWorkers({
           mode: 'manual',
           accountId: 'test-account',
-          apiToken: 'test-token',
+          apiToken: 'test-token'
         })
       ).rejects.toThrow('Worker names are required');
 
@@ -574,7 +542,7 @@ describe('workers-cleanup', () => {
         cleanupWorkers({
           mode: 'batch',
           accountId: 'test-account',
-          apiToken: 'test-token',
+          apiToken: 'test-token'
         })
       ).rejects.toThrow('Batch pattern is required');
 
@@ -582,7 +550,7 @@ describe('workers-cleanup', () => {
         cleanupWorkers({
           mode: 'batch-by-age',
           accountId: 'test-account',
-          apiToken: 'test-token',
+          apiToken: 'test-token'
         })
       ).rejects.toThrow('max-age-days must be a positive number');
     });

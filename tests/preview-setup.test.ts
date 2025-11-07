@@ -7,7 +7,7 @@ import {
   updateWorkerName,
   updateEnvVars,
   updateRoutes,
-  setupPreviewEnvironment,
+  setupPreviewEnvironment
 } from '../src/preview-setup/setup';
 
 describe('preview-setup', () => {
@@ -46,9 +46,7 @@ compatibility_date = "2024-01-01"
     });
 
     it('should throw error if file does not exist', () => {
-      expect(() => createBackup('/nonexistent/file.toml')).toThrow(
-        'File not found'
-      );
+      expect(() => createBackup('/nonexistent/file.toml')).toThrow('File not found');
     });
   });
 
@@ -79,9 +77,9 @@ name = "old-worker-name"
     });
 
     it('should throw error if file does not exist', () => {
-      expect(() =>
-        updateWorkerName('/nonexistent/file.toml', 'preview', 'worker')
-      ).toThrow('File not found');
+      expect(() => updateWorkerName('/nonexistent/file.toml', 'preview', 'worker')).toThrow(
+        'File not found'
+      );
     });
   });
 
@@ -89,7 +87,7 @@ name = "old-worker-name"
     it('should add environment variables', () => {
       updateEnvVars(testTomlPath, 'preview', {
         ENVIRONMENT: 'preview',
-        DEBUG: 'true',
+        DEBUG: 'true'
       });
 
       const content = readFileSync(testTomlPath, 'utf-8');
@@ -100,18 +98,15 @@ name = "old-worker-name"
     });
 
     it('should throw error if file does not exist', () => {
-      expect(() =>
-        updateEnvVars('/nonexistent/file.toml', 'preview', {})
-      ).toThrow('File not found');
+      expect(() => updateEnvVars('/nonexistent/file.toml', 'preview', {})).toThrow(
+        'File not found'
+      );
     });
   });
 
   describe('updateRoutes', () => {
     it('should add routes', () => {
-      updateRoutes(testTomlPath, 'preview', [
-        'example.com/*',
-        'preview.example.com/*',
-      ]);
+      updateRoutes(testTomlPath, 'preview', ['example.com/*', 'preview.example.com/*']);
 
       const content = readFileSync(testTomlPath, 'utf-8');
 
@@ -121,9 +116,7 @@ name = "old-worker-name"
     });
 
     it('should throw error if file does not exist', () => {
-      expect(() =>
-        updateRoutes('/nonexistent/file.toml', 'preview', [])
-      ).toThrow('File not found');
+      expect(() => updateRoutes('/nonexistent/file.toml', 'preview', [])).toThrow('File not found');
     });
   });
 
@@ -135,9 +128,9 @@ name = "old-worker-name"
         workerName: 'test-worker-pr-42',
         createBackup: true,
         updateVars: {
-          ENVIRONMENT: 'preview',
+          ENVIRONMENT: 'preview'
         },
-        updateRoutes: ['preview.example.com/*'],
+        updateRoutes: ['preview.example.com/*']
       });
 
       expect(result.updated).toBe(true);
@@ -159,7 +152,7 @@ name = "old-worker-name"
         wranglerTomlPath: testTomlPath,
         environmentName: 'preview',
         workerName: 'test-worker',
-        createBackup: false,
+        createBackup: false
       });
 
       expect(result.updated).toBe(true);
@@ -170,7 +163,7 @@ name = "old-worker-name"
       const result = setupPreviewEnvironment({
         wranglerTomlPath: testTomlPath,
         environmentName: 'preview',
-        workerName: 'test-worker',
+        workerName: 'test-worker'
       });
 
       expect(result.updated).toBe(true);

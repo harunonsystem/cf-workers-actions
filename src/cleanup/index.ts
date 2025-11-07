@@ -4,7 +4,11 @@ import { cleanupWorkers } from './cleanup';
 async function run(): Promise<void> {
   try {
     // Get inputs
-    const mode = core.getInput('cleanup-mode', { required: true }) as 'pr-linked' | 'manual' | 'batch' | 'batch-by-age';
+    const mode = core.getInput('cleanup-mode', { required: true }) as
+      | 'pr-linked'
+      | 'manual'
+      | 'batch'
+      | 'batch-by-age';
     const accountId = core.getInput('cloudflare-account-id', { required: true });
     const apiToken = core.getInput('cloudflare-api-token', { required: true });
     const prNumberStr = core.getInput('pr-number');
@@ -17,8 +21,10 @@ async function run(): Promise<void> {
 
     const prNumber = prNumberStr ? parseInt(prNumberStr, 10) : undefined;
     const maxAgeDays = maxAgeDaysStr ? parseInt(maxAgeDaysStr, 10) : undefined;
-    const workerNames = workerNamesStr ? workerNamesStr.split(',').map(s => s.trim()) : undefined;
-    const excludeWorkers = excludeWorkersStr ? excludeWorkersStr.split(',').map(s => s.trim()) : undefined;
+    const workerNames = workerNamesStr ? workerNamesStr.split(',').map((s) => s.trim()) : undefined;
+    const excludeWorkers = excludeWorkersStr
+      ? excludeWorkersStr.split(',').map((s) => s.trim())
+      : undefined;
 
     core.info(`Cleanup mode: ${mode}`);
     core.info(`Dry run: ${dryRun ? 'Yes' : 'No'}`);
@@ -34,7 +40,7 @@ async function run(): Promise<void> {
       batchPattern,
       maxAgeDays,
       excludeWorkers,
-      dryRun,
+      dryRun
     });
 
     // Set outputs
@@ -50,7 +56,7 @@ async function run(): Promise<void> {
 
     if (result.errors.length > 0) {
       core.error('Errors encountered:');
-      result.errors.forEach(error => core.error(`  - ${error}`));
+      result.errors.forEach((error) => core.error(`  - ${error}`));
       core.setFailed('Cleanup completed with errors');
     } else {
       core.info('');

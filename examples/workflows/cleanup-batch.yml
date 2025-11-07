@@ -2,7 +2,7 @@ name: Batch Cleanup Old Previews
 
 on:
   schedule:
-    - cron: '0 0 * * 0'  # 毎週日曜日
+    - cron: '0 0 * * 0' # 毎週日曜日
   workflow_dispatch:
     inputs:
       max-age-days:

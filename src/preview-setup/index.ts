@@ -25,7 +25,7 @@ async function run(): Promise<void> {
       workerName,
       createBackup,
       updateVars,
-      updateRoutes,
+      updateRoutes
     });
 
     // Set outputs

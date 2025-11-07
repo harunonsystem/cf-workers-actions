@@ -36,10 +36,7 @@ export interface CloudflareWorker {
 /**
  * Build list of workers to delete for PR-linked mode
  */
-export function buildPRLinkedList(
-  prNumber: number,
-  prefix: string = 'preview'
-): string[] {
+export function buildPRLinkedList(prNumber: number, prefix: string = 'preview'): string[] {
   return [`${prefix}-${prNumber}`];
 }
 
@@ -47,7 +44,7 @@ export function buildPRLinkedList(
  * Build list of workers to delete for manual mode
  */
 export function buildManualList(workerNames: string[]): string[] {
-  return workerNames.map(name => name.trim()).filter(name => name.length > 0);
+  return workerNames.map((name) => name.trim()).filter((name) => name.length > 0);
 }
 
 /**
@@ -68,12 +65,12 @@ export function buildBatchList(
   const regex = new RegExp(`^${regexPattern}$`);
 
   // Filter workers by pattern
-  let matched = allWorkers.filter(worker => regex.test(worker));
+  let matched = allWorkers.filter((worker) => regex.test(worker));
 
   // Apply exclusion list
   if (excludeList.length > 0) {
-    const excludeSet = new Set(excludeList.map(name => name.trim()));
-    matched = matched.filter(worker => !excludeSet.has(worker));
+    const excludeSet = new Set(excludeList.map((name) => name.trim()));
+    matched = matched.filter((worker) => !excludeSet.has(worker));
   }
 
   return matched;
@@ -92,7 +89,7 @@ export function buildBatchByAgeList(
   const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
 
   // Filter workers by age
-  let matched = allWorkers.filter(worker => {
+  let matched = allWorkers.filter((worker) => {
     const createdDate = new Date(worker.created_on);
     const age = now.getTime() - createdDate.getTime();
     return age > maxAgeMs;
@@ -106,16 +103,16 @@ export function buildBatchByAgeList(
       .replace(/\[/g, '\\[')
       .replace(/\]/g, '\\]');
     const regex = new RegExp(`^${regexPattern}$`);
-    matched = matched.filter(worker => regex.test(worker.id));
+    matched = matched.filter((worker) => regex.test(worker.id));
   }
 
   // Apply exclusion list
   if (excludeList.length > 0) {
-    const excludeSet = new Set(excludeList.map(name => name.trim()));
-    matched = matched.filter(worker => !excludeSet.has(worker.id));
+    const excludeSet = new Set(excludeList.map((name) => name.trim()));
+    matched = matched.filter((worker) => !excludeSet.has(worker.id));
   }
 
-  return matched.map(worker => worker.id);
+  return matched.map((worker) => worker.id);
 }
 
 /**
@@ -129,8 +126,8 @@ export async function fetchAllWorkersWithMetadata(
 
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${apiToken}`,
-    },
+      Authorization: `Bearer ${apiToken}`
+    }
   });
 
   if (!response.ok) {
@@ -149,12 +146,9 @@ export async function fetchAllWorkersWithMetadata(
 /**
  * Fetch all workers from Cloudflare API (names only)
  */
-export async function fetchAllWorkers(
-  accountId: string,
-  apiToken: string
-): Promise<string[]> {
+export async function fetchAllWorkers(accountId: string, apiToken: string): Promise<string[]> {
   const workers = await fetchAllWorkersWithMetadata(accountId, apiToken);
-  return workers.map(worker => worker.id);
+  return workers.map((worker) => worker.id);
 }
 
 /**
@@ -169,8 +163,8 @@ export async function workerExists(
 
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${apiToken}`,
-    },
+      Authorization: `Bearer ${apiToken}`
+    }
   });
 
   if (!response.ok) {
@@ -194,14 +188,13 @@ export async function deleteWorker(
   const response = await fetch(url, {
     method: 'DELETE',
     headers: {
-      Authorization: `Bearer ${apiToken}`,
-    },
+      Authorization: `Bearer ${apiToken}`
+    }
   });
 
   if (!response.ok) {
     const data = await response.json();
-    const errorMsg =
-      data.errors?.[0]?.message || `Failed to delete: ${response.statusText}`;
+    const errorMsg = data.errors?.[0]?.message || `Failed to delete: ${response.statusText}`;
     throw new Error(errorMsg);
   }
 
@@ -226,7 +219,7 @@ export async function processDeleteions(
     deleted: 0,
     skipped: 0,
     deletedNames: [],
-    errors: [],
+    errors: []
   };
 
   for (const worker of workersList) {
@@ -257,8 +250,7 @@ export async function processDeleteions(
       result.deleted++;
       result.deletedNames.push(worker);
     } catch (error) {
-      const errorMsg =
-        error instanceof Error ? error.message : 'Unknown error';
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       console.error(`  ❌ Deletion failed: ${errorMsg}`);
       result.errors.push(`${worker}: ${errorMsg}`);
     }
@@ -270,9 +262,7 @@ export async function processDeleteions(
 /**
  * Main cleanup function
  */
-export async function cleanupWorkers(
-  options: CleanupOptions
-): Promise<CleanupResult> {
+export async function cleanupWorkers(options: CleanupOptions): Promise<CleanupResult> {
   const {
     mode,
     accountId,
@@ -283,7 +273,7 @@ export async function cleanupWorkers(
     batchPattern,
     maxAgeDays,
     excludeWorkers = [],
-    dryRun = false,
+    dryRun = false
   } = options;
 
   let workersList: string[] = [];
@@ -316,8 +306,15 @@ export async function cleanupWorkers(
         throw new Error('max-age-days must be a positive number for batch-by-age mode');
       }
       const allWorkersWithMetadata = await fetchAllWorkersWithMetadata(accountId, apiToken);
-      workersList = buildBatchByAgeList(allWorkersWithMetadata, maxAgeDays, batchPattern, excludeWorkers);
-      console.log(`Filtering workers older than ${maxAgeDays} days${batchPattern ? ` matching pattern: ${batchPattern}` : ''}`);
+      workersList = buildBatchByAgeList(
+        allWorkersWithMetadata,
+        maxAgeDays,
+        batchPattern,
+        excludeWorkers
+      );
+      console.log(
+        `Filtering workers older than ${maxAgeDays} days${batchPattern ? ` matching pattern: ${batchPattern}` : ''}`
+      );
       break;
 
     default:
@@ -330,12 +327,12 @@ export async function cleanupWorkers(
       deleted: 0,
       skipped: 0,
       deletedNames: [],
-      errors: [],
+      errors: []
     };
   }
 
   console.log('Found workers to process:');
-  workersList.forEach(worker => console.log(`  - ${worker}`));
+  workersList.forEach((worker) => console.log(`  - ${worker}`));
   console.log('');
 
   return await processDeleteions(workersList, accountId, apiToken, dryRun);

@@ -28,12 +28,10 @@ runs:
       run: pnpm run lint
       shell: bash
 
-    - name: Run tests (Vitest)
-      run: pnpm test
+    - name: Check code formatting
+      run: pnpm run format:check
       shell: bash
 
-    - name: Run composite action tests
-      run: |
-        echo "Testing composite actions..."
-        ./run-tests.sh
+    - name: Run tests (Vitest)
+      run: pnpm test
       shell: bash

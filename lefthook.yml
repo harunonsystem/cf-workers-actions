@@ -6,37 +6,32 @@ pre-commit:
   commands:
     # Pin GitHub Actions to commit SHA for security
     pinact:
-      glob: ".github/workflows/*.{yml,yaml}"
-      run: npx -y pinact .github/workflows/*.yml --no-write-check
+      glob: '.github/workflows/*.{yml,yaml}'
+      run: pnpm run actions:pin
 
     # Optimize GitHub Actions permissions
     gh-actions-permissions:
-      glob: ".github/workflows/*.{yml,yaml}"
-      run: npx -y @pkgdeps/update-github-actions-permissions .github/workflows/*.yml
+      glob: '.github/workflows/*.{yml,yaml}'
+      run: pnpm run actions:permissions
 
     # Lint GitHub Actions workflows
     ghalint:
-      glob: ".github/workflows/*.{yml,yaml}"
-      run: |
-        if ! command -v ghalint &> /dev/null; then
-          echo "⚠️  ghalint not installed. Install with: go install github.com/rhysd/actionlint/cmd/actionlint@latest"
-          exit 0
-        fi
-        ghalint run .github/workflows/
+      glob: '.github/workflows/*.{yml,yaml}'
+      run: pnpm run actions:lint
 
     # Type check
     typecheck:
-      glob: "*.{ts,tsx}"
+      glob: '*.{ts,tsx}'
       run: pnpm typecheck
 
     # Lint
     lint:
-      glob: "*.{ts,tsx,js,jsx}"
+      glob: '*.{ts,tsx,js,jsx}'
       run: pnpm lint
 
     # Format check
     format:
-      glob: "*.{ts,tsx,js,jsx,json,yml,yaml,md}"
+      glob: '*.{ts,tsx,js,jsx,json,yml,yaml,md}'
       run: pnpm format:check
 
 pre-push:

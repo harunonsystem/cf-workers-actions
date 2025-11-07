@@ -48,10 +48,7 @@ export function updateWorkerName(
 
   if (envSectionRegex.test(content)) {
     // Update existing environment
-    const nameRegex = new RegExp(
-      `(\\[env\\.${environmentName}\\][\\s\\S]*?)^name = .*$`,
-      'm'
-    );
+    const nameRegex = new RegExp(`(\\[env\\.${environmentName}\\][\\s\\S]*?)^name = .*$`, 'm');
 
     if (nameRegex.test(content)) {
       content = content.replace(nameRegex, `$1name = "${workerName}"`);
@@ -97,11 +94,7 @@ export function updateEnvVars(
 /**
  * Update routes in wrangler.toml
  */
-export function updateRoutes(
-  tomlPath: string,
-  environmentName: string,
-  routes: string[]
-): void {
+export function updateRoutes(tomlPath: string, environmentName: string, routes: string[]): void {
   if (!existsSync(tomlPath)) {
     throw new Error(`File not found: ${tomlPath}`);
   }
@@ -109,7 +102,7 @@ export function updateRoutes(
   let content = readFileSync(tomlPath, 'utf-8');
 
   // Add routes
-  routes.forEach(route => {
+  routes.forEach((route) => {
     content += `\n[[env.${environmentName}.routes]]\npattern = "${route}"\n`;
   });
 
@@ -126,11 +119,11 @@ export function setupPreviewEnvironment(options: SetupOptions): SetupResult {
     workerName,
     createBackup: shouldCreateBackup = true,
     updateVars,
-    updateRoutes: routesToUpdate,
+    updateRoutes: routesToUpdate
   } = options;
 
   const result: SetupResult = {
-    updated: false,
+    updated: false
   };
 
   // Create backup if requested

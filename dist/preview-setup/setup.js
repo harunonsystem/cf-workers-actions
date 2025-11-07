@@ -69,7 +69,7 @@ function updateRoutes(tomlPath, environmentName, routes) {
     }
     let content = (0, fs_1.readFileSync)(tomlPath, 'utf-8');
     // Add routes
-    routes.forEach(route => {
+    routes.forEach((route) => {
         content += `\n[[env.${environmentName}.routes]]\npattern = "${route}"\n`;
     });
     (0, fs_1.writeFileSync)(tomlPath, content, 'utf-8');
@@ -78,9 +78,9 @@ function updateRoutes(tomlPath, environmentName, routes) {
  * Main setup function
  */
 function setupPreviewEnvironment(options) {
-    const { wranglerTomlPath, environmentName, workerName, createBackup: shouldCreateBackup = true, updateVars, updateRoutes: routesToUpdate, } = options;
+    const { wranglerTomlPath, environmentName, workerName, createBackup: shouldCreateBackup = true, updateVars, updateRoutes: routesToUpdate } = options;
     const result = {
-        updated: false,
+        updated: false
     };
     // Create backup if requested
     if (shouldCreateBackup) {

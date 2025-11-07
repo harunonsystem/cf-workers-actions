@@ -500,7 +500,7 @@ name: Cleanup Old Previews
 
 on:
   schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sunday
+    - cron: '0 0 * * 0' # Weekly on Sunday
   workflow_dispatch:
     inputs:
       max-age-days:

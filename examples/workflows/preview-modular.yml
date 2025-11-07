@@ -41,7 +41,7 @@ jobs:
         if: always()
         with:
           worker-name: 'myapp-pr-${{ github.event.pull_request.number }}'
-          worker-url: ${{ steps.deploy.outputs.deployment-url }}
+          deployment-url: ${{ steps.deploy.outputs.deployment-url }}
           deployment-status: ${{ steps.deploy.outcome == 'success' && 'success' || 'failure' }}
 
       # wrangler.tomlリストア
