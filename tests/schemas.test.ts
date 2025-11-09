@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CleanupInputSchema, CleanupOutputSchema } from '../src/shared/schemas';
+import { CleanupInputSchema, CleanupOutputSchema } from '../src/cleanup/schemas';
 import { parseInputs, setOutputsValidated } from '../src/shared/validation';
 import * as core from '@actions/core';
 

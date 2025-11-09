@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import { CloudflareApi } from '../shared/lib/cloudflare-api';
-import { CleanupInputSchema } from '../shared/schemas';
+import { CleanupInputSchema } from './schemas';
 import { mapInputs, parseInputs } from '../shared/validation';
 import { handleActionError, CLEANUP_ERROR_OUTPUTS } from '../shared/lib/error-handler';
 
