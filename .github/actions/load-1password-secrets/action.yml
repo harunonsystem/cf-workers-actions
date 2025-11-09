@@ -1,0 +1,24 @@
+---
+name: 'Load 1Password Secrets'
+description: 'Load Cloudflare credentials from 1Password'
+
+outputs:
+  CLOUDFLARE_API_TOKEN:
+    description: 'Cloudflare API Token'
+    value: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID:
+    description: 'Cloudflare Account ID'
+    value: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Load secrets from 1Password
+      id: load-secrets
+      uses: 1password/load-secrets-action@v2
+      with:
+        export-env: false
+      env:
+        OP_SERVICE_ACCOUNT_TOKEN: ${{ env.OP_SERVICE_ACCOUNT_TOKEN }}
+        CLOUDFLARE_API_TOKEN: op://cloudflare/api-token/credential
+        CLOUDFLARE_ACCOUNT_ID: op://cloudflare/account-id/credential

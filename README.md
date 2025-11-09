@@ -1,331 +1,128 @@
-# Cloudflare Actions
+# Cloudflare Workers Delete Action
 
-[![CI](https://github.com/harunonsystem/cloudflare-actions/workflows/CI/badge.svg)](https://github.com/harunonsystem/cloudflare-actions/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive suite of GitHub Actions for Cloudflare Workers deployment, PR commenting, and cleanup operations.
+A minimal GitHub Action to delete Cloudflare Workers.
 
-## 🚀 Features
+## Features
 
-- **Deploy**: Deploy Cloudflare Workers with preview and production support
-- **Comment**: Automatically post deployment URLs and status to PR comments
-- **Cleanup**: Clean up workers based on patterns or specific names
-- **TypeScript First**: Written in TypeScript with complete type safety and definitions
-- **Comprehensive Testing**: Full test coverage with Vitest (50-100x faster than Jest)
-- **Ultra-Fast Linting**: Code quality checks with Oxlint (10-100x faster than ESLint)
-- **Error Handling**: Robust error handling and informative logging
-- **Security First**: No external dependencies, minimal attack surface
+- Delete Cloudflare Workers by name
+- Support for comma-separated list of workers
+- 1Password integration for secure credential management
+- Detailed deletion status reporting
+- Error handling and retry logic
 
-## 📦 Actions
+## Usage
 
-### Deploy Action (`deploy`)
-
-Deploy applications to Cloudflare Workers with support for both preview and production environments.
+### Basic Usage
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/deploy@v1
-   id: deploy
-   with:
-     environment: preview
-     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-```
-
-**Inputs:**
-
-- `environment` (required): Deployment environment (`preview` or `production`)
-- `worker-name-pattern`: Worker name pattern (default: `project-pr-{pr_number}`)
-- `script-path`: Path to worker script (default: `index.js`)
-- `cloudflare-api-token` (required): Cloudflare API Token
-- `cloudflare-account-id` (required): Cloudflare Account ID
-- `subdomain`: Custom subdomain for workers.dev URL
-- `vars`: Environment variables (JSON format)
-- `secrets`: Worker secrets (JSON format)
-- `compatibility-date`: Cloudflare Workers compatibility date
-
-**Outputs:**
-
-- `url`: Deployed worker URL
-- `worker-name`: Actual worker name used
-- `success`: Deployment success status
-- `deployment-id`: Unique deployment identifier
-
-### Comment Action (`comment`)
-
-Post deployment information and preview URLs to Pull Request comments.
-
-```yaml
-- uses: harunonsystem/cloudflare-actions/comment@v1
+- name: Delete Cloudflare Workers
+  uses: harunonsystem/cloudflare-actions@v1
   with:
-    deployment-url: ${{ steps.deploy.outputs.url }}
-    github-token: ${{ secrets.GITHUB_TOKEN }}
+    cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    worker-names: 'my-worker-1,my-worker-2'
 ```
 
-**Inputs:**
-
-- `deployment-url` (required): URL of the deployed preview
-- `deployment-status`: Deployment status (`success` or `failure`)
-- `worker-name`: Name of the deployed worker
-- `github-token` (required): GitHub Token
-- `custom-message`: Additional custom message
-- `comment-template`: Custom comment template (markdown supported)
-- `update-existing`: Update existing comment instead of creating new one
-- `comment-tag`: Unique tag to identify comments for updates
-
-**Outputs:**
-
-- `comment-id`: ID of the created/updated comment
-- `comment-url`: URL of the comment
-
-### Cleanup Action (`cleanup`)
-
-Clean up and delete Cloudflare Workers based on patterns or specific names.
+### With 1Password Integration
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/cleanup@v1
-   with:
-     worker-pattern: 'project-pr-*'
-     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+- name: Load secrets
+  id: load-secrets
+  uses: harunonsystem/cloudflare-actions/.github/actions/load-1password-secrets@v1
+  env:
+    OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+- name: Delete workers
+  uses: harunonsystem/cloudflare-actions@v1
+  with:
+    cloudflare-api-token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN }}
+    cloudflare-account-id: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
+    worker-names: 'my-worker-1,my-worker-2'
 ```
 
-**Inputs:**
-
-- `worker-pattern`: Pattern for workers to delete (supports wildcards)
-- `worker-names`: Specific worker names to delete (comma-separated)
-- `cloudflare-api-token` (required): Cloudflare API Token
-- `cloudflare-account-id` (required): Cloudflare Account ID
-- `dry-run`: Only list workers without deleting (default: `false`)
-- `max-age-days`: Only delete workers older than specified days
-- `exclude-pattern`: Pattern for workers to exclude from deletion
-- `confirm-deletion`: Require explicit confirmation (default: `yes`)
-
-**Outputs:**
-
-- `deleted-workers`: List of deleted worker names (JSON array)
-- `deleted-count`: Number of workers deleted
-- `skipped-workers`: List of workers that were skipped (JSON array)
-- `dry-run-results`: Workers that would be deleted in dry run mode (JSON array)
-
-## 🔧 Complete Workflow Examples
-
-### Preview Deployment with PR Comments
+### Delete Workers on PR Close
 
 ```yaml
-name: Deploy Preview
-
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-
-jobs:
-  deploy-preview:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to Cloudflare Workers
-        id: deploy
-        uses: harunonsystem/cloudflare-actions/deploy@v1
-        with:
-          environment: preview
-          worker-name-pattern: 'myapp-pr-{pr_number}'
-          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          vars: |
-            {
-              "ENVIRONMENT": "preview",
-              "DEBUG": "true"
-            }
-
-      - name: Comment PR
-        uses: harunonsystem/cloudflare-actions/comment@v1
-        if: always()
-        with:
-          deployment-url: ${{ steps.deploy.outputs.url }}
-          deployment-status: ${{ steps.deploy.outputs.success == 'true' && 'success' || 'failure' }}
-          worker-name: ${{ steps.deploy.outputs.worker-name }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          custom-message: |
-            🚀 Preview deployment completed!
-
-            **Build Information:**
-            - Commit: ${{ github.sha }}
-            - Branch: ${{ github.head_ref }}
-```
-
-### Production Deployment
-
-```yaml
-name: Deploy Production
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy-production:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-       - name: Deploy to Production
-         uses: harunonsystem/cloudflare-actions/deploy@v1
-         with:
-           environment: production
-           worker-name-pattern: 'myapp-production'
-           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          vars: |
-            {
-              "ENVIRONMENT": "production",
-              "DEBUG": "false"
-            }
-          secrets: |
-            {
-              "API_KEY": "${{ secrets.PRODUCTION_API_KEY }}",
-              "DATABASE_URL": "${{ secrets.DATABASE_URL }}"
-            }
-```
-
-### Cleanup Old Preview Deployments
-
-```yaml
-name: Cleanup Old Previews
+name: Cleanup
 
 on:
   pull_request:
     types: [closed]
 
 jobs:
-  cleanup:
+  delete-preview:
     runs-on: ubuntu-latest
     steps:
-       - name: Cleanup Preview Worker
-         uses: harunonsystem/cloudflare-actions/cleanup@v1
-         with:
-           worker-pattern: 'myapp-pr-${{ github.event.pull_request.number }}'
-           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          confirm-deletion: 'yes'
+      - uses: actions/checkout@v4
+
+      - name: Load secrets
+        id: load-secrets
+        uses: ./.github/actions/load-1password-secrets
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+      - name: Delete preview worker
+        uses: harunonsystem/cloudflare-actions@v1
+        with:
+          cloudflare-api-token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
+          worker-names: 'my-app-pr-${{ github.event.pull_request.number }}'
 ```
 
-### Scheduled Cleanup
+## Inputs
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `cloudflare-api-token` | Cloudflare API Token | Yes | - |
+| `cloudflare-account-id` | Cloudflare Account ID | Yes | - |
+| `worker-names` | Comma-separated list of worker names to delete | Yes | - |
+| `fail-on-error` | Fail the workflow if any deletion fails | No | `true` |
+
+## Outputs
+
+This action outputs deletion results to the console:
+- Number of successfully deleted workers
+- Number of workers not found
+- Number of errors encountered
+
+## 1Password Integration
+
+This repository includes a helper action to load secrets from 1Password:
 
 ```yaml
-name: Weekly Cleanup
-
-on:
-  schedule:
-    - cron: '0 2 * * 0' # Every Sunday at 2 AM
-
-jobs:
-  cleanup-old-workers:
-    runs-on: ubuntu-latest
-    steps:
-       - name: Cleanup Old Preview Workers
-         uses: harunonsystem/cloudflare-actions/cleanup@v1
-         with:
-           worker-pattern: 'myapp-pr-*'
-           exclude-pattern: 'myapp-pr-main'
-           max-age-days: 7
-           dry-run: false
-           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          confirm-deletion: 'yes'
+- uses: harunonsystem/cloudflare-actions/.github/actions/load-1password-secrets@v1
+  env:
+    OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
 ```
 
-## 🔑 Secret Management
+### 1Password Setup
 
-### Option 1: GitHub Secrets (Default)
+1. Create secrets in 1Password with the following paths:
+   - `op://cloudflare/api-token/credential`
+   - `op://cloudflare/account-id/credential`
 
-Add these secrets to your repository settings:
+2. Add `OP_SERVICE_ACCOUNT_TOKEN` to your GitHub repository secrets
 
-- `CLOUDFLARE_API_TOKEN`: Your Cloudflare API token with Workers permissions
-- `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare Account ID
-- `GITHUB_TOKEN`: Automatically provided by GitHub Actions (for commenting)
-
-### Getting Cloudflare Credentials
+## Getting Cloudflare Credentials
 
 1. **API Token**: Go to [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) → API Tokens → Create Token
    - Use the "Workers:Edit" template
    - Or create a custom token with these permissions:
      - Account: Cloudflare Workers:Edit
-     - Zone: Zone:Read (if deploying to custom domains)
 
 2. **Account ID**: Found in the right sidebar of any domain's overview page in the Cloudflare dashboard
 
-## 🏗️ Architecture
-
-The actions are built with a modular architecture:
-
-```
-cloudflare-actions/
-├── deploy/           # Deploy action
-├── comment/          # Comment action
-├── cleanup/          # Cleanup action
-├── shared/           # Shared libraries
-│   ├── lib/
-│   │   ├── cloudflare-api.js    # Cloudflare API client
-│   │   ├── url-generator.js     # URL generation utilities
-│   │   └── wrangler.js          # Wrangler CLI wrapper
-│   └── __tests__/    # Shared library tests
-└── __tests__/        # Integration tests
-```
-
-### Shared Libraries
-
-- **CloudflareApi**: Direct API client for Cloudflare Workers API
-- **WranglerClient**: Wrapper around Wrangler CLI for deployments
-- **URL Generator**: Utilities for generating worker names and URLs
-
-## 🧪 Testing
-
-Run the test suite:
-
-```bash
-pnpm test
-```
-
-Run tests with coverage:
-
-```bash
-pnpm run test:coverage
-```
-
-The project includes comprehensive tests for:
-
-- All shared library functions
-- API client functionality
-- URL generation logic
-- Error handling scenarios
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass (`pnpm test`)
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🔗 Related
+## Related
 
 - [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
+- [1Password GitHub Actions](https://github.com/1Password/load-secrets-action)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
-
-## 📊 Marketplace Stats
-
-- **Version**: 1.0.0
-- **Downloads**: Coming soon
-- **Stars**: ⭐ Star this repo to support the project!
 
 ---
 
