@@ -50,8 +50,8 @@ export interface WranglerDeployResult {
 export interface DeployInputs {
     environment: string;
     workerName?: string;
-    apiToken: string;
-    accountId: string;
+    cloudflareApiToken: string;
+    cloudflareAccountId: string;
     secrets: Record<string, string>;
 }
 export interface CommentInputs {
@@ -67,9 +67,8 @@ export interface CommentInputs {
 export interface CleanupInputs {
     workerPattern?: string;
     workerNames?: string[];
-    apiToken: string;
-    accountId: string;
+    cloudflareApiToken: string;
+    cloudflareAccountId: string;
     dryRun: boolean;
-    confirmDeletion: string;
     exclude?: string;
 }

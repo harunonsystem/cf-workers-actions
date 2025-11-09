@@ -33,42 +33,53 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.mapInputs = mapInputs;
 exports.parseInputs = parseInputs;
 exports.setOutputsValidated = setOutputsValidated;
 const core = __importStar(require("@actions/core"));
-const zod_1 = require("zod");
-function parseInputs(schema, raw) {
-    try {
-        return schema.parse(raw);
+// Dash-case to camelCase conversion for input names
+function dashToCamel(str) {
+    return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+// Map raw inputs from core.getInput (dash-case) to camelCase keys for Zod validation
+function mapInputs(inputMap) {
+    const mapped = {};
+    for (const [dashKey, config] of Object.entries(inputMap)) {
+        const camelKey = dashToCamel(dashKey);
+        const value = core.getInput(dashKey, { required: config.required });
+        mapped[camelKey] = value || config.default || undefined;
     }
-    catch (err) {
-        if (err instanceof zod_1.ZodError) {
-            const msg = err.issues.map((e) => `${e.path.join('.')} - ${e.message}`).join('; ');
-            core.setFailed(`Input validation failed: ${msg}`);
-        }
-        else {
-            core.setFailed(`Input validation failed: ${String(err)}`);
-        }
+    return mapped;
+}
+function parseInputs(schema, raw) {
+    const result = schema.safeParse(raw);
+    if (!result.success) {
+        const msg = result.error.issues
+            .map((e) => `${e.path.join('.')} - ${e.message}`)
+            .join('; ');
+        core.setFailed(`Input validation failed: ${msg}`);
         return null;
     }
+    return result.data;
 }
 function setOutputsValidated(schema, outputs) {
-    try {
-        const validated = schema.parse(outputs);
-        for (const [k, v] of Object.entries(validated)) {
-            if (v === undefined || v === null) {
-                core.setOutput(k, '');
-            }
-            else if (typeof v === 'object') {
-                core.setOutput(k, JSON.stringify(v));
-            }
-            else {
-                core.setOutput(k, String(v));
-            }
-        }
-    }
-    catch (err) {
-        const message = err instanceof zod_1.ZodError ? err.issues.map((e) => e.message).join('; ') : String(err);
+    const result = schema.safeParse(outputs);
+    if (!result.success) {
+        const message = result.error.issues.map((e) => e.message).join('; ');
         core.setFailed(`Output validation failed: ${message}`);
+        return;
+    }
+    // Type-safe output setting
+    const validated = result.data;
+    for (const [k, v] of Object.entries(validated)) {
+        if (v === undefined || v === null) {
+            core.setOutput(k, '');
+        }
+        else if (typeof v === 'object') {
+            core.setOutput(k, JSON.stringify(v));
+        }
+        else {
+            core.setOutput(k, String(v));
+        }
     }
 }

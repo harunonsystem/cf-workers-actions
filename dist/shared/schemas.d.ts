@@ -21,22 +21,14 @@ export type CommentInputs = z.infer<typeof CommentInputSchema>;
 export type CommentOutputs = z.infer<typeof CommentOutputSchema>;
 export declare const DeployInputSchema: z.ZodObject<{
     environment: z.ZodDefault<z.ZodString>;
-    workerName: z.ZodOptional<z.ZodString>;
     workerNamePattern: z.ZodOptional<z.ZodString>;
     subdomain: z.ZodOptional<z.ZodString>;
-    forcePreview: z.ZodDefault<z.ZodBoolean>;
     cloudflareApiToken: z.ZodString;
     cloudflareAccountId: z.ZodOptional<z.ZodString>;
     secrets: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
     deployCommand: z.ZodDefault<z.ZodString>;
     wranglerFile: z.ZodDefault<z.ZodString>;
-    workflowMode: z.ZodDefault<z.ZodEnum<{
-        auto: "auto";
-        gitflow: "gitflow";
-        githubflow: "githubflow";
-    }>>;
     excludeBranches: z.ZodDefault<z.ZodString>;
-    releaseBranchPattern: z.ZodDefault<z.ZodString>;
 }, z.core.$strip>;
 export declare const DeployOutputSchema: z.ZodObject<{
     workerUrl: z.ZodOptional<z.ZodString>;
@@ -52,7 +44,6 @@ export declare const CleanupInputSchema: z.ZodObject<{
     cloudflareApiToken: z.ZodString;
     cloudflareAccountId: z.ZodString;
     dryRun: z.ZodDefault<z.ZodBoolean>;
-    confirmDeletion: z.ZodDefault<z.ZodString>;
     exclude: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const CleanupOutputSchema: z.ZodObject<{

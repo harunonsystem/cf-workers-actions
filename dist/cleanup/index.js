@@ -35,36 +35,44 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(require("@actions/core"));
 const cloudflare_api_1 = require("../shared/lib/cloudflare-api");
+const schemas_1 = require("../shared/schemas");
+const validation_1 = require("../shared/validation");
+const error_handler_1 = require("../shared/lib/error-handler");
 async function run() {
     try {
-        // Get inputs
-        const inputs = {
-            workerPattern: core.getInput('worker-pattern') || undefined,
-            workerNames: undefined,
-            apiToken: core.getInput('cloudflare-api-token', { required: true }),
-            accountId: core.getInput('cloudflare-account-id', { required: true }),
-            dryRun: core.getInput('dry-run') === 'true',
-            confirmDeletion: core.getInput('confirm-deletion'),
-            exclude: core.getInput('exclude') || undefined
-        };
-        // Parse worker names
+        // Map and validate inputs
+        const rawInputs = (0, validation_1.mapInputs)({
+            'worker-pattern': { required: false },
+            'cloudflare-api-token': { required: true },
+            'cloudflare-account-id': { required: true },
+            'dry-run': { required: false, default: 'true' },
+            exclude: { required: false }
+        });
+        // Parse worker names separately
         const workerNamesInput = core.getInput('worker-names');
+        let workerNames;
         if (workerNamesInput) {
-            inputs.workerNames = workerNamesInput
+            workerNames = workerNamesInput
                 .split(',')
                 .map((name) => name.trim())
                 .filter(Boolean);
+        }
+        // Validate inputs with Zod
+        const inputs = (0, validation_1.parseInputs)(schemas_1.CleanupInputSchema, {
+            ...rawInputs,
+            workerNames,
+            dryRun: rawInputs.dryRun === 'true'
+        });
+        if (!inputs) {
+            throw new Error('Input validation failed');
         }
         // Validate inputs
         if (!inputs.workerPattern && !inputs.workerNames) {
             throw new Error('Either worker-pattern or worker-names must be provided');
         }
-        if (!inputs.dryRun && inputs.confirmDeletion !== 'yes') {
-            throw new Error('confirm-deletion must be set to "yes" to proceed with actual deletion');
-        }
         // API token, account ID, and worker name validation is handled by Cloudflare API
         // Initialize Cloudflare API client
-        const cf = new cloudflare_api_1.CloudflareApi(inputs.apiToken, inputs.accountId);
+        const cf = new cloudflare_api_1.CloudflareApi(inputs.cloudflareApiToken, inputs.cloudflareAccountId);
         // Get workers to process
         let workersToProcess = [];
         if (inputs.workerNames && inputs.workerNames.length > 0) {
@@ -138,6 +146,28 @@ async function run() {
         }
         const deletedWorkers = [];
         const skippedWorkers = [];
+        // Rate limiting configuration
+        // Cloudflare API allows ~1200 requests per 5 minutes
+        // 500ms base delay with exponential backoff on rate limit errors
+        const RATE_LIMIT_DELAY = 500;
+        const MAX_RETRIES = 3;
+        async function deleteWithRetry(workerName, retryCount = 0) {
+            try {
+                return await cf.deleteWorker(workerName);
+            }
+            catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                // Handle rate limiting with exponential backoff
+                if ((errorMessage.includes('rate limit') || errorMessage.includes('429')) &&
+                    retryCount < MAX_RETRIES) {
+                    const backoffDelay = Math.pow(2, retryCount) * 30000; // 30s, 60s, 120s
+                    core.warning(`⏰ Rate limit hit for ${workerName}, waiting ${backoffDelay / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
+                    await new Promise((resolve) => setTimeout(resolve, backoffDelay));
+                    return deleteWithRetry(workerName, retryCount + 1);
+                }
+                throw error;
+            }
+        }
         if (inputs.dryRun) {
             // Dry run mode - just list what would be deleted
             core.info(`🔍 DRY RUN MODE: Would delete ${workersToProcess.length} workers:`);
@@ -166,7 +196,7 @@ async function run() {
             core.info(`🗑️  Deleting ${workersToProcess.length} workers...`);
             for (const workerName of workersToProcess) {
                 try {
-                    const deleted = await cf.deleteWorker(workerName);
+                    const deleted = await deleteWithRetry(workerName);
                     if (deleted) {
                         deletedWorkers.push(workerName);
                         core.info(`✅ Deleted: ${workerName}`);
@@ -177,12 +207,12 @@ async function run() {
                     }
                 }
                 catch (error) {
-                    skippedWorkers.push(workerName);
                     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                    skippedWorkers.push(workerName);
                     core.error(`❌ Failed to delete ${workerName}: ${errorMessage}`);
                 }
-                // Add small delay to avoid rate limiting
-                await new Promise((resolve) => setTimeout(resolve, 100));
+                // Apply rate limiting delay between deletions
+                await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_DELAY));
             }
             // Set outputs
             core.setOutput('deleted-workers', JSON.stringify(deletedWorkers));
@@ -211,19 +241,10 @@ async function run() {
         }
     }
     catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        core.error(`❌ Cleanup failed: ${errorMessage}`);
-        // Set failure outputs
-        core.setOutput('deleted-workers', '[]');
-        core.setOutput('deleted-count', '0');
-        core.setOutput('skipped-workers', '[]');
-        core.setOutput('dry-run-results', '[]');
-        // Set failure summary
-        await core.summary
-            .addHeading('❌ Cloudflare Workers Cleanup Failed')
-            .addCodeBlock(errorMessage, 'text')
-            .write();
-        core.setFailed(errorMessage);
+        await (0, error_handler_1.handleActionError)(error, {
+            summaryTitle: 'Cloudflare Workers Cleanup Failed',
+            outputs: error_handler_1.CLEANUP_ERROR_OUTPUTS
+        });
     }
 }
 // Self-invoking async function to handle top-level await
