@@ -8,7 +8,8 @@ Cloudflare Workers のクリーンアップアクション (cleanup) の実装�
 
 主な使い方：
 - **PR がクローズされたとき** → PR の Preview Worker を自動削除
-- **任意のタイミングで** → パターンマッチで複数 Workers を一括削除
+- **手動実行** → GitHub UI から `workflow_dispatch` で任意のタイミングに実行
+- **パターンマッチで削除** → 複数 Workers を条件指定で一括削除
 - **除外設定で保護** → 本番環境や重要な Workers は削除から除外
 
 ---
@@ -81,6 +82,47 @@ jobs:
   - 削除: `myapp-pr-1`, `myapp-pr-2`, `myapp-pr-123` など
   - 削除しない: `myapp-develop`, `myapp-staging`, `myapp-stg`
 - 環境ブランチ（develop/staging）の Worker は安全に保護される
+
+---
+
+### 手動実行（workflow_dispatch）
+
+GitHub UI からパターンを指定して任意のタイミングで実行
+
+```yaml
+name: Manual Cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      worker-pattern:
+        description: 'Worker pattern to delete (e.g. myapp-pr-*, myapp-release-*)'
+        required: true
+        default: 'myapp-pr-*'
+      dry-run:
+        description: 'Dry run (true=確認のみ, false=実削除)'
+        required: false
+        default: 'true'
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-pattern: ${{ github.event.inputs.worker-pattern }}
+          exclude: 'myapp,myapp-develop,myapp-staging,myapp-release-*'
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          dry-run: ${{ github.event.inputs.dry-run }}
+```
+
+**使い方**:
+1. GitHub UI → Actions → Manual Cleanup
+2. "Run workflow" をクリック
+3. パターン入力（例: `myapp-pr-*`）
+4. `dry-run: true` で先に確認
+5. 削除対象を確認後、`dry-run: false` で再実行して実削除
 
 ---
 
