@@ -83,5 +83,5 @@ Thumbs.db
 
 # Local testing tools
 wrkflw
-index.js
+/index.js
 todo.md
