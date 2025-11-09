@@ -1,88 +1,24 @@
 ---
-name: 'Delete Cloudflare Workers'
-description: 'Delete Cloudflare Workers by name or prefix'
+name: 'Cloudflare Actions'
+description: 'GitHub Actions for Cloudflare Workers'
 author: 'harunonsystem'
 
 branding:
-  icon: 'trash-2'
-  color: 'red'
+  icon: 'cloud'
+  color: 'orange'
 
-inputs:
-  cloudflare-api-token:
-    description: 'Cloudflare API Token'
-    required: true
-  cloudflare-account-id:
-    description: 'Cloudflare Account ID'
-    required: true
-  worker-names:
-    description: 'Comma-separated list of worker names to delete (e.g., "worker1,worker2,worker3")'
-    required: true
-  fail-on-error:
-    description: 'Fail the workflow if any deletion fails'
-    required: false
-    default: 'true'
+# This is a composite action that provides access to sub-actions
+# Users can access individual actions via:
+# - harunonsystem/cloudflare-actions/cleanup@v1
 
 runs:
   using: 'composite'
   steps:
-    - name: Delete Cloudflare Workers
+    - name: 'Information'
       shell: bash
       run: |
-        IFS=',' read -ra WORKERS <<< "${{ inputs.worker-names }}"
-
-        SUCCESS=0
-        NOTFOUND=0
-        ERROR=0
-
-        for worker in "${WORKERS[@]}"; do
-          worker=$(echo "$worker" | xargs)
-          [ -z "$worker" ] && continue
-
-          echo "Processing: $worker"
-
-          # Check if worker exists
-          if status=$(curl -s --fail --max-time 30 -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer ${{ inputs.cloudflare-api-token }}" \
-            "https://api.cloudflare.com/client/v4/accounts/${{ inputs.cloudflare-account-id }}/workers/scripts/$worker" 2>/dev/null); then
-
-            case $status in
-              200)
-                # Worker exists, delete it
-                if del_status=$(curl -s --fail --max-time 30 -o /dev/null -w "%{http_code}" -X DELETE \
-                  -H "Authorization: Bearer ${{ inputs.cloudflare-api-token }}" \
-                  "https://api.cloudflare.com/client/v4/accounts/${{ inputs.cloudflare-account-id }}/workers/scripts/$worker" 2>/dev/null); then
-
-                  if [ "$del_status" = "200" ]; then
-                    echo "  ✅ Deleted successfully"
-                    SUCCESS=$((SUCCESS + 1))
-                  else
-                    echo "  ❌ Delete failed (HTTP $del_status)"
-                    ERROR=$((ERROR + 1))
-                  fi
-                else
-                  echo "  ❌ Delete request failed"
-                  ERROR=$((ERROR + 1))
-                fi
-                ;;
-              404)
-                echo "  ℹ️ Worker not found"
-                NOTFOUND=$((NOTFOUND + 1))
-                ;;
-              *)
-                echo "  ⚠️ Unexpected status: $status"
-                ERROR=$((ERROR + 1))
-                ;;
-            esac
-          else
-            echo "  ❌ Check request failed or timed out"
-            ERROR=$((ERROR + 1))
-          fi
-        done
-
+        echo "🚀 Cloudflare Actions Suite"
+        echo "Available actions:"
+        echo "  - cleanup: harunonsystem/cloudflare-actions/cleanup@v1"
         echo ""
-        echo "📊 Results: ✅$SUCCESS ℹ️$NOTFOUND ❌$ERROR"
-
-        if [ "${{ inputs.fail-on-error }}" = "true" ] && [ $ERROR -gt 0 ]; then
-          echo "⚠️ Some operations failed. Check the logs above for details."
-          exit 1
-        fi
+        echo "📖 Documentation: https://github.com/harunonsystem/cloudflare-actions"

@@ -1,0 +1,159 @@
+---
+name: 'Delete Cloudflare Workers'
+description: 'Delete Cloudflare Workers by prefix, numbers, or names'
+author: 'harunonsystem'
+
+branding:
+  icon: 'trash-2'
+  color: 'red'
+
+inputs:
+  cloudflare-api-token:
+    description: 'Cloudflare API Token'
+    required: true
+  cloudflare-account-id:
+    description: 'Cloudflare Account ID'
+    required: true
+  worker-prefix:
+    description: 'Worker prefix (e.g., "my-app-pr-")'
+    required: false
+    default: ''
+  worker-numbers:
+    description: 'Comma-separated numbers to delete (e.g., "1,2,3")'
+    required: false
+    default: ''
+  worker-names:
+    description: 'Comma-separated full worker names (overrides prefix+numbers)'
+    required: false
+    default: ''
+  pr-number:
+    description: 'PR number for automatic worker name generation'
+    required: false
+    default: ''
+  fail-on-error:
+    description: 'Fail the workflow if any deletion fails'
+    required: false
+    default: 'true'
+
+outputs:
+  deleted-count:
+    description: 'Number of workers successfully deleted'
+    value: ${{ steps.cleanup.outputs.deleted-count }}
+  not-found-count:
+    description: 'Number of workers not found'
+    value: ${{ steps.cleanup.outputs.not-found-count }}
+  error-count:
+    description: 'Number of errors encountered'
+    value: ${{ steps.cleanup.outputs.error-count }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Delete Cloudflare Workers
+      id: cleanup
+      shell: bash
+      run: |
+        # Determine worker prefix
+        if [ -n "${{ inputs.worker-prefix }}" ]; then
+          PREFIX="${{ inputs.worker-prefix }}"
+        else
+          PREFIX=""
+        fi
+
+        # Build worker list
+        WORKERS=()
+
+        # Priority 1: Full worker names (overrides everything)
+        if [ -n "${{ inputs.worker-names }}" ]; then
+          IFS=',' read -ra WORKERS <<< "${{ inputs.worker-names }}"
+
+        # Priority 2: PR number (for auto-cleanup)
+        elif [ -n "${{ inputs.pr-number }}" ]; then
+          if [ -z "$PREFIX" ]; then
+            echo "❌ Error: worker-prefix is required when using pr-number"
+            exit 1
+          fi
+          WORKERS=("${PREFIX}${{ inputs.pr-number }}")
+
+        # Priority 3: Prefix + numbers
+        elif [ -n "${{ inputs.worker-numbers }}" ]; then
+          if [ -z "$PREFIX" ]; then
+            echo "❌ Error: worker-prefix is required when using worker-numbers"
+            exit 1
+          fi
+          IFS=',' read -ra NUMS <<< "${{ inputs.worker-numbers }}"
+          for num in "${NUMS[@]}"; do
+            num=$(echo "$num" | xargs)
+            [ -z "$num" ] && continue
+            WORKERS+=("${PREFIX}${num}")
+          done
+
+        else
+          echo "❌ Error: Must specify worker-names, pr-number, or worker-numbers"
+          exit 1
+        fi
+
+        # Delete workers
+        SUCCESS=0
+        NOTFOUND=0
+        ERROR=0
+
+        for worker in "${WORKERS[@]}"; do
+          worker=$(echo "$worker" | xargs)
+          [ -z "$worker" ] && continue
+
+          echo "Processing: $worker"
+
+          # Check if worker exists
+          if status=$(curl -s --fail --max-time 30 -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ inputs.cloudflare-api-token }}" \
+            "https://api.cloudflare.com/client/v4/accounts/${{ inputs.cloudflare-account-id }}/workers/scripts/$worker" 2>/dev/null); then
+
+            case $status in
+              200)
+                # Worker exists, delete it
+                if del_status=$(curl -s --fail --max-time 30 -o /dev/null -w "%{http_code}" -X DELETE \
+                  -H "Authorization: Bearer ${{ inputs.cloudflare-api-token }}" \
+                  "https://api.cloudflare.com/client/v4/accounts/${{ inputs.cloudflare-account-id }}/workers/scripts/$worker" 2>/dev/null); then
+
+                  if [ "$del_status" = "200" ]; then
+                    echo "  ✅ Deleted successfully"
+                    SUCCESS=$((SUCCESS + 1))
+                  else
+                    echo "  ❌ Delete failed (HTTP $del_status)"
+                    ERROR=$((ERROR + 1))
+                  fi
+                else
+                  echo "  ❌ Delete request failed"
+                  ERROR=$((ERROR + 1))
+                fi
+                ;;
+              404)
+                echo "  ℹ️ Worker not found"
+                NOTFOUND=$((NOTFOUND + 1))
+                ;;
+              *)
+                echo "  ⚠️ Unexpected status: $status"
+                ERROR=$((ERROR + 1))
+                ;;
+            esac
+          else
+            echo "  ❌ Check request failed or timed out"
+            ERROR=$((ERROR + 1))
+          fi
+        done
+
+        # Output results
+        echo ""
+        echo "📊 Results: ✅$SUCCESS ℹ️$NOTFOUND ❌$ERROR"
+
+        # Set outputs
+        echo "deleted-count=$SUCCESS" >> "$GITHUB_OUTPUT"
+        echo "not-found-count=$NOTFOUND" >> "$GITHUB_OUTPUT"
+        echo "error-count=$ERROR" >> "$GITHUB_OUTPUT"
+
+        # Fail if needed
+        if [ "${{ inputs.fail-on-error }}" = "true" ] && [ $ERROR -gt 0 ]; then
+          echo "⚠️ Some operations failed. Check the logs above for details."
+          exit 1
+        fi
