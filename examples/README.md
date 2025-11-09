@@ -69,7 +69,7 @@ jobs:
           worker-pattern: 'myapp-pr-*'
           
           # develop / staging 環境は除外（削除しない）
-          exclude: 'myapp-develop,myapp-staging,myapp-stg'
+          exclude: 'myapp-develop,myapp-staging'
           
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -84,7 +84,9 @@ jobs:
 
 ---
 
-## パターンマッチの例
+## パターンマッチと除外設定
+
+### worker-pattern（削除対象）の例
 
 ```yaml
 # Pattern: 'myapp-pr-*'
@@ -100,6 +102,47 @@ jobs:
   - myapp-develop
 ```
 
+### exclude（除外対象）の例
+
+**完全一致による除外**:
+```yaml
+exclude: 'myapp-develop,myapp-staging,myapp'
+# 削除されない:
+#   - myapp-develop（完全一致）
+#   - myapp-staging（完全一致）
+#   - myapp（完全一致）
+# 削除される:
+#   - myapp-dev（部分一致は削除されない）
+#   - myapp-stg（別名は削除対象）
+```
+
+**パターンによる除外**（ワイルドカード対応）:
+```yaml
+exclude: 'myapp-release-*,myapp-*-prod,*-stable'
+# 削除されない:
+#   - myapp-release-1
+#   - myapp-release-v1.0
+#   - myapp-release-beta
+#   - myapp-service-prod
+#   - myapp-api-prod
+#   - staging-stable
+#   - main-stable
+```
+
+### 実践例：複数環境での除外
+
+```yaml
+exclude: 'myapp,myapp-main,myapp-develop,myapp-staging,myapp-release-*,*-production'
+# 削除されない例:
+#   - myapp（本番）
+#   - myapp-main（main ブランチ）
+#   - myapp-develop（develop ブランチ）
+#   - myapp-staging（staging ブランチ）
+#   - myapp-release-1.0（リリース Worker）
+#   - myapp-release-beta（リリース候補）
+#   - api-production（他の本番 Worker）
+```
+
 ---
 
 ## 入力値 (Inputs)
@@ -108,12 +151,23 @@ jobs:
 |--------|------|------|-----|
 | `worker-names` | 削除対象の Worker 名（カンマ区切り） | ⚠️※1 | `myapp-pr-1,myapp-pr-2` |
 | `worker-pattern` | 削除対象の Worker パターン | ⚠️※1 | `myapp-pr-*` |
-| `exclude` | 削除から除外する Worker 名またはパターン | ✅ | `myapp-develop,myapp-stg` |
+| `exclude` | 削除から除外する Worker 名またはパターン（ワイルドカード対応） | ✅ | `myapp-develop,myapp-release-*,*-prod` |
 | `dry-run` | 削除する前に確認するのみ | ✅ | `true` (デフォルト) |
 | `cloudflare-api-token` | Cloudflare API Token | ❌ | `${{ secrets.CLOUDFLARE_API_TOKEN }}` |
 | `cloudflare-account-id` | Cloudflare Account ID | ❌ | `${{ secrets.CLOUDFLARE_ACCOUNT_ID }}` |
 
 ※1: `worker-names` と `worker-pattern` のいずれか一つを指定する必要があります
+
+#### exclude パラメータの詳細
+
+**完全一致** （ワイルドカードなし）:
+- `myapp-develop` → `myapp-develop` のみ除外
+- `myapp-staging` → `myapp-staging` のみ除外
+
+**パターンマッチ** （ワイルドカード対応）:
+- `myapp-release-*` → `myapp-release-1`, `myapp-release-v1.0` など全て除外
+- `*-prod` → `api-prod`, `web-prod` など全て除外
+- `*-*-stable` → `main-app-stable`, `staging-api-stable` など除外
 
 ---
 
