@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CommentInputSchema, CommentOutputSchema } from '../src/shared/schemas';
+import { CleanupInputSchema, CleanupOutputSchema } from '../src/shared/schemas';
 import { parseInputs, setOutputsValidated } from '../src/shared/validation';
 import * as core from '@actions/core';
 
@@ -17,52 +17,42 @@ describe('Schemas', () => {
     mockSetOutput.mockClear();
   });
 
-  describe('CommentInputSchema', () => {
-    it('should parse valid inputs', () => {
+  describe('CleanupInputSchema', () => {
+    it('should parse valid inputs with worker pattern', () => {
       const raw = {
-        deploymentUrl: 'https://example.com',
-        deploymentStatus: 'success',
-        workerName: 'test-worker',
-        githubToken: 'token123',
-        customMessage: 'Test message',
-        commentTemplate: 'Template',
-        updateExisting: true,
-        commentTag: 'test-tag'
+        workerPattern: 'test-*',
+        cloudflareApiToken: 'token123',
+        cloudflareAccountId: 'account123',
+        dryRun: true
       };
-      const result = parseInputs(CommentInputSchema, raw);
+      const result = parseInputs(CleanupInputSchema, raw);
       expect(result).toEqual({
-        deploymentUrl: 'https://example.com',
-        deploymentStatus: 'success',
-        workerName: 'test-worker',
-        githubToken: 'token123',
-        customMessage: 'Test message',
-        commentTemplate: 'Template',
-        updateExisting: true,
-        commentTag: 'test-tag'
+        workerPattern: 'test-*',
+        cloudflareApiToken: 'token123',
+        cloudflareAccountId: 'account123',
+        dryRun: true
       });
       expect(mockSetFailed).not.toHaveBeenCalled();
     });
 
-    it('should fail on invalid URL', () => {
+    it('should fail on missing required cloudflareApiToken', () => {
       const raw = {
-        deploymentUrl: 'invalid-url',
-        deploymentStatus: 'success',
-        githubToken: 'token123'
+        workerPattern: 'test-*',
+        cloudflareAccountId: 'account123'
       };
-      const result = parseInputs(CommentInputSchema, raw);
+      const result = parseInputs(CleanupInputSchema, raw);
       expect(result).toBeNull();
       expect(mockSetFailed).toHaveBeenCalledWith(
         expect.stringContaining('Input validation failed')
       );
     });
 
-    it('should fail on empty githubToken', () => {
+    it('should fail on missing required cloudflareAccountId', () => {
       const raw = {
-        deploymentUrl: 'https://example.com',
-        deploymentStatus: 'success',
-        githubToken: ''
+        workerPattern: 'test-*',
+        cloudflareApiToken: 'token123'
       };
-      const result = parseInputs(CommentInputSchema, raw);
+      const result = parseInputs(CleanupInputSchema, raw);
       expect(result).toBeNull();
       expect(mockSetFailed).toHaveBeenCalledWith(
         expect.stringContaining('Input validation failed')
@@ -70,21 +60,25 @@ describe('Schemas', () => {
     });
   });
 
-  describe('CommentOutputSchema', () => {
-    it('should validate outputs', () => {
+  describe('CleanupOutputSchema', () => {
+    it('should validate cleanup outputs', () => {
       const outputs = {
-        commentId: '123',
-        commentUrl: 'https://github.com'
+        deletedWorkers: ['worker1', 'worker2'],
+        deletedCount: 2,
+        skippedWorkers: [],
+        dryRunResults: []
       };
-      expect(() => setOutputsValidated(CommentOutputSchema, outputs)).not.toThrow();
+      expect(() => setOutputsValidated(CleanupOutputSchema, outputs)).not.toThrow();
     });
 
-    it('should handle valid outputs', () => {
+    it('should handle empty cleanup outputs', () => {
       const outputs = {
-        commentId: '123',
-        commentUrl: 'https://github.com'
+        deletedWorkers: [],
+        deletedCount: 0,
+        skippedWorkers: [],
+        dryRunResults: []
       };
-      expect(() => setOutputsValidated(CommentOutputSchema, outputs)).not.toThrow();
+      expect(() => setOutputsValidated(CleanupOutputSchema, outputs)).not.toThrow();
     });
   });
 });

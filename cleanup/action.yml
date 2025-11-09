@@ -9,7 +9,7 @@ branding:
 
 inputs:
   worker-pattern:
-    description: 'Pattern for workers to delete (e.g., "project-pr-*")'
+    description: 'Pattern for workers to delete (e.g., "myapp-pr-*")'
     required: false
 
   worker-names:
