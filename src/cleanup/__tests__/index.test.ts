@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import * as core from '@actions/core';
-import { CloudflareApi } from '../src/shared/lib/cloudflare-api';
+import { CloudflareApi } from '../../shared/lib/cloudflare-api';
 
 global.fetch = vi.fn();
 
@@ -23,7 +23,7 @@ vi.mock('@actions/core', () => ({
 }));
 
 // Mock CloudflareApi
-vi.mock('../src/shared/lib/cloudflare-api');
+vi.mock('../../shared/lib/cloudflare-api');
 
 describe('cleanup action integration', () => {
   beforeEach(() => {
@@ -44,7 +44,7 @@ describe('cleanup action integration', () => {
     });
 
     vi.resetModules();
-    await import('../src/cleanup/index');
+    await import('../index');
 
     expect(core.setFailed).toHaveBeenCalledWith(
       expect.stringContaining('Either worker-pattern or worker-names must be provided')
@@ -69,7 +69,7 @@ describe('cleanup action integration', () => {
     mockCf.findWorkersByPattern.mockResolvedValue([]);
 
     vi.resetModules();
-    await import('../src/cleanup/index');
+    await import('../index');
 
     expect(core.info).toHaveBeenCalledWith('Processing specific workers: worker1, worker2');
     expect(core.setOutput).toHaveBeenCalledWith(

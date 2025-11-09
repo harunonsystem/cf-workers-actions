@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CleanupInputSchema, CleanupOutputSchema } from '../src/cleanup/schemas';
-import { parseInputs, setOutputsValidated } from '../src/shared/validation';
+import { CleanupInputSchema, CleanupOutputSchema } from '../schemas';
+import { parseInputs, setOutputsValidated } from '../../shared/validation';
 import * as core from '@actions/core';
 
 vi.mock('@actions/core', () => ({
@@ -11,7 +11,7 @@ vi.mock('@actions/core', () => ({
 const mockSetFailed = vi.mocked(core.setFailed);
 const mockSetOutput = vi.mocked(core.setOutput);
 
-describe('Schemas', () => {
+describe('Cleanup Schemas', () => {
   beforeEach(() => {
     mockSetFailed.mockClear();
     mockSetOutput.mockClear();
