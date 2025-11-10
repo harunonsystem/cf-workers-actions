@@ -35,7 +35,7 @@ jobs:
         if: github.event.action == 'closed'
         uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
-          worker-names: 'secure-app-pr-${{ github.event.pull_request.number }}'
+          worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
           cloudflare-api-token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
 
@@ -43,6 +43,6 @@ jobs:
         if: github.event_name == 'schedule'
         uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
-          worker-pattern: 'secure-app-pr-*'
+          worker-pattern: 'myapp-pr-*'
           cloudflare-api-token: ${{ steps.load-secrets.outputs.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ steps.load-secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
