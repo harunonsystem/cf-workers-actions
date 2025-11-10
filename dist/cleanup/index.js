@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(require("@actions/core"));
 const cloudflare_api_1 = require("../shared/lib/cloudflare-api");
-const schemas_1 = require("../shared/schemas");
+const schemas_1 = require("./schemas");
 const validation_1 = require("../shared/validation");
 const error_handler_1 = require("../shared/lib/error-handler");
 async function run() {

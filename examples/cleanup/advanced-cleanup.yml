@@ -8,7 +8,7 @@ on:
   pull_request:
     types: [closed]
   schedule:
-    - cron: '0 2 * * *'  # 毎日 2 AM
+    - cron: '0 2 * * *' # 毎日 2 AM
   workflow_dispatch:
     inputs:
       worker-pattern:
@@ -32,7 +32,7 @@ jobs:
   auto-cleanup-pr:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - name: Cleanup PR worker
         id: cleanup
@@ -42,7 +42,7 @@ jobs:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           dry-run: 'false'
-      
+
       - name: Output cleanup result
         run: |
           echo "Deleted: ${{ steps.cleanup.outputs.deleted-count }} workers"
@@ -52,34 +52,34 @@ jobs:
   scheduled-cleanup:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
-    
+
     steps:
       - name: Cleanup old workers (dry-run first)
         id: dryrun
         uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
           worker-pattern: 'myapp-pr-*'
-          exclude: 'myapp,myapp-develop,myapp-staging,*-production,*-prod'
+          exclude: 'myapp,myapp-dev,myapp-stg,*-production,*-prod'
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           dry-run: 'true'
-      
+
       - name: Log dry-run results
         run: |
           echo "Dry-run would delete these workers:"
           echo "${{ steps.dryrun.outputs.dry-run-results }}"
           echo "Count: ${{ steps.dryrun.outputs.deleted-count }}"
-      
+
       - name: Cleanup old workers (actual deletion)
         id: cleanup
         uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
           worker-pattern: 'myapp-pr-*'
-          exclude: 'myapp,myapp-develop,myapp-staging,*-production,*-prod'
+          exclude: 'myapp,myapp-dev,myapp-stg,*-production,*-prod'
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           dry-run: 'false'
-      
+
       - name: Notify Slack (success)
         if: success()
         uses: slackapi/slack-github-action@v1.24.0
@@ -98,7 +98,7 @@ jobs:
                 }
               ]
             }
-      
+
       - name: Notify Slack (failure)
         if: failure()
         uses: slackapi/slack-github-action@v1.24.0
@@ -122,7 +122,7 @@ jobs:
   manual-cleanup:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
-    
+
     steps:
       - name: Cleanup with dry-run
         id: dryrun
@@ -132,7 +132,7 @@ jobs:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           dry-run: 'true'
-      
+
       - name: Show what would be deleted
         run: |
           echo "Pattern: ${{ github.event.inputs.worker-pattern }}"
@@ -141,7 +141,7 @@ jobs:
           echo ""
           echo "⚠️ This is a DRY-RUN (no actual deletion)"
           echo "Run with dry-run=false to actually delete"
-      
+
       - name: Cleanup (actual deletion)
         id: cleanup
         if: github.event.inputs.dry-run == 'false'
@@ -151,7 +151,7 @@ jobs:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           dry-run: 'false'
-      
+
       - name: Summary
         if: github.event.inputs.dry-run == 'false'
         run: |

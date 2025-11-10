@@ -248,7 +248,7 @@ jobs:
          uses: harunonsystem/cloudflare-actions/cleanup@v1
          with:
            worker-pattern: 'myapp-pr-*'
-            exclude: 'myapp-develop,myapp-staging,myapp,*-production'
+            exclude: 'myapp-dev,myapp-stg,myapp,*-production'
             dry-run: false
            cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
            cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -264,7 +264,7 @@ This action suite fully supports GitFlow branching strategies with persistent an
 Create multiple worker types for different purposes:
 
 - **Temporary PR Previews**: `myapp-pr-123`, `myapp-pr-456` (auto-deleted when PR closes)
-- **Persistent Environments**: `myapp-develop`, `myapp-staging`, `myapp` (permanent)
+- **Persistent Environments**: `myapp-dev`, `myapp-stg`, `myapp` (permanent)
 
 ### Key Features
 
@@ -273,7 +273,7 @@ Create multiple worker types for different purposes:
    - `worker-name-pattern-branch` - For direct branch deployments (e.g., `myapp-{branch}`)
 
 2. **Protection mechanism** to prevent accidental deletion:
-   - `exclude` - Supports both exact names and glob patterns (e.g., `myapp-develop,*-staging,*-production`)
+   - `exclude` - Supports both exact names and glob patterns (e.g., `myapp-dev,*-staging,*-production`)
 
 3. **Automatic cleanup** with safety guarantees
 
@@ -333,7 +333,7 @@ jobs:
       - uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
           worker-pattern: 'myapp-pr-${{ github.event.pull_request.number }}'
-          protected-workers: 'myapp-develop,myapp-staging,myapp,*-production'
+          protected-workers: 'myapp-dev,myapp-stg,myapp,*-production'
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           confirm-deletion: 'yes'

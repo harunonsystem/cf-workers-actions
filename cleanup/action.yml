@@ -30,7 +30,7 @@ inputs:
     default: 'true'
 
   exclude:
-    description: 'Comma-separated list of worker names or patterns to exclude from deletion. Supports exact names (e.g., "myapp-develop,myapp-staging") and glob patterns (e.g., "*-develop,*-staging,*-production"). Excluded workers will never be deleted even if they match worker-pattern.'
+    description: 'Comma-separated list of worker names or patterns to exclude from deletion. Supports exact names (e.g., "myapp-dev,myapp-stg") and glob patterns (e.g., "*-develop,*-staging,*-production"). Excluded workers will never be deleted even if they match worker-pattern.'
     required: false
     default: ''
 

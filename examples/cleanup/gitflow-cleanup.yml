@@ -12,7 +12,7 @@ permissions:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Cleanup PR worker with protection
         id: cleanup
@@ -21,19 +21,19 @@ jobs:
           # myapp-pr-* パターンで削除
           # myapp-pr-1, myapp-pr-2, myapp-pr-123 などが削除対象
           worker-pattern: 'myapp-pr-*'
-          
+
           # 除外設定: 完全一致とワイルドカード両方対応
           # 削除されない:
-          #   - myapp-develop, myapp-staging, myapp-stg（完全一致）
+          #   - myapp-dev, myapp-stg（完全一致）
           #   - myapp-release-1, myapp-release-v1.0（パターン）
           #   - api-prod, web-prod（パターン）
           #   - myapp（本番環境）
-          exclude: 'myapp-develop,myapp-staging,myapp-stg,myapp-release-*,*-prod,myapp'
-          
+          exclude: 'myapp-dev,myapp-stg,myapp-release-*,*-prod,myapp'
+
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           dry-run: 'false'
-      
+
       - name: Log result
         run: |
           echo "✅ Cleanup completed"

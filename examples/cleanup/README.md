@@ -80,13 +80,13 @@ exclude: 'myapp-pr-3'
 
 ---
 
-### パターン4️⃣: 複数環境を除外（最も実用的）
+### パターン4️⃣: 複数環境を除外
 
 **使い方**: PR Worker は全部削除するが、環境ブランチは保護
 
 ```yaml
 worker-pattern: 'myapp-pr-*'
-exclude: 'myapp,myapp-develop,myapp-staging,myapp-release-*,*-prod'
+exclude: 'myapp,myapp-dev,myapp-stg,myapp-release-*'
 ```
 
 **削除結果**:
@@ -94,10 +94,9 @@ exclude: 'myapp,myapp-develop,myapp-staging,myapp-release-*,*-prod'
 - ✅ `myapp-pr-1` → 削除
 - ✅ `myapp-feature-x` → 削除
 - ❌ `myapp` → **削除しない**（除外: 本番環境）
-- ❌ `myapp-develop` → **削除しない**（除外: develop ブランチ）
-- ❌ `myapp-staging` → **削除しない**（除外: staging ブランチ）
+- ❌ `myapp-dev` → **削除しない**（除外: develop ブランチ）
+- ❌ `myapp-stg` → **削除しない**（除外: staging ブランチ）
 - ❌ `myapp-release-1.0` → **削除しない**（除外: リリース）
-- ❌ `api-prod` → **削除しない**（除外パターン）
 
 ---
 
@@ -156,7 +155,7 @@ jobs:
         with:
           worker-pattern: ${{ github.event.inputs.deletion-type == 'by-pattern' && github.event.inputs.worker-input || '' }}
           worker-names: ${{ github.event.inputs.deletion-type == 'by-names' && github.event.inputs.worker-input || '' }}
-          exclude: 'myapp,myapp-develop,myapp-staging,myapp-release-*'
+          exclude: 'myapp,myapp-dev,myapp-stg,myapp-release-*'
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           dry-run: ${{ github.event.inputs.dry-run }}
@@ -171,7 +170,7 @@ jobs:
 ```yaml
 worker-names: 'myapp-pr-1,myapp-pr-2' # 完全一致、複数指定可
 worker-pattern: 'myapp-pr-*' # ワイルドカード、1つのみ
-exclude: 'myapp-develop,myapp-release-*' # 除外設定、ワイルドカード対応
+exclude: 'myapp-dev,myapp-release-*' # 除外設定、ワイルドカード対応
 dry-run: 'true' # true=確認のみ, false=実削除
 cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -195,7 +194,7 @@ cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ### 完全一致による除外
 
 ```yaml
-exclude: 'myapp,myapp-develop,myapp-staging'
+exclude: 'myapp,myapp-dev,myapp-stg'
 ```
 
 - `myapp` のみ除外
@@ -209,22 +208,6 @@ exclude: 'myapp-release-*,*-prod,*-production'
 
 - `myapp-release-1`, `myapp-release-v1.0` 除外
 - `api-prod`, `web-prod` 除外
-
----
-
-## ベストプラクティス
-
-✅ **やるべきこと**
-
-1. 本番環境は必ず除外: `exclude: 'myapp,myapp-main,*-production'`
-2. 最初は dry-run で確認: `dry-run: 'true'`
-3. Slack 通知を設定
-
-❌ **してはいけないこと**
-
-1. 本番環境を削除対象に含める
-2. `exclude` なしで広いパターン削除
-3. ドライラン確認なしで実削除
 
 ---
 
