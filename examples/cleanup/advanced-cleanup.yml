@@ -15,6 +15,10 @@ on:
         description: 'Worker name pattern to delete'
         required: true
         default: 'myapp-pr-*'
+      worker-names:
+        description: 'Specific worker names to delete (comma-separated)'
+        required: false
+        default: ''
       dry-run:
         description: 'Dry run (true=確認のみ, false=実削除)'
         required: false
