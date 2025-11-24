@@ -13,6 +13,7 @@ A comprehensive suite of modular GitHub Actions for Cloudflare Workers deploymen
 - **Cleanup**: Clean up workers based on patterns or specific names
 - **Modular Architecture**: Mix and match actions as needed, compatible with official Cloudflare actions
 - **TypeScript First**: Written in TypeScript with complete type safety and definitions
+- **Ultra-Fast Tooling**: Linting and formatting with Biome (replacing Oxlint & Prettier)
 - **Comprehensive Testing**: Full test coverage with Vitest
 - **Error Handling**: Robust error handling and informative logging
 

@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'vitest';
-import { readFileSync, existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { describe, expect, test } from 'vitest';
 import { parse } from 'yaml';
 
 /**
@@ -91,7 +91,6 @@ describe('GitHub Actions Validation', () => {
   });
 
   describe('Input Validation', () => {
-
     test.each(actions)('should have proper input descriptions: %s', (actionName) => {
       const action = loadAction(actionName);
 
@@ -112,13 +111,13 @@ describe('GitHub Actions Validation', () => {
       expect(action.runs.using).toBe('composite');
       expect(action.runs.steps).toBeDefined();
       expect(Array.isArray(action.runs.steps)).toBe(true);
-      expect(action.runs.steps!.length).toBeGreaterThan(0);
+      expect(action.runs.steps?.length).toBeGreaterThan(0);
     });
 
     test.each(actions)('should have valid step structure: %s', (actionName) => {
       const action = loadAction(actionName);
 
-      action.runs.steps!.forEach((step, _index) => {
+      action.runs.steps?.forEach((step, _index) => {
         // ステップは名前を持つべき
         expect(step.name).toBeDefined();
         expect(step.name).toBeTruthy();
@@ -140,8 +139,8 @@ describe('GitHub Actions Validation', () => {
     test.each(actions)('should use pinned action versions: %s', (actionName) => {
       const action = loadAction(actionName);
 
-      action.runs.steps!.forEach((step) => {
-        if (step.uses && step.uses.includes('@')) {
+      action.runs.steps?.forEach((step) => {
+        if (step.uses?.includes('@')) {
           // GitHub Actions should be pinned to specific commit SHAs or versions
           const [actionRef, version] = step.uses.split('@');
 
@@ -157,7 +156,7 @@ describe('GitHub Actions Validation', () => {
     test.each(actions)('should not expose secrets in run commands: %s', (actionName) => {
       const action = loadAction(actionName);
 
-      action.runs.steps!.forEach((step) => {
+      action.runs.steps?.forEach((step) => {
         if (step.run) {
           // 実行コマンドにトークンやシークレットが直接埋め込まれていないことを確認
           expect(step.run).not.toMatch(/token.*=.*[a-zA-Z0-9]{20,}/);
@@ -172,8 +171,8 @@ describe('GitHub Actions Validation', () => {
     test.each(actions)('should have meaningful step names: %s', (actionName) => {
       const action = loadAction(actionName);
 
-      action.runs.steps!.forEach((step) => {
-        expect(step.name!.length).toBeGreaterThan(5); // 意味のある名前
+      action.runs.steps?.forEach((step) => {
+        expect(step.name?.length).toBeGreaterThan(5); // 意味のある名前
         expect(step.name).not.toMatch(/^step\s*\d*$/i); // 単純な "Step N" は避ける
       });
     });

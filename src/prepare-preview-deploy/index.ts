@@ -1,9 +1,8 @@
+import * as fs from 'node:fs';
 import * as core from '@actions/core';
-import * as fs from 'fs';
-import * as path from 'path';
 import * as github from '@actions/github';
-import { mapInputs, parseInputs } from '../shared/validation';
 import { handleActionError } from '../shared/lib/error-handler';
+import { mapInputs, parseInputs } from '../shared/validation';
 import { PreparePreviewDeployInputSchema } from './schemas.js';
 
 /**
@@ -21,7 +20,7 @@ function processTemplate(
   // Replace {pr-number} with PR number if available, otherwise fall back to branch-name
   const prIdentifier = variables.prNumber || variables.branchName;
   result = result.replace(/\{pr-number\}/g, prIdentifier);
-  
+
   // Replace {branch-name} with branch name
   result = result.replace(/\{branch-name\}/g, variables.branchName);
 
@@ -134,7 +133,7 @@ async function run(): Promise<void> {
 
     // Get variables for template processing
     const branchName = getSanitizedBranchName();
-    
+
     // Auto-detect PR number
     const prNumber = github.context.payload.pull_request?.number?.toString();
 

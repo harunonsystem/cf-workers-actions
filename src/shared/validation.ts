@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 // Dash-case to camelCase conversion for input names
 function dashToCamel(str: string): string {

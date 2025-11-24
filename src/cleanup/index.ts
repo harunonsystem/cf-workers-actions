@@ -1,8 +1,8 @@
 import * as core from '@actions/core';
 import { CloudflareApi } from '../shared/lib/cloudflare-api';
-import { CleanupInputSchema } from './schemas';
+import { CLEANUP_ERROR_OUTPUTS, handleActionError } from '../shared/lib/error-handler';
 import { mapInputs, parseInputs } from '../shared/validation';
-import { handleActionError, CLEANUP_ERROR_OUTPUTS } from '../shared/lib/error-handler';
+import { CleanupInputSchema } from './schemas';
 
 async function run(): Promise<void> {
   try {
@@ -152,7 +152,7 @@ async function run(): Promise<void> {
           (errorMessage.includes('rate limit') || errorMessage.includes('429')) &&
           retryCount < MAX_RETRIES
         ) {
-          const backoffDelay = Math.pow(2, retryCount) * 30000; // 30s, 60s, 120s
+          const backoffDelay = 2 ** retryCount * 30000; // 30s, 60s, 120s
           core.warning(
             `⏰ Rate limit hit for ${workerName}, waiting ${backoffDelay / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})...`
           );
@@ -253,5 +253,9 @@ async function run(): Promise<void> {
   }
 }
 
-// Self-invoking async function to handle top-level await
-void run();
+export { run };
+
+// Execute if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  void run();
+}

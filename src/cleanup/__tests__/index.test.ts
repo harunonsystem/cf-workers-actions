@@ -1,11 +1,13 @@
-import { describe, test, expect, beforeEach, vi } from 'vitest';
 import * as core from '@actions/core';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { CloudflareApi } from '../../shared/lib/cloudflare-api';
+import { run } from '../index';
 
 global.fetch = vi.fn();
 
-// Mock @actions/core
-vi.mock('@actions/core', () => ({
+const coreMocks = vi.hoisted(() => ({
+  __esModule: true,
+  default: {},
   getInput: vi.fn(),
   setOutput: vi.fn(),
   setFailed: vi.fn(),
@@ -22,6 +24,9 @@ vi.mock('@actions/core', () => ({
   }
 }));
 
+// Mock @actions/core
+vi.mock('@actions/core', () => coreMocks);
+
 // Mock CloudflareApi
 vi.mock('../../shared/lib/cloudflare-api');
 
@@ -35,18 +40,19 @@ describe('cleanup action integration', () => {
       findWorkersByPattern: vi.fn(),
       deleteWorker: vi.fn()
     };
-    (CloudflareApi as any).mockImplementation(() => mockCf);
+    (CloudflareApi as any).mockImplementation(function () {
+      return mockCf;
+    });
 
-    (core.getInput as any).mockImplementation((name: string) => {
+    coreMocks.getInput.mockImplementation((name: string) => {
       if (name === 'cloudflare-api-token') return 'token';
       if (name === 'cloudflare-account-id') return 'account';
       return '';
     });
 
-    vi.resetModules();
-    await import('../index');
+    await run();
 
-    expect(core.setFailed).toHaveBeenCalledWith(
+    expect(coreMocks.setFailed).toHaveBeenCalledWith(
       expect.stringContaining('Either worker-pattern or worker-names must be provided')
     );
   });
@@ -56,9 +62,11 @@ describe('cleanup action integration', () => {
       findWorkersByPattern: vi.fn(),
       deleteWorker: vi.fn()
     };
-    (CloudflareApi as any).mockImplementation(() => mockCf);
+    (CloudflareApi as any).mockImplementation(function () {
+      return mockCf;
+    });
 
-    (core.getInput as any).mockImplementation((name: string) => {
+    coreMocks.getInput.mockImplementation((name: string) => {
       if (name === 'worker-names') return 'worker1,worker2';
       if (name === 'cloudflare-api-token') return 'token';
       if (name === 'cloudflare-account-id') return 'account';
@@ -68,11 +76,10 @@ describe('cleanup action integration', () => {
 
     mockCf.findWorkersByPattern.mockResolvedValue([]);
 
-    vi.resetModules();
-    await import('../index');
+    await run();
 
-    expect(core.info).toHaveBeenCalledWith('Processing specific workers: worker1, worker2');
-    expect(core.setOutput).toHaveBeenCalledWith(
+    expect(coreMocks.info).toHaveBeenCalledWith('Processing specific workers: worker1, worker2');
+    expect(coreMocks.setOutput).toHaveBeenCalledWith(
       'dry-run-results',
       JSON.stringify(['worker1', 'worker2'])
     );

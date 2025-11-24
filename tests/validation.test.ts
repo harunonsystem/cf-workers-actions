@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mapInputs, parseInputs, setOutputsValidated } from '../src/shared/validation';
 import * as core from '@actions/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+import { mapInputs, parseInputs, setOutputsValidated } from '../src/shared/validation';
 
 vi.mock('@actions/core', () => ({
   getInput: vi.fn(),

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CleanupInputSchema, CleanupOutputSchema } from '../schemas';
-import { parseInputs, setOutputsValidated } from '../../shared/validation';
 import * as core from '@actions/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { parseInputs, setOutputsValidated } from '../../shared/validation';
+import { CleanupInputSchema, CleanupOutputSchema } from '../schemas';
 
 vi.mock('@actions/core', () => ({
   setFailed: vi.fn(),

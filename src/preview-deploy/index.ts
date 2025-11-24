@@ -1,8 +1,8 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
-import { mapInputs, parseInputs } from '../shared/validation';
 import { handleActionError } from '../shared/lib/error-handler';
+import { mapInputs, parseInputs } from '../shared/validation';
 import { DeployPreviewInputSchema } from './schemas.js';
 
 /**
@@ -20,7 +20,7 @@ function processTemplate(
   // Replace {pr-number} with PR number if available, otherwise fall back to branch-name
   const prIdentifier = variables.prNumber || variables.branchName;
   result = result.replace(/\{pr-number\}/g, prIdentifier);
-  
+
   // Replace {branch-name} with branch name
   result = result.replace(/\{branch-name\}/g, variables.branchName);
 
@@ -51,20 +51,20 @@ async function updateWranglerToml(
   // We use sed to update wrangler.toml for simplicity in this action
   // In a real implementation, we might want to use a TOML parser
   // But since we want to preserve comments and structure, regex replacement is often safer for simple edits
-  
+
   // Note: This implementation assumes standard wrangler.toml formatting
   // It looks for [env.{environment}] and updates/adds name = "{workerName}"
-  
+
   // For this action, we'll use a simplified approach:
   // We will use the prepare-preview-deploy logic if we were importing it,
   // but here we will just use a simple replacement or assume the user uses prepare-preview-deploy separately?
   // No, preview-deploy is a "batteries included" action.
-  
+
   // Let's use the same logic as prepare-preview-deploy (simplified for this file)
   // Actually, we can just use the same implementation logic.
-  
-  const fs = await import('fs');
-  
+
+  const fs = await import('node:fs');
+
   if (!fs.existsSync(tomlPath)) {
     throw new Error(`wrangler.toml not found at ${tomlPath}`);
   }
@@ -140,7 +140,7 @@ async function createOrUpdateComment(
 
   const octokit = github.getOctokit(token);
   const { owner, repo } = github.context.repo;
-  
+
   // Find existing comment
   const { data: comments } = await octokit.rest.issues.listComments({
     owner,
@@ -150,7 +150,8 @@ async function createOrUpdateComment(
 
   const existingComment = comments.find(
     (comment) =>
-      comment.user?.login === 'github-actions[bot]' && comment.body?.includes('🚀 Preview Deployment')
+      comment.user?.login === 'github-actions[bot]' &&
+      comment.body?.includes('🚀 Preview Deployment')
   );
 
   const statusIcon = deploymentSuccess ? '✅' : '❌';
@@ -247,7 +248,7 @@ async function run(): Promise<void> {
 
     // Step 4: Comment on PR (if pr-number provided or detected)
     const prNumberInt = prNumber ? parseInt(prNumber, 10) : undefined;
-    if (prNumberInt && !isNaN(prNumberInt)) {
+    if (prNumberInt && !Number.isNaN(prNumberInt)) {
       await createOrUpdateComment(prNumberInt, deploymentUrl, workerName, deploymentSuccess);
       core.info('✅ PR comment posted');
     }

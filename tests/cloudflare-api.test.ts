@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { CloudflareApi } from '../src/shared/lib/cloudflare-api';
 
 // Mock fetch globally

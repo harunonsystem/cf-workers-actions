@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 /**
  * prepare-preview-deploy アクションのテンプレート処理ロジックのテスト
@@ -20,7 +20,7 @@ function processTemplate(template: string, variables: TemplateVariables): string
   // Replace {pr-number} with PR number if available, otherwise fall back to branch-name
   const prIdentifier = variables.prNumber || variables.branchName;
   result = result.replace(/\{pr-number\}/g, prIdentifier);
-  
+
   // Replace {branch-name} with branch name
   result = result.replace(/\{branch-name\}/g, variables.branchName);
 

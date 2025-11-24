@@ -1,8 +1,8 @@
-import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as fs from 'node:fs';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
-import * as fs from 'fs';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 // Mock dependencies
 vi.mock('@actions/core');
@@ -58,7 +58,7 @@ describe('preview-deploy action', () => {
       addCodeBlock: vi.fn().mockReturnThis(),
       write: vi.fn().mockResolvedValue(undefined)
     };
-    // @ts-ignore
+    // @ts-expect-error
     core.summary = mockSummary;
 
     // Mock fs
@@ -126,7 +126,7 @@ name = "my-app-preview"
     inputs = {
       'worker-name': 'myapp-pr-{pr-number}',
       environment: 'preview',
-      'domain': 'username.workers.dev',
+      domain: 'username.workers.dev',
       'pr-number': '123',
       'cloudflare-api-token': 'fake-token',
       'cloudflare-account-id': 'fake-account-id'
@@ -162,32 +162,34 @@ name = "my-app-preview"
       repo: 'test-repo',
       issue_number: 123
     });
-    expect(mockCreateComment).toHaveBeenCalledWith(expect.objectContaining({
-      owner: 'test-owner',
-      repo: 'test-repo',
-      issue_number: 123,
-      body: expect.stringContaining('https://myapp-pr-123.username.workers.dev')
-    }));
+    expect(mockCreateComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        owner: 'test-owner',
+        repo: 'test-repo',
+        issue_number: 123,
+        body: expect.stringContaining('https://myapp-pr-123.username.workers.dev')
+      })
+    );
   });
 
   test('should fallback to branch name if pr-number is missing (no comment posted)', async () => {
     inputs = {
       'worker-name': 'myapp-{branch-name}',
       environment: 'preview',
-      'domain': 'example.com',
+      domain: 'example.com',
       'cloudflare-api-token': 'fake-token',
       'cloudflare-account-id': 'fake-account-id'
     };
-    
+
     // Mock branch name
     process.env.GITHUB_REF = 'refs/heads/feature/test';
-    
+
     Object.defineProperty(github, 'context', {
       value: {
         repo: { owner: 'test-owner', repo: 'test-repo' },
         sha: 'test-sha',
         ref: 'refs/heads/feature/test',
-        payload: {}  // No pull_request in payload
+        payload: {} // No pull_request in payload
       },
       writable: true
     });
@@ -197,7 +199,7 @@ name = "my-app-preview"
     expect(outputs['deployment-url']).toBe('https://myapp-feature-test.example.com');
     expect(outputs['deployment-name']).toBe('myapp-feature-test');
     expect(outputs['deployment-success']).toBe('true');
-    
+
     // Should NOT post comment if pr-number is missing
     expect(mockCreateComment).not.toHaveBeenCalled();
   });

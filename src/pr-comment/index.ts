@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { mapInputs, parseInputs } from '../shared/validation';
 import { handleActionError } from '../shared/lib/error-handler';
+import { mapInputs, parseInputs } from '../shared/validation';
 import { PrCommentInputSchema } from './schemas.js';
 
 /**
@@ -23,7 +23,7 @@ async function createOrUpdateComment(
 
   const body = `## 🚀 Preview Deployment
 
-**Preview URL:** ${deploymentSuccess ? `[${deploymentUrl}](${deploymentUrl})` : '[Deploy failed - check logs](' + `https://github.com/${owner}/${repo}/actions` + ')'}
+**Preview URL:** ${deploymentSuccess ? `[${deploymentUrl}](${deploymentUrl})` : `[Deploy failed - check logs](https://github.com/${owner}/${repo}/actions)`}
 
 **Build Status:** ${statusIcon} ${statusText}
 **Worker Name:** \`${deploymentName}\`
@@ -41,7 +41,8 @@ ${deploymentSuccess ? 'This preview will be automatically updated when you push 
 
   const existingComment = comments.find(
     (comment) =>
-      comment.user?.login === 'github-actions[bot]' && comment.body?.includes('🚀 Preview Deployment')
+      comment.user?.login === 'github-actions[bot]' &&
+      comment.body?.includes('🚀 Preview Deployment')
   );
 
   if (existingComment) {
@@ -86,7 +87,9 @@ async function run(): Promise<void> {
     // Get PR number from context
     const prNumber = github.context.payload.pull_request?.number;
     if (!prNumber) {
-      throw new Error('Could not get PR number from context. This action must run on pull_request events.');
+      throw new Error(
+        'Could not get PR number from context. This action must run on pull_request events.'
+      );
     }
 
     core.info('💬 Commenting on PR...');
