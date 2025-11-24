@@ -33,11 +33,12 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.run = run;
 const core = __importStar(require("@actions/core"));
 const cloudflare_api_1 = require("../shared/lib/cloudflare-api");
-const schemas_1 = require("./schemas");
-const validation_1 = require("../shared/validation");
 const error_handler_1 = require("../shared/lib/error-handler");
+const validation_1 = require("../shared/validation");
+const schemas_1 = require("./schemas");
 async function run() {
     try {
         // Map and validate inputs
@@ -160,7 +161,7 @@ async function run() {
                 // Handle rate limiting with exponential backoff
                 if ((errorMessage.includes('rate limit') || errorMessage.includes('429')) &&
                     retryCount < MAX_RETRIES) {
-                    const backoffDelay = Math.pow(2, retryCount) * 30000; // 30s, 60s, 120s
+                    const backoffDelay = 2 ** retryCount * 30000; // 30s, 60s, 120s
                     core.warning(`⏰ Rate limit hit for ${workerName}, waiting ${backoffDelay / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
                     await new Promise((resolve) => setTimeout(resolve, backoffDelay));
                     return deleteWithRetry(workerName, retryCount + 1);
@@ -247,5 +248,7 @@ async function run() {
         });
     }
 }
-// Self-invoking async function to handle top-level await
-void run();
+// Execute if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+    void run();
+}

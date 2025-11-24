@@ -75,10 +75,3 @@ Thumbs.db
 
 # Note: dist/ contains compiled JS for GitHub Actions - keep it committed
 
-# Local testing tools
-wrkflw
-index.js
-todo.md
-
-# wip
-dist/

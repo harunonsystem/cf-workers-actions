@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Development & Quality
 
 - Complete Jest test suite with >90% coverage
-- ESLint and Prettier configuration
+- Biome configuration (replaced ESLint/Prettier/Oxlint)
 - GitHub Actions CI/CD pipeline
 - Comprehensive documentation and examples
 - MIT license

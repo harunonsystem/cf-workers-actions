@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 export declare function mapInputs(inputMap: Record<string, {
     required?: boolean;
     default?: string;

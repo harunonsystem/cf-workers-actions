@@ -1,4 +1,3 @@
-import * as core from '@actions/core';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { CloudflareApi } from '../../shared/lib/cloudflare-api';
 import { run } from '../index';
@@ -40,6 +39,7 @@ describe('cleanup action integration', () => {
       findWorkersByPattern: vi.fn(),
       deleteWorker: vi.fn()
     };
+    // biome-ignore lint/complexity/useArrowFunction: Mock implementation must be a function to support 'new' operator
     (CloudflareApi as any).mockImplementation(function () {
       return mockCf;
     });
@@ -62,6 +62,7 @@ describe('cleanup action integration', () => {
       findWorkersByPattern: vi.fn(),
       deleteWorker: vi.fn()
     };
+    // biome-ignore lint/complexity/useArrowFunction: Mock implementation must be a function to support 'new' operator
     (CloudflareApi as any).mockImplementation(function () {
       return mockCf;
     });

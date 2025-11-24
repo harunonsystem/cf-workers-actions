@@ -24,7 +24,7 @@ runs:
       run: pnpm run typecheck
       shell: bash
 
-    - name: Run linter (Oxlint)
+    - name: Run linter (Biome)
       run: pnpm run lint
       shell: bash
 

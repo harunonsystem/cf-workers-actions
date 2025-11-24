@@ -47,7 +47,7 @@ Thank you for your interest in contributing to Cloudflare Actions! This document
 
    ```bash
    pnpm run typecheck  # TypeScript type checking
-   pnpm run lint       # Run Oxlint (ultra-fast linting)
+   pnpm run lint       # Run Biome (linting and checking)
    pnpm test           # Run Vitest (ultra-fast testing)
    pnpm build          # Build TypeScript to JavaScript
    ```
@@ -79,7 +79,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Code Style
 
-- We use Oxlint (ultra-fast linter) and Prettier for code formatting
+- We use Biome for both linting and code formatting
 - Run `pnpm run lint` to check code quality (10-100x faster than ESLint)
 - Run `pnpm run format` to format code
 

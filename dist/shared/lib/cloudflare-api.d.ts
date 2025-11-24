@@ -1,4 +1,4 @@
-import { CloudflareApiResponse, CloudflareWorker } from '../types';
+import type { CloudflareApiResponse, CloudflareWorker } from '../types';
 /**
  * Cloudflare API client wrapper
  */
