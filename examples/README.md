@@ -1,33 +1,78 @@
-# Examples
+# Cloudflare Workers Deployment Examples
 
-Cloudflare Workers のクリーンアップアクション (cleanup) の実装例です。
+Practical examples for deploying Cloudflare Workers with preview environments and automated PR comments.
 
-## 📖 完全ガイド
+## 📂 Directory Structure
 
-**詳細なドキュメント、パターン別ガイド、シーン別実装例は以下をご覧ください：**
+```
+examples/
+├── cleanup/          # Worker cleanup automation
+└── preview-deploy/   # Preview deployment workflows
+    ├── using-wrangler-action/   # Modular approach
+    └── using-preview-deploy/    # All-in-one approach
+```
 
-👉 **[cleanup/README.md](./cleanup/README.md)** ← ここから始めてください
+## 🚀 Preview Deploy Examples
+
+Choose the approach that best fits your needs:
+
+### [Using Wrangler Action](./preview-deploy/using-wrangler-action/) (Modular)
+
+**Three separate actions for maximum flexibility:**
+- `prepare-preview-deploy` - Generate URLs and update wrangler.toml
+- `cloudflare/wrangler-action` - Official deployment
+- `pr-comment` - PR status updates
+
+**Best for:**
+- Teams wanting full control over deployment steps
+- Custom deployment logic between steps
+- Fine-grained workflow customization
+
+### [Using Preview Deploy](./preview-deploy/using-preview-deploy/) (All-in-one)
+
+**Single action handles everything:**
+- URL generation + deployment + PR commenting in one step
+
+**Best for:**
+- Simple, streamlined workflows
+- Quick setup with less boilerplate
+- Standard deployment patterns
+
+## 🌿 Git Workflow Support
+
+Both approaches support common Git workflows:
+
+### Preview + Production (GitHub Flow)
+- **Preview** (PRs) → `myapp-pr-123`
+- **Production** (main) → `myapp`
+
+### Multi-Environment (GitFlow)
+- **Preview** (PRs) → `myapp-pr-123` (dynamic)
+- **Dev** (dev) → `myapp-dev` (static)
+- **Staging** (stg) → `myapp-stg` (static)
+- **Release** (release/**) → `myapp-release-v1.0` (static)
+- **Production** (main) → `myapp` (static)
+
+## 🧹 Cleanup Examples
+
+Auto-cleanup of preview workers when PRs close:
+
+👉 [Cleanup Examples](./cleanup/)
+
+## 🔧 Quick Start
+
+1. **Choose your approach** (modular vs all-in-one)
+2. **Choose your Git workflow** (GitHub Flow vs GitFlow)
+3. **Copy the workflow file** to `.github/workflows/`
+4. **Update app name** in the workflow
+5. **Add secrets** to repository settings
+
+## 📚 What's Next?
+
+- [Preview Deploy with Wrangler Action](./preview-deploy/using-wrangler-action/)
+- [Preview Deploy with Preview Deploy](./preview-deploy/using-preview-deploy/)
+- [Cleanup Automation](./cleanup/)
 
 ---
 
-## サンプルファイル
-
-### cleanup/
-
-cleanup アクションのサンプル実装：
-
-- **`cleanup/using-secrets.yml`** - GitHub Secrets を使った基本的な例
-- **`cleanup/using-1pass-cli.yml`** - 1Password CLI を使った例
-- **`cleanup/gitflow-cleanup.yml`** - Git Flow（複数環境）パターン例
-- **`cleanup/advanced-cleanup.yml`** - 応用例（ドライラン、Slack 通知など）
-
----
-
-## クイックスタート
-
-1. **cleanup/README.md を読む** → 4つの削除パターンを理解
-2. **サンプルファイルをコピー** → `.github/workflows/` に配置
-3. **自分の環境に合わせて編集** → Worker 名のプリフィックスなど
-4. **Secrets を設定** → CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
-
-詳細は [cleanup/README.md](./cleanup/README.md) をご覧ください。
+**Made with ❤️ by [harunonsystem](https://github.com/harunonsystem)**

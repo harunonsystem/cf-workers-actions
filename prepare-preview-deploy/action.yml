@@ -1,0 +1,38 @@
+---
+name: 'Prepare Preview Deploy'
+description: 'Prepare Cloudflare Workers deployment by generating worker names from templates and updating wrangler.toml configuration'
+author: 'harunonsystem'
+
+branding:
+  icon: 'git-pull-request'
+  color: 'blue'
+
+inputs:
+  worker-name:
+    description: 'Worker name template. Supports: {pr-number}, {branch-name}. Example: myapp-pr-{pr-number}'
+    required: true
+
+  environment:
+    description: 'Deployment environment for wrangler.toml [env.xxx] section'
+    required: true
+
+  domain:
+    description: 'Custom domain for deployment URL'
+    required: false
+    default: 'workers.dev'
+
+  wrangler-toml-path:
+    description: 'Path to wrangler.toml file'
+    required: false
+    default: './wrangler.toml'
+
+outputs:
+  deployment-url:
+    description: 'Generated deployment URL'
+
+  deployment-name:
+    description: 'Generated worker name'
+
+runs:
+  using: 'node20'
+  main: '../dist/prepare-preview-deploy/index.js'

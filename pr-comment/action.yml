@@ -1,0 +1,29 @@
+---
+name: 'PR Comment'
+description: 'Create or update PR comment with Cloudflare Workers deployment status'
+author: 'harunonsystem'
+
+branding:
+  icon: 'message-square'
+  color: 'green'
+
+inputs:
+  deployment-url:
+    description: 'Deployment URL to display in the comment'
+    required: true
+
+  deployment-success:
+    description: 'Whether the deployment was successful (true/false)'
+    required: true
+
+  deployment-name:
+    description: 'Name of the deployed worker'
+    required: true
+
+outputs:
+  comment-id:
+    description: 'ID of the created or updated comment'
+
+runs:
+  using: 'node20'
+  main: '../dist/pr-comment/index.js'

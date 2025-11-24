@@ -1,0 +1,35 @@
+# GitHub Flow: Preview + Production Deployment
+# Uses preview-deploy action for PR deployments
+#
+# Pattern:
+# - Pull Request → Preview deployment (myapp-pr-123)
+# - Production → See prod-deploy.yml
+
+name: GitHub Flow (Deploy Preview)
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Preview deployment for Pull Requests
+  preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # All-in-one deployment with automatic PR commenting
+      - name: Deploy to Preview
+        uses: harunonsystem/cloudflare-actions/preview-deploy@v1
+        with:
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          worker-name: 'myapp-pr-{pr-number}'
+          environment: 'preview'
+          domain: 'preview.example.com'

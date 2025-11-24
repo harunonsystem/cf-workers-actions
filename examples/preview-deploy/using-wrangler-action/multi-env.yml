@@ -1,0 +1,136 @@
+# GitFlow: Preview + Dev + Staging + Production Deployment
+# Uses modular approach: prepare-preview-deploy + wrangler-action + pr-comment
+#
+# Pattern:
+# - Pull Request (feature/**, hotfix/**) → Preview (myapp-pr-123) - DYNAMIC
+# - Push to dev → Dev deployment (myapp-dev) - STATIC
+# - Push to stg → Staging deployment (myapp-stg) - STATIC
+# - Push to release/** → Release deployment (myapp-release-v1-2-3) - DYNAMIC
+#
+# Note: Production deployment is handled in prod-deploy.yml
+
+name: GitFlow (Multi-Environment)
+
+on:
+  pull_request:
+    branches: [dev, stg, main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: 
+      - dev
+      - stg
+      - 'release/**'
+      - 'feature/**'
+      - 'hotfix/**'
+
+jobs:
+  # Preview deployment for Pull Requests (DYNAMIC)
+  preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Prepare preview deployment (generate URL and update wrangler.toml)
+      - name: Prepare Preview Deployment
+        id: prepare
+        uses: harunonsystem/cloudflare-actions/prepare-preview-deploy@v1
+        with:
+          worker-name: 'myapp-pr-{pr-number}'
+          environment: 'preview'
+          domain: 'preview.example.com'
+
+      # Deploy to Cloudflare Workers using preview environment
+      - name: Deploy to Preview
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -e preview
+
+      # Comment on PR with deployment status
+      - name: Comment on PR
+        if: always()
+        uses: harunonsystem/cloudflare-actions/pr-comment@v1
+        with:
+          deployment-url: ${{ steps.prepare.outputs.deployment-url }}
+          deployment-success: ${{ steps.deploy.outcome == 'success' && 'true' || 'false' }}
+          deployment-name: ${{ steps.prepare.outputs.deployment-name }}
+
+  # Dev deployment on push to dev (STATIC)
+  dev:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Deploy to dev environment (uses wrangler.toml env.dev config)
+      - name: Deploy to Dev
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env dev
+
+  # Staging deployment on push to stg (STATIC)
+  staging:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/stg'
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Deploy to staging environment (uses wrangler.toml env.stg config)
+      - name: Deploy to Staging
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env stg
+
+  # Release deployment on push to release/** branches (DYNAMIC)
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/')
+    runs-on: ubuntu-latest
+    environment: release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Extract and sanitize release version from branch name
+      # e.g., release/v1.2.3 → v1-2-3 (dots not allowed in worker names)
+      - name: Extract Release Version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/heads/release/}"
+          # Replace dots with hyphens and remove invalid characters
+          SANITIZED_VERSION=$(echo "$VERSION" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+          echo "version=${SANITIZED_VERSION}" >> $GITHUB_OUTPUT
+          echo "Sanitized version: ${SANITIZED_VERSION}"
+
+      # Prepare release deployment with version-specific name
+      - name: Prepare Release Deployment
+        uses: harunonsystem/cloudflare-actions/prepare-preview-deploy@v1
+        with:
+          worker-name: 'myapp-release-${{ steps.version.outputs.version }}'
+          environment: 'release'
+
+      # Deploy to release environment
+      - name: Deploy to Release
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -e release

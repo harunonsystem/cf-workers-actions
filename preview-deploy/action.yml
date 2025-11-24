@@ -1,0 +1,51 @@
+---
+name: 'Deploy Preview'
+description: 'Deploy Cloudflare Workers with automatic PR commenting'
+author: 'harunonsystem'
+
+branding:
+  icon: 'upload-cloud'
+  color: 'purple'
+
+inputs:
+  cloudflare-api-token:
+    description: 'Cloudflare API Token'
+    required: true
+
+  cloudflare-account-id:
+    description: 'Cloudflare Account ID'
+    required: true
+
+  worker-name:
+    description: 'Worker name template. Supports: {pr-number}, {branch-name}. Example: myapp-pr-{pr-number}'
+    required: true
+
+  environment:
+    description: 'Environment to use in wrangler.toml (e.g., "preview")'
+    required: false
+    default: 'preview'
+
+  domain:
+    description: 'Custom domain or workers.dev subdomain (e.g., "username.workers.dev" or "example.com")'
+    required: false
+    default: 'username.workers.dev'
+
+  wrangler-toml-path:
+    description: 'Path to wrangler.toml file'
+    required: false
+    default: './wrangler.toml'
+
+
+outputs:
+  deployment-url:
+    description: 'Generated deployment URL'
+
+  deployment-name:
+    description: 'Generated worker name'
+
+  deployment-success:
+    description: 'Whether the deployment was successful'
+
+runs:
+  using: 'node20'
+  main: '../dist/preview-deploy/index.js'

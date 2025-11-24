@@ -1,0 +1,102 @@
+# GitFlow: Preview + Dev + Staging + Release Deployment
+# Uses preview-deploy action for PR deployments
+#
+# Pattern:
+# - Pull Request (feature/**, hotfix/**) → Preview (myapp-pr-123) - DYNAMIC
+# - Push to dev → Dev deployment (myapp-dev) - STATIC
+# - Push to stg → Staging deployment (myapp-stg) - STATIC
+# - Push to release/** → Release deployment (myapp-release) - STATIC
+#
+# Note: Production deployment is handled in prod-deploy.yml
+
+name: GitFlow (Multi-Environment)
+
+on:
+  pull_request:
+    branches: [dev, stg, main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - dev
+      - stg
+      - 'release/**'
+      - 'feature/**'
+      - 'hotfix/**'
+
+jobs:
+  # Preview deployment for Pull Requests (DYNAMIC)
+  preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # All-in-one deployment with automatic PR commenting
+      - name: Deploy to Preview
+        uses: harunonsystem/cloudflare-actions/preview-deploy@v1
+        with:
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          worker-name: 'myapp-pr-{pr-number}'
+          environment: 'preview'
+          domain: 'preview.example.com'
+
+  # Dev deployment on push to dev (STATIC)
+  dev:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Deploy to dev environment (uses wrangler.toml env.dev config)
+      - name: Deploy to Dev
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env dev
+
+  # Staging deployment on push to stg (STATIC)
+  staging:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/stg'
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Deploy to staging environment (uses wrangler.toml env.stg config)
+      - name: Deploy to Staging
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env stg
+
+  # Release deployment on push to release/** branches (STATIC)
+  # Note: For dynamic version-based releases, use the wrangler-action approach
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/')
+    runs-on: ubuntu-latest
+    environment: release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Deploy to release environment (uses wrangler.toml env.release config)
+      - name: Deploy to Release
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env release

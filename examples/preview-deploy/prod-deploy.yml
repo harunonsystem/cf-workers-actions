@@ -1,0 +1,32 @@
+# Production Deployment
+# Simple production deployment on main branch push
+#
+# Pattern:
+# - Push to main → Production deployment (myapp)
+#
+# Features:
+# - GitHub Environment protection (manual approval)
+# - Simple wrangler-action deployment
+# - No preview environments (see multi-env.yml for that)
+
+name: Production Deployment
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  production:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Deploy to Production
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env production
