@@ -1,0 +1,52 @@
+# GitHub Flow: Preview + Production Deployment
+# Uses modular approach: prepare-preview-deploy + wrangler-action + pr-comment
+#
+# Pattern:
+# - Pull Request → Preview deployment (myapp-pr-123)
+# - Production → See prod-deploy.yml
+
+name: GitHub Flow (Wrangler Action)
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Preview deployment for Pull Requests
+  preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Prepare preview deployment (generate URL and update wrangler.toml)
+      - name: Prepare Preview Deployment
+        id: prepare
+        uses: harunonsystem/cloudflare-actions/prepare-preview-deploy@v1
+        with:
+          worker-name: 'myapp-pr-{pr-number}'
+          environment: 'preview'
+          domain: 'preview.example.com'
+
+      # Deploy to Cloudflare Workers using preview environment
+      - name: Deploy to Preview
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -e preview
+
+      # Comment on PR with deployment status
+      - name: Comment on PR
+        if: always()
+        uses: harunonsystem/cloudflare-actions/pr-comment@v1
+        with:
+          deployment-url: ${{ steps.prepare.outputs.deployment-url }}
+          deployment-success: ${{ steps.deploy.outcome == 'success' && 'true' || 'false' }}
+          deployment-name: ${{ steps.prepare.outputs.deployment-name }}

@@ -3,90 +3,103 @@
 [![CI](https://github.com/harunonsystem/cloudflare-actions/workflows/CI/badge.svg)](https://github.com/harunonsystem/cloudflare-actions/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive suite of GitHub Actions for Cloudflare Workers deployment, PR commenting, and cleanup operations.
+A comprehensive suite of modular GitHub Actions for Cloudflare Workers deployment, PR commenting, and cleanup operations.
 
 ## 🚀 Features
 
-- **Deploy**: Deploy Cloudflare Workers with preview and production support
-- **Comment**: Automatically post deployment URLs and status to PR comments
+- **Prepare Preview Deploy**: Generate URLs and update wrangler.toml for preview deployments
+- **Preview Deploy**: All-in-one action combining URL generation, deployment, and PR comments
+- **PR Comment**: Automatically post deployment URLs and status to PR comments
 - **Cleanup**: Clean up workers based on patterns or specific names
+- **Modular Architecture**: Mix and match actions as needed, compatible with official Cloudflare actions
 - **TypeScript First**: Written in TypeScript with complete type safety and definitions
-- **Comprehensive Testing**: Full test coverage with Vitest (50-100x faster than Jest)
-- **Ultra-Fast Linting**: Code quality checks with Oxlint (10-100x faster than ESLint)
+- **Ultra-Fast Tooling**: Linting and formatting with Biome (replacing Oxlint & Prettier)
+- **Comprehensive Testing**: Full test coverage with Vitest
 - **Error Handling**: Robust error handling and informative logging
-- **Security First**: No external dependencies, minimal attack surface
 
 ## 📦 Actions
 
-### Deploy Action (`deploy`)
+### Prepare Preview Deploy (`prepare-preview-deploy`)
 
-Deploy applications to Cloudflare Workers with support for both preview and production environments.
+Prepare preview deployments by generating worker names and updating wrangler.toml.
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/deploy@v1
-   id: deploy
-   with:
-     environment: preview
-     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+- uses: harunonsystem/cloudflare-actions/prepare-preview-deploy@v1
+  id: prepare
+  with:
+    worker-name: 'myapp-pr-{pr-number}'
+    environment: 'preview'
 ```
 
 **Inputs:**
 
-- `environment` (required): Deployment environment (`preview` or `production`)
-- `worker-name-pattern`: Worker name pattern (default: `project-pr-{pr_number}`)
-- `script-path`: Path to worker script (default: `index.js`)
-- `cloudflare-api-token` (required): Cloudflare API Token
-- `cloudflare-account-id` (required): Cloudflare Account ID
-- `subdomain`: Custom subdomain for workers.dev URL
-- `vars`: Environment variables (JSON format)
-- `secrets`: Worker secrets (JSON format)
-- `compatibility-date`: Cloudflare Workers compatibility date
+- `worker-name` (required): Worker name template (supports `{pr-number}`, `{branch-name}`)
+- `environment` (required): Deployment environment for wrangler.toml `[env.xxx]` section
+- `domain`: Custom domain (default: `workers.dev`)
+- `wrangler-toml-path`: Path to wrangler.toml (default: `./wrangler.toml`)
 
 **Outputs:**
 
-- `url`: Deployed worker URL
-- `worker-name`: Actual worker name used
-- `success`: Deployment success status
-- `deployment-id`: Unique deployment identifier
+- `deployment-name`: Generated worker name
+- `deployment-url`: Generated deployment URL
 
-### Comment Action (`comment`)
+### Preview Deploy (`preview-deploy`)
+
+All-in-one action that handles URL generation, deployment, and PR commenting.
+
+```yaml
+- uses: harunonsystem/cloudflare-actions/preview-deploy@v1
+  with:
+    cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    worker-name: 'myapp-pr-{pr-number}'
+```
+
+**Inputs:**
+
+- `cloudflare-api-token` (required): Cloudflare API Token
+- `cloudflare-account-id` (required): Cloudflare Account ID
+- `worker-name` (required): Worker name template
+- `environment`: Deployment environment (default: `preview`)
+- `domain`: Custom domain (default: `workers.dev`)
+
+**Outputs:**
+
+- `deployment-url`: Deployed worker URL
+- `deployment-name`: Worker name
+- `deployment-success`: Deployment success status
+
+### PR Comment (`pr-comment`)
 
 Post deployment information and preview URLs to Pull Request comments.
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/comment@v1
+- uses: harunonsystem/cloudflare-actions/pr-comment@v1
   with:
-    deployment-url: ${{ steps.deploy.outputs.url }}
-    github-token: ${{ secrets.GITHUB_TOKEN }}
+    deployment-url: ${{ steps.prepare.outputs.deployment-url }}
+    deployment-success: 'true'
 ```
 
 **Inputs:**
 
 - `deployment-url` (required): URL of the deployed preview
-- `deployment-status`: Deployment status (`success` or `failure`)
-- `worker-name`: Name of the deployed worker
-- `github-token` (required): GitHub Token
-- `custom-message`: Additional custom message
-- `comment-template`: Custom comment template (markdown supported)
-- `update-existing`: Update existing comment instead of creating new one
-- `comment-tag`: Unique tag to identify comments for updates
+- `deployment-success` (required): Deployment status (`true` or `false`)
+- `deployment-name`: Name of the deployed worker
 
 **Outputs:**
 
 - `comment-id`: ID of the created/updated comment
-- `comment-url`: URL of the comment
 
-### Cleanup Action (`cleanup`)
+### Cleanup (`cleanup`)
 
 Clean up and delete Cloudflare Workers based on patterns or specific names.
 
 ```yaml
 - uses: harunonsystem/cloudflare-actions/cleanup@v1
-   with:
-     worker-pattern: 'project-pr-*'
-     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  with:
+    worker-pattern: 'myapp-pr-*'
+    cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
 
 **Inputs:**
@@ -96,20 +109,15 @@ Clean up and delete Cloudflare Workers based on patterns or specific names.
 - `cloudflare-api-token` (required): Cloudflare API Token
 - `cloudflare-account-id` (required): Cloudflare Account ID
 - `dry-run`: Only list workers without deleting (default: `false`)
-- `max-age-days`: Only delete workers older than specified days
-- `exclude-pattern`: Pattern for workers to exclude from deletion
-- `confirm-deletion`: Require explicit confirmation (default: `yes`)
 
 **Outputs:**
 
 - `deleted-workers`: List of deleted worker names (JSON array)
 - `deleted-count`: Number of workers deleted
-- `skipped-workers`: List of workers that were skipped (JSON array)
-- `dry-run-results`: Workers that would be deleted in dry run mode (JSON array)
 
 ## 🔧 Complete Workflow Examples
 
-### Preview Deployment with PR Comments
+### All-in-One Preview Deploy
 
 ```yaml
 name: Deploy Preview
@@ -119,39 +127,65 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  deploy-preview:
+  preview-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: harunonsystem/cloudflare-actions/preview-deploy@v1
+        with:
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          worker-name: 'myapp-pr-{pr-number}'
+          environment: 'preview'
+          domain: 'preview.example.com'
+```
+
+### Modular Preview Deployment
+
+```yaml
+name: Deploy Preview (Modular)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    
     steps:
       - uses: actions/checkout@v4
 
+      - name: Prepare Preview Deployment
+        id: prepare
+        uses: harunonsystem/cloudflare-actions/prepare-preview-deploy@v1
+        with:
+          worker-name: 'myapp-pr-{pr-number}'
+          environment: 'preview'
+
       - name: Deploy to Cloudflare Workers
         id: deploy
-        uses: harunonsystem/cloudflare-actions/deploy@v1
+        uses: cloudflare/wrangler-action@v3
         with:
-          environment: preview
-          worker-name-pattern: 'myapp-pr-{pr_number}'
-          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          vars: |
-            {
-              "ENVIRONMENT": "preview",
-              "DEBUG": "true"
-            }
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -e preview
 
-      - name: Comment PR
-        uses: harunonsystem/cloudflare-actions/comment@v1
+      - name: Comment on PR
         if: always()
+        uses: harunonsystem/cloudflare-actions/pr-comment@v1
         with:
-          deployment-url: ${{ steps.deploy.outputs.url }}
-          deployment-status: ${{ steps.deploy.outputs.success == 'true' && 'success' || 'failure' }}
-          worker-name: ${{ steps.deploy.outputs.worker-name }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          custom-message: |
-            🚀 Preview deployment completed!
-
-            **Build Information:**
-            - Commit: ${{ github.sha }}
-            - Branch: ${{ github.head_ref }}
+          deployment-url: ${{ steps.prepare.outputs.deployment-url }}
+          deployment-name: ${{ steps.prepare.outputs.deployment-name }}
+          deployment-success: ${{ steps.deploy.outcome == 'success' && 'true' || 'false' }}
 ```
 
 ### Production Deployment
@@ -169,23 +203,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-       - name: Deploy to Production
-         uses: harunonsystem/cloudflare-actions/deploy@v1
-         with:
-           environment: production
-           worker-name-pattern: 'myapp-production'
-           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          vars: |
-            {
-              "ENVIRONMENT": "production",
-              "DEBUG": "false"
-            }
+      - name: Deploy to Production
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
           secrets: |
-            {
-              "API_KEY": "${{ secrets.PRODUCTION_API_KEY }}",
-              "DATABASE_URL": "${{ secrets.DATABASE_URL }}"
-            }
+            API_KEY=${{ secrets.PRODUCTION_API_KEY }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+        env:
+          ENVIRONMENT: production
 ```
 
 ### Cleanup Old Preview Deployments
@@ -201,39 +229,14 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-       - name: Cleanup Preview Worker
-         uses: harunonsystem/cloudflare-actions/cleanup@v1
-         with:
-           worker-pattern: 'myapp-pr-${{ github.event.pull_request.number }}'
-           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          confirm-deletion: 'yes'
+      - name: Cleanup Preview Worker
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-pattern: 'myapp-pr-${{ github.event.pull_request.number }}'
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
 
-### Scheduled Cleanup
-
-```yaml
-name: Weekly Cleanup
-
-on:
-  schedule:
-    - cron: '0 2 * * 0' # Every Sunday at 2 AM
-
-jobs:
-  cleanup-old-workers:
-    runs-on: ubuntu-latest
-    steps:
-       - name: Cleanup Old Preview Workers
-         uses: harunonsystem/cloudflare-actions/cleanup@v1
-         with:
-           worker-pattern: 'myapp-pr-*'
-           exclude-pattern: 'myapp-pr-main'
-           max-age-days: 7
-           dry-run: false
-           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          confirm-deletion: 'yes'
-```
 
 ## 🔑 Secret Management
 
@@ -261,23 +264,24 @@ The actions are built with a modular architecture:
 
 ```
 cloudflare-actions/
-├── deploy/           # Deploy action
-├── comment/          # Comment action
-├── cleanup/          # Cleanup action
-├── shared/           # Shared libraries
-│   ├── lib/
-│   │   ├── cloudflare-api.js    # Cloudflare API client
-│   │   ├── url-generator.js     # URL generation utilities
-│   │   └── wrangler.js          # Wrangler CLI wrapper
-│   └── __tests__/    # Shared library tests
-└── __tests__/        # Integration tests
+├── prepare-preview-deploy/  # Prepare preview deployments
+├── preview-deploy/           # All-in-one preview deploy
+├── pr-comment/               # PR comment action
+├── cleanup/                  # Cleanup action
+├── src/                      # TypeScript source code
+│   ├── prepare-preview-deploy/
+│   ├── preview-deploy/
+│   ├── pr-comment/
+│   └── cleanup/
+└── tests/                    # Comprehensive test suite
 ```
 
-### Shared Libraries
+### Design Philosophy
 
-- **CloudflareApi**: Direct API client for Cloudflare Workers API
-- **WranglerClient**: Wrapper around Wrangler CLI for deployments
-- **URL Generator**: Utilities for generating worker names and URLs
+- **Modular**: Each action has a single responsibility
+- **Flexible**: Mix and match actions based on your needs
+- **Type-Safe**: Full TypeScript with Zod schema validation
+- **Well-Tested**: Comprehensive unit and integration tests
 
 ## 🧪 Testing
 
@@ -324,7 +328,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📊 Marketplace Stats
 
 - **Version**: 1.0.0
-- **Downloads**: Coming soon
 - **Stars**: ⭐ Star this repo to support the project!
 
 ---

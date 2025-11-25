@@ -1,0 +1,24 @@
+name = "myapp"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[env.preview]
+# Name dynamically set by prepare-preview-deploy action
+
+[env.dev]
+name = "myapp-dev"
+
+[env.stg]
+name = "myapp-stg"
+
+[env.release]
+name = "myapp-release"
+
+[env.feature]
+name = "myapp-feature"
+
+[env.hotfix]
+name = "myapp-hotfix"
+
+[env.production]
+name = "myapp"

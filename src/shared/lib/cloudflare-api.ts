@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { CloudflareApiResponse, CloudflareWorker } from '../types';
+import type { CloudflareApiResponse, CloudflareWorker } from '../types';
 
 /**
  * Cloudflare API client wrapper
