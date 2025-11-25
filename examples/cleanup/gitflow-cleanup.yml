@@ -1,7 +1,7 @@
 name: Cleanup Workers (Git Flow)
 
-# PR がクローズされたときに PR Worker を削除
-# develop / staging ブランチの Workers は保護される
+# Delete PR Worker when PR is closed
+# Workers for develop / staging branches are protected
 on:
   pull_request:
     types: [closed]
@@ -18,16 +18,16 @@ jobs:
         id: cleanup
         uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
-          # myapp-pr-* パターンで削除
-          # myapp-pr-1, myapp-pr-2, myapp-pr-123 などが削除対象
+          # Delete with pattern myapp-pr-*
+          # e.g., myapp-pr-1, myapp-pr-2, myapp-pr-123 will be deleted
           worker-pattern: 'myapp-pr-*'
 
-          # 除外設定: 完全一致とワイルドカード両方対応
-          # 削除されない:
-          #   - myapp-dev, myapp-stg（完全一致）
-          #   - myapp-release-1, myapp-release-v1.0（パターン）
-          #   - api-prod, web-prod（パターン）
-          #   - myapp（本番環境）
+          # Exclusion settings: supports both exact match and wildcards
+          # Will NOT be deleted:
+          #   - myapp-dev, myapp-stg (exact match)
+          #   - myapp-release-1, myapp-release-v1.0 (pattern)
+          #   - api-prod, web-prod (pattern)
+          #   - myapp (production environment)
           exclude: 'myapp-dev,myapp-stg,myapp-release-*,*-prod,myapp'
 
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}

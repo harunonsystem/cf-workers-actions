@@ -1,67 +1,67 @@
-# Cleanup Action - 完全ガイド
+# Cleanup Action - Complete Guide
 
-Cloudflare Workers を自動削除する cleanup アクションの完全な実装ガイドです。
+Complete implementation guide for the cleanup action to automatically delete Cloudflare Workers.
 
 ---
 
-## 概要
+## Overview
 
-cleanup アクションは 2つの方法で Workers を削除できます：
+The cleanup action can delete Workers in two ways:
 
-| 方法             | `worker-names`          | `worker-pattern`       |
+| Method           | `worker-names`          | `worker-pattern`       |
 | ---------------- | ----------------------- | ---------------------- |
-| **削除方式**     | 完全一致（リスト指定）  | ワイルドカードマッチ   |
-| **指定例**       | `myapp-pr-1,myapp-pr-2` | `myapp-pr-*`           |
-| **削除対象**     | 指定したもののみ        | パターンに合致した全て |
-| **複数パターン** | ✅ 複数指定可           | ❌ 1つのみ             |
-| **使う場面**     | PR 番号で削除           | 定期クリーンアップ     |
+| Deletion Mode| Exact match (list)      | Wildcard match         |
+| Example      | `myapp-pr-1,myapp-pr-2` | `myapp-pr-*`           |
+| Target       | Specified ones only     | All matching pattern   |
+| Multiple     | ✅ Allowed              | ❌ Only one            |
+| Use Case     | Delete by PR number     | Scheduled cleanup      |
 
 ---
 
-## 4つの削除パターン
+## 4 Deletion Patterns
 
-### パターン1️⃣: 特定の Worker だけ削除
+### Pattern 1️⃣: Delete specific Workers only
 
-**使い方**: PR #1, #2 は削除したいが、PR #3 は残したい
+Usage: Want to delete PR #1, #2, but keep PR #3
 
 ```yaml
 worker-names: 'myapp-pr-1,myapp-pr-2'
 worker-pattern: ''
 ```
 
-**削除結果**:
+Result:
 
-- ✅ `myapp-pr-1` → 削除
-- ✅ `myapp-pr-2` → 削除
-- ❌ `myapp-pr-3` → **削除しない**（指定されていない）
+- ✅ `myapp-pr-1` -> Deleted
+- ✅ `myapp-pr-2` -> Deleted
+- ❌ `myapp-pr-3` -> Not deleted (not specified)
 
-**重要**: `worker-pattern` は指定しない（ブランク）
+Important: Leave `worker-pattern` empty
 
 ---
 
-### パターン2️⃣: パターンで全て削除
+### Pattern 2️⃣: Delete all by pattern
 
-**使い方**: PR Worker は全部削除
+Usage: Delete all PR Workers
 
 ```yaml
 worker-names: ''
 worker-pattern: 'myapp-pr-*'
 ```
 
-**削除結果**:
+Result:
 
-- ✅ `myapp-pr-1` → 削除
-- ✅ `myapp-pr-2` → 削除
-- ✅ `myapp-pr-3` → **削除**
-- ✅ `myapp-pr-999` → 削除
+- ✅ `myapp-pr-1` -> Deleted
+- ✅ `myapp-pr-2` -> Deleted
+- ✅ `myapp-pr-3` -> Deleted
+- ✅ `myapp-pr-999` -> Deleted
 
-**重要**: `worker-names` は指定しない（ブランク）
+Important: Leave `worker-names` empty
 
 ---
 
-### パターン3️⃣: パターン + 一部除外
+### Pattern 3️⃣: Pattern + Partial Exclusion
 
-**使い方**: PR Worker は全部削除するが、PR #3 だけ残す
+Usage: Delete all PR Workers, but keep PR #3
 
 ```yaml
 worker-names: ''
@@ -69,40 +69,40 @@ worker-pattern: 'myapp-pr-*'
 exclude: 'myapp-pr-3'
 ```
 
-**削除結果**:
+Result:
 
-- ✅ `myapp-pr-1` → 削除
-- ✅ `myapp-pr-2` → 削除
-- ❌ `myapp-pr-3` → **削除しない**（除外指定）
-- ✅ `myapp-pr-999` → 削除
+- ✅ `myapp-pr-1` -> Deleted
+- ✅ `myapp-pr-2` -> Deleted
+- ❌ `myapp-pr-3` -> Not deleted (excluded)
+- ✅ `myapp-pr-999` -> Deleted
 
-**重要**: `worker-names` は指定しない、`exclude` で除外
+Important: Leave `worker-names` empty, use `exclude`
 
 ---
 
-### パターン4️⃣: 複数環境を除外
+### Pattern 4️⃣: Exclude Multiple Environments
 
-**使い方**: PR Worker は全部削除するが、環境ブランチは保護
+Usage: Delete all PR Workers, but protect environment branches
 
 ```yaml
 worker-pattern: 'myapp-pr-*'
 exclude: 'myapp,myapp-dev,myapp-stg,myapp-release-*'
 ```
 
-**削除結果**:
+Result:
 
-- ✅ `myapp-pr-1` → 削除
-- ✅ `myapp-feature-x` → 削除
-- ❌ `myapp` → **削除しない**（除外: 本番環境）
-- ❌ `myapp-dev` → **削除しない**（除外: develop ブランチ）
-- ❌ `myapp-stg` → **削除しない**（除外: staging ブランチ）
-- ❌ `myapp-release-1.0` → **削除しない**（除外: リリース）
+- ✅ `myapp-pr-1` -> Deleted
+- ✅ `myapp-feature-x` -> Deleted
+- ❌ `myapp` -> Not deleted (Excluded: Production)
+- ❌ `myapp-dev` -> Not deleted (Excluded: Develop branch)
+- ❌ `myapp-stg` -> Not deleted (Excluded: Staging branch)
+- ❌ `myapp-release-1.0` -> Not deleted (Excluded: Release)
 
 ---
 
-## 使用タイミング
+## Usage Timing
 
-### PR がクローズされたときに自動削除
+### Auto-delete when PR is closed
 
 ```yaml
 on:
@@ -121,11 +121,11 @@ jobs:
           dry-run: 'false'
 ```
 
-→ PR #123 がクローズされると `myapp-pr-123` が削除される
+-> When PR #123 is closed, `myapp-pr-123` is deleted
 
 ---
 
-### 手動実行で削除パターンを選択
+### Select deletion pattern manually
 
 ```yaml
 on:
@@ -161,72 +161,72 @@ jobs:
           dry-run: ${{ github.event.inputs.dry-run }}
 ```
 
-→ GitHub UI から削除パターンを選択して実行
+-> Select deletion pattern from GitHub UI and execute
 
 ---
 
-## 入力値 (Inputs)
+## Inputs
 
 ```yaml
-worker-names: 'myapp-pr-1,myapp-pr-2' # 完全一致、複数指定可
-worker-pattern: 'myapp-pr-*' # ワイルドカード、1つのみ
-exclude: 'myapp-dev,myapp-release-*' # 除外設定、ワイルドカード対応
-dry-run: 'true' # true=確認のみ, false=実削除
+worker-names: 'myapp-pr-1,myapp-pr-2' # Exact match, multiple allowed
+worker-pattern: 'myapp-pr-*' # Wildcard, only one
+exclude: 'myapp-dev,myapp-release-*' # Exclusion settings, wildcard supported
+dry-run: 'true' # true=check only, false=actual deletion
 cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
 
-### ⚠️ 重要なルール
+### ⚠️ Important Rules
 
-`worker-names` と `worker-pattern` は **必ずどちらか一つだけ指定**
+Must specify exactly one of `worker-names` or `worker-pattern`
 
-| 指定方法                                       | 結果      |
+| Method                                         | Result    |
 | ---------------------------------------------- | --------- |
 | `worker-names: 'a,b'`, `worker-pattern: ''`    | ✅ OK     |
 | `worker-names: ''`, `worker-pattern: 'a-*'`    | ✅ OK     |
-| `worker-names: 'a,b'`, `worker-pattern: 'a-*'` | ❌ エラー |
-| `worker-names: ''`, `worker-pattern: ''`       | ❌ エラー |
+| `worker-names: 'a,b'`, `worker-pattern: 'a-*'` | ❌ Error  |
+| `worker-names: ''`, `worker-pattern: ''`       | ❌ Error  |
 
 ---
 
-## exclude パラメータ
+## exclude Parameter
 
-### 完全一致による除外
+### Exclusion by Exact Match
 
 ```yaml
 exclude: 'myapp,myapp-dev,myapp-stg'
 ```
 
-- `myapp` のみ除外
-- `myapp-dev` は削除される（部分一致）
+- `myapp` excluded
+- `myapp-dev` deleted (partial match)
 
-### パターンによる除外
+### Exclusion by Pattern
 
 ```yaml
 exclude: 'myapp-release-*,*-prod,*-production'
 ```
 
-- `myapp-release-1`, `myapp-release-v1.0` 除外
-- `api-prod`, `web-prod` 除外
+- `myapp-release-1`, `myapp-release-v1.0` excluded
+- `api-prod`, `web-prod` excluded
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-### 削除対象が見つからない
+### Target not found
 
-- `worker-names` / `worker-pattern` を確認
-- `exclude` で誤って除外していないか確認
-- Cloudflare ダッシュボードで実際の Worker 名を確認
+- Check `worker-names` / `worker-pattern`
+- Check if accidentally excluded by `exclude`
+- Check actual Worker name in Cloudflare Dashboard
 
-### 重要な Worker が削除された
+### Important Worker deleted
 
-- Cloudflare ダッシュボードで復旧可能か確認
-- `exclude` に追加して保護
+- Check if recoverable in Cloudflare Dashboard
+- Add to `exclude` to protect
 
 ---
 
-## 出力値 (Outputs)
+## Outputs
 
 ```yaml
 - id: cleanup
@@ -238,22 +238,22 @@ exclude: 'myapp-release-*,*-prod,*-production'
     echo "Deleted: ${{ steps.cleanup.outputs.deleted-count }}"
 ```
 
-| 出力値            | 説明                                         |
+| Output            | Description                                  |
 | ----------------- | -------------------------------------------- |
-| `deleted-workers` | 削除された Worker 名の配列（JSON）           |
-| `deleted-count`   | 削除された Worker の数                       |
-| `skipped-workers` | 削除失敗した Worker 名の配列                 |
-| `dry-run-results` | ドライランで削除対象となった Worker 名の配列 |
+| `deleted-workers` | List of deleted worker names (JSON array)    |
+| `deleted-count`   | Number of workers deleted                    |
+| `skipped-workers` | List of skipped worker names (JSON array)    |
+| `dry-run-results` | List of workers targeted in dry-run (JSON array) |
 
 ---
 
-## サンプルファイル
+## Sample Files
 
-このディレクトリの実装例：
+Implementation examples in this directory:
 
-- **`using-secrets.yml`** - GitHub Secrets を使った基本例
-- **`using-1pass-cli.yml`** - 1Password CLI を使った例
-- **`gitflow-cleanup.yml`** - Git Flow（複数環境）例
-- **`advanced-cleanup.yml`** - ドライラン + Slack 通知例
+- `using-secrets.yml` - Basic example using GitHub Secrets
+- `using-1pass-cli.yml` - Example using 1Password CLI
+- `gitflow-cleanup.yml` - Git Flow (Multi-environment) example
+- `advanced-cleanup.yml` - Dry-run + Slack notification example
 
-各ファイルをコピーして `.github/workflows/` に配置し、自分の環境に合わせて編集してください。
+Copy each file to `.github/workflows/` and edit for your environment.

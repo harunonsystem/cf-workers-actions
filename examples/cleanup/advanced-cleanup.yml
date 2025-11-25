@@ -1,14 +1,12 @@
-name: Advanced Cleanup with Dry-Run and Notifications
-
-# 3つのトリガーで異なる cleanup を実行
-# 1. PR クローズ時の自動削除
-# 2. 定期スケジュール実行（本番環境は除外）
-# 3. 手動実行（パターン指定可能）
+# Execute cleanup with 3 triggers
+# 1. Auto-delete when PR is closed
+# 2. Scheduled execution (production excluded)
+# 3. Manual execution (pattern can be specified)
 on:
   pull_request:
     types: [closed]
   schedule:
-    - cron: '0 2 * * *' # 毎日 2 AM
+    - cron: '0 2 * * *' # Every day at 2 AM
   workflow_dispatch:
     inputs:
       worker-pattern:
@@ -20,7 +18,7 @@ on:
         required: false
         default: ''
       dry-run:
-        description: 'Dry run (true=確認のみ, false=実削除)'
+        description: 'Dry run (true=check only, false=actual deletion)'
         required: false
         default: 'true'
 
@@ -28,7 +26,7 @@ permissions:
   contents: read
 
 jobs:
-  # === 1. PR クローズ時の自動削除 ===
+  # === 1. Auto-delete when PR is closed ===
   auto-cleanup-pr:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
@@ -48,7 +46,7 @@ jobs:
           echo "Deleted: ${{ steps.cleanup.outputs.deleted-count }} workers"
           echo "${{ steps.cleanup.outputs.deleted-workers }}"
 
-  # === 2. 定期スケジュール実行（本番環境は除外） ===
+  # === 2. Scheduled execution (production excluded) ===
   scheduled-cleanup:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
@@ -82,7 +80,7 @@ jobs:
 
       - name: Notify Slack (success)
         if: success()
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117 # v1.24.0
         with:
           webhook-url: ${{ secrets.SLACK_WEBHOOK }}
           payload: |
@@ -101,7 +99,7 @@ jobs:
 
       - name: Notify Slack (failure)
         if: failure()
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117 # v1.24.0
         with:
           webhook-url: ${{ secrets.SLACK_WEBHOOK }}
           payload: |
@@ -118,7 +116,7 @@ jobs:
               ]
             }
 
-  # === 3. 手動実行（パターン指定可能） ===
+  # === 3. Manual execution (pattern can be specified) ===
   manual-cleanup:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'

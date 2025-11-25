@@ -43,7 +43,7 @@ interface ActionStep {
 }
 
 /**
- * アクションファイルを読み込む
+ * Load action file
  */
 function loadAction(actionName: string): ActionDefinition {
   const actionPath = join(process.cwd(), '.github', 'actions', actionName, 'action.yml');
@@ -57,7 +57,7 @@ function loadAction(actionName: string): ActionDefinition {
 }
 
 /**
- * 利用可能なアクションを取得
+ * Get available actions
  */
 function getAvailableActions(): string[] {
   const actionsDir = join(process.cwd(), '.github', 'actions');
@@ -98,7 +98,7 @@ describe('GitHub Actions Validation', () => {
         Object.entries(action.inputs).forEach(([_inputName, input]) => {
           expect(input.description).toBeDefined();
           expect(input.description).toBeTruthy();
-          expect(input.description.length).toBeGreaterThan(10); // 適切な説明長
+          expect(input.description.length).toBeGreaterThan(10); // Appropriate description length
         });
       }
     });
@@ -118,16 +118,16 @@ describe('GitHub Actions Validation', () => {
       const action = loadAction(actionName);
 
       action.runs.steps?.forEach((step, _index) => {
-        // ステップは名前を持つべき
+        // Step should have a name
         expect(step.name).toBeDefined();
         expect(step.name).toBeTruthy();
 
-        // ステップはrunかusesのいずれかを持つべき
+        // Step should have either run or uses
         const hasRun = !!step.run;
         const hasUses = !!step.uses;
         expect(hasRun || hasUses).toBe(true);
 
-        // runを使う場合はshellも指定すべき
+        // Shell should be specified when using run
         if (hasRun) {
           expect(step.shell).toBeDefined();
         }
@@ -145,7 +145,7 @@ describe('GitHub Actions Validation', () => {
           const [actionRef, version] = step.uses.split('@');
 
           if (actionRef.startsWith('actions/') || actionRef.includes('/')) {
-            // 外部アクションはバージョン指定が必要
+            // External actions require version specification
             expect(version).toBeDefined();
             expect(version).toBeTruthy();
           }
@@ -158,7 +158,7 @@ describe('GitHub Actions Validation', () => {
 
       action.runs.steps?.forEach((step) => {
         if (step.run) {
-          // 実行コマンドにトークンやシークレットが直接埋め込まれていないことを確認
+          // Ensure tokens and secrets are not directly embedded in run commands
           expect(step.run).not.toMatch(/token.*=.*[a-zA-Z0-9]{20,}/);
           expect(step.run).not.toMatch(/secret.*=.*[a-zA-Z0-9]{20,}/);
           expect(step.run).not.toMatch(/key.*=.*[a-zA-Z0-9]{20,}/);
@@ -172,19 +172,19 @@ describe('GitHub Actions Validation', () => {
       const action = loadAction(actionName);
 
       action.runs.steps?.forEach((step) => {
-        expect(step.name?.length).toBeGreaterThan(5); // 意味のある名前
-        expect(step.name).not.toMatch(/^step\s*\d*$/i); // 単純な "Step N" は避ける
+        expect(step.name?.length).toBeGreaterThan(5); // Meaningful name
+        expect(step.name).not.toMatch(/^step\s*\d*$/i); // Avoid simple "Step N"
       });
     });
 
     test('actions should follow consistent naming', () => {
       actions.forEach((actionName) => {
-        // アクション名は小文字とハイフンのみ
+        // Action name should be lowercase and hyphens only
         expect(actionName).toMatch(/^[a-z-]+$/);
 
         const action = loadAction(actionName);
 
-        // アクション名は適切な形式
+        // Action name should be in appropriate format
         expect(action.name).toMatch(/^[A-Z][a-zA-Z\s]+$/);
       });
     });
