@@ -1,0 +1,126 @@
+---
+name: Multi-Trigger Cleanup
+
+# Production-ready cleanup with multiple triggers:
+# 1. Auto-delete when PR is closed
+# 2. Scheduled cleanup (daily)
+# 3. Manual execution via workflow_dispatch
+on:
+  pull_request:
+    types: [closed]
+
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+
+  workflow_dispatch:
+    inputs:
+      worker-pattern:
+        description: 'Worker pattern to delete (e.g., "myapp-pr-*")'
+        required: false
+        default: 'myapp-pr-*'
+      dry-run:
+        description: 'Dry run mode (true=preview only, false=actual deletion)'
+        required: false
+        default: 'true'
+
+permissions:
+  contents: read
+
+jobs:
+  # ===== 1. Auto-delete when PR is closed =====
+  pr-cleanup:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Delete closed PR worker
+        id: cleanup
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          dry-run: 'false'
+
+      - name: Log result
+        run: |
+          echo "✅ Deleted worker: myapp-pr-${{ github.event.pull_request.number }}"
+
+  # ===== 2. Scheduled cleanup (with exclusions) =====
+  scheduled-cleanup:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Dry-run preview
+        id: dryrun
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-pattern: 'myapp-pr-*'
+          # Protect production and staging environments
+          exclude: 'myapp,myapp-dev,myapp-stg,*-production,*-prod'
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          dry-run: 'true'
+
+      - name: Show dry-run results
+        run: |
+          echo "Would delete these workers:"
+          echo "${{ steps.dryrun.outputs.dry-run-results }}"
+          echo "Total count: ${{ steps.dryrun.outputs.deleted-count }}"
+
+      - name: Actual cleanup
+        id: cleanup
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-pattern: 'myapp-pr-*'
+          exclude: 'myapp,myapp-dev,myapp-stg,*-production,*-prod'
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          dry-run: 'false'
+
+      - name: Summary
+        run: |
+          echo "✅ Cleanup completed"
+          echo "Deleted: ${{ steps.cleanup.outputs.deleted-count }} workers"
+          echo "Skipped: ${{ steps.cleanup.outputs.skipped-workers }}"
+
+      # Optional: Notify via Slack (uncomment and configure)
+      # - name: Notify Slack
+      #   if: success()
+      #   uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117 # v1.24.0
+      #   with:
+      #     webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+      #     payload: |
+      #       {
+      #         "text": "✅ Cleanup: deleted ${{ steps.cleanup.outputs.deleted-count }}"
+      #       }
+
+  # ===== 3. Manual execution =====
+  manual-cleanup:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Cleanup workers
+        id: cleanup
+        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        with:
+          worker-pattern: ${{ github.event.inputs.worker-pattern }}
+          exclude: 'myapp,myapp-dev,myapp-stg,*-production,*-prod'
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          dry-run: ${{ github.event.inputs.dry-run }}
+
+      - name: Show results
+        run: |
+          echo "Pattern: ${{ github.event.inputs.worker-pattern }}"
+          echo "Dry-run: ${{ github.event.inputs.dry-run }}"
+
+          if [ "${{ github.event.inputs.dry-run }}" = "true" ]; then
+            echo "⚠️ DRY-RUN MODE - No actual deletion"
+            echo "Would delete: ${{ steps.dryrun.outputs.dry-run-results }}"
+          else
+            echo "✅ Deleted: ${{ steps.cleanup.outputs.deleted-count }} workers"
+            echo "Workers: ${{ steps.cleanup.outputs.deleted-workers }}"
+          fi

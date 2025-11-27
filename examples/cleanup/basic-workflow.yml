@@ -1,6 +1,7 @@
-name: Cleanup Workers (GitHub Flow)
+---
+name: Basic Cleanup Workflow
 
-# PR がクローズされたときに自動削除
+# Automatically delete worker when PR is closed
 on:
   pull_request:
     types: [closed]
@@ -11,21 +12,24 @@ permissions:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Cleanup PR worker
+      - name: Delete PR worker
         id: cleanup
         uses: harunonsystem/cloudflare-actions/cleanup@v1
         with:
-          # PR #123 → myapp-pr-123 が削除される
-          # worker-names で完全一致指定
+          # Delete worker matching PR number
+          # Example: PR #123 -> deletes "myapp-pr-123"
           worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
-          
+
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+          # Set to 'false' to actually delete (default is 'true' for safety)
           dry-run: 'false'
-      
-      - name: Log result
+
+      - name: Show result
         run: |
-          echo "✅ Deleted: ${{ steps.cleanup.outputs.deleted-count }} worker"
-          echo "Worker: myapp-pr-${{ github.event.pull_request.number }}"
+          echo "✅ Deleted: ${{ steps.cleanup.outputs.deleted-count }} worker(s)"
+          echo "Workers: ${{ steps.cleanup.outputs.deleted-workers }}"
+

@@ -1,259 +1,96 @@
-# Cleanup Action - 完全ガイド
+# Cleanup Action Examples
 
-Cloudflare Workers を自動削除する cleanup アクションの完全な実装ガイドです。
+Clean up and delete Cloudflare Workers based on patterns or specific names.
+
+## Quick Start
+
+Choose the example that best fits your use case:
+
+### 1. [basic-workflow.yml](./basic-workflow.yml)
+**Simple PR cleanup** - Automatically delete worker when PR is closed
+
+```yaml
+# When PR #123 is closed -> deletes "myapp-pr-123"
+worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
+```
+
+### 2. [multi-trigger.yml](./multi-trigger.yml)
+**Production-ready** - Multiple triggers with protection
+
+- ✅ Auto-delete on PR close
+- ✅ Scheduled cleanup (daily)
+- ✅ Manual execution via workflow_dispatch
+- ✅ Environment protection with `exclude`
+- ✅ Dry-run preview
 
 ---
 
-## 概要
+## Two Deletion Modes
 
-cleanup アクションは 2つの方法で Workers を削除できます：
-
-| 方法             | `worker-names`          | `worker-pattern`       |
-| ---------------- | ----------------------- | ---------------------- |
-| **削除方式**     | 完全一致（リスト指定）  | ワイルドカードマッチ   |
-| **指定例**       | `myapp-pr-1,myapp-pr-2` | `myapp-pr-*`           |
-| **削除対象**     | 指定したもののみ        | パターンに合致した全て |
-| **複数パターン** | ✅ 複数指定可           | ❌ 1つのみ             |
-| **使う場面**     | PR 番号で削除           | 定期クリーンアップ     |
-
----
-
-## 4つの削除パターン
-
-### パターン1️⃣: 特定の Worker だけ削除
-
-**使い方**: PR #1, #2 は削除したいが、PR #3 は残したい
+### Mode 1: Exact Match (`worker-names`)
+Delete specific workers by name
 
 ```yaml
 worker-names: 'myapp-pr-1,myapp-pr-2'
-worker-pattern: ''
 ```
 
-**削除結果**:
+**Result**: Only `myapp-pr-1` and `myapp-pr-2` are deleted
 
-- ✅ `myapp-pr-1` → 削除
-- ✅ `myapp-pr-2` → 削除
-- ❌ `myapp-pr-3` → **削除しない**（指定されていない）
-
-**重要**: `worker-pattern` は指定しない（ブランク）
-
----
-
-### パターン2️⃣: パターンで全て削除
-
-**使い方**: PR Worker は全部削除
-
-```yaml
-worker-names: ''
-worker-pattern: 'myapp-pr-*'
-```
-
-**削除結果**:
-
-- ✅ `myapp-pr-1` → 削除
-- ✅ `myapp-pr-2` → 削除
-- ✅ `myapp-pr-3` → **削除**
-- ✅ `myapp-pr-999` → 削除
-
-**重要**: `worker-names` は指定しない（ブランク）
-
----
-
-### パターン3️⃣: パターン + 一部除外
-
-**使い方**: PR Worker は全部削除するが、PR #3 だけ残す
-
-```yaml
-worker-names: ''
-worker-pattern: 'myapp-pr-*'
-exclude: 'myapp-pr-3'
-```
-
-**削除結果**:
-
-- ✅ `myapp-pr-1` → 削除
-- ✅ `myapp-pr-2` → 削除
-- ❌ `myapp-pr-3` → **削除しない**（除外指定）
-- ✅ `myapp-pr-999` → 削除
-
-**重要**: `worker-names` は指定しない、`exclude` で除外
-
----
-
-### パターン4️⃣: 複数環境を除外
-
-**使い方**: PR Worker は全部削除するが、環境ブランチは保護
+### Mode 2: Pattern Match (`worker-pattern`)
+Delete all workers matching a pattern
 
 ```yaml
 worker-pattern: 'myapp-pr-*'
-exclude: 'myapp,myapp-dev,myapp-stg,myapp-release-*'
 ```
 
-**削除結果**:
+**Result**: All workers starting with `myapp-pr-` are deleted
 
-- ✅ `myapp-pr-1` → 削除
-- ✅ `myapp-feature-x` → 削除
-- ❌ `myapp` → **削除しない**（除外: 本番環境）
-- ❌ `myapp-dev` → **削除しない**（除外: develop ブランチ）
-- ❌ `myapp-stg` → **削除しない**（除外: staging ブランチ）
-- ❌ `myapp-release-1.0` → **削除しない**（除外: リリース）
+> ⚠️ **Important**: Specify exactly ONE of `worker-names` or `worker-pattern`, not both
 
 ---
 
-## 使用タイミング
+## Protecting Environments
 
-### PR がクローズされたときに自動削除
+Use `exclude` to protect production and staging workers:
 
 ```yaml
-on:
-  pull_request:
-    types: [closed]
-
-jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: harunonsystem/cloudflare-actions/cleanup@v1
-        with:
-          worker-names: myapp-pr-${{ github.event.pull_request.number }}
-          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          dry-run: 'false'
+worker-pattern: 'myapp-pr-*'
+exclude: 'myapp,myapp-dev,myapp-stg,*-production'
 ```
 
-→ PR #123 がクローズされると `myapp-pr-123` が削除される
+**Supports**:
+- Exact names: `myapp`, `myapp-dev`
+- Wildcards: `*-production`, `myapp-release-*`
 
 ---
 
-### 手動実行で削除パターンを選択
+## Action Inputs
 
-```yaml
-on:
-  workflow_dispatch:
-    inputs:
-      deletion-type:
-        description: 'Deletion type'
-        required: true
-        type: choice
-        options:
-          - by-pattern
-          - by-names
-      worker-input:
-        description: 'Pattern (myapp-pr-*) or Names (myapp-pr-1,myapp-pr-2)'
-        required: true
-        default: 'myapp-pr-*'
-      dry-run:
-        description: 'Dry run (true=確認のみ, false=実削除)'
-        required: false
-        default: 'true'
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `worker-names` | Specific worker names (comma-separated) | No | - |
+| `worker-pattern` | Pattern for workers to delete (e.g., `myapp-pr-*`) | No | - |
+| `exclude` | Workers/patterns to exclude from deletion | No | - |
+| `dry-run` | Preview mode (`true` = no deletion) | No | `true` |
+| `cloudflare-api-token` | Cloudflare API Token | Yes | - |
+| `cloudflare-account-id` | Cloudflare Account ID | Yes | - |
 
-jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: harunonsystem/cloudflare-actions/cleanup@v1
-        with:
-          worker-pattern: ${{ github.event.inputs.deletion-type == 'by-pattern' && github.event.inputs.worker-input || '' }}
-          worker-names: ${{ github.event.inputs.deletion-type == 'by-names' && github.event.inputs.worker-input || '' }}
-          exclude: 'myapp,myapp-dev,myapp-stg,myapp-release-*'
-          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          dry-run: ${{ github.event.inputs.dry-run }}
-```
+## Action Outputs
 
-→ GitHub UI から削除パターンを選択して実行
+| Output | Description |
+|--------|-------------|
+| `deleted-workers` | List of deleted workers (JSON array) |
+| `deleted-count` | Number of workers deleted |
+| `skipped-workers` | List of skipped workers (JSON array) |
+| `dry-run-results` | Workers that would be deleted in dry-run (JSON array) |
 
 ---
 
-## 入力値 (Inputs)
+## Usage
 
-```yaml
-worker-names: 'myapp-pr-1,myapp-pr-2' # 完全一致、複数指定可
-worker-pattern: 'myapp-pr-*' # ワイルドカード、1つのみ
-exclude: 'myapp-dev,myapp-release-*' # 除外設定、ワイルドカード対応
-dry-run: 'true' # true=確認のみ, false=実削除
-cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-```
+Copy one of the example files to `.github/workflows/` in your repository and customize:
 
-### ⚠️ 重要なルール
-
-`worker-names` と `worker-pattern` は **必ずどちらか一つだけ指定**
-
-| 指定方法                                       | 結果      |
-| ---------------------------------------------- | --------- |
-| `worker-names: 'a,b'`, `worker-pattern: ''`    | ✅ OK     |
-| `worker-names: ''`, `worker-pattern: 'a-*'`    | ✅ OK     |
-| `worker-names: 'a,b'`, `worker-pattern: 'a-*'` | ❌ エラー |
-| `worker-names: ''`, `worker-pattern: ''`       | ❌ エラー |
-
----
-
-## exclude パラメータ
-
-### 完全一致による除外
-
-```yaml
-exclude: 'myapp,myapp-dev,myapp-stg'
-```
-
-- `myapp` のみ除外
-- `myapp-dev` は削除される（部分一致）
-
-### パターンによる除外
-
-```yaml
-exclude: 'myapp-release-*,*-prod,*-production'
-```
-
-- `myapp-release-1`, `myapp-release-v1.0` 除外
-- `api-prod`, `web-prod` 除外
-
----
-
-## トラブルシューティング
-
-### 削除対象が見つからない
-
-- `worker-names` / `worker-pattern` を確認
-- `exclude` で誤って除外していないか確認
-- Cloudflare ダッシュボードで実際の Worker 名を確認
-
-### 重要な Worker が削除された
-
-- Cloudflare ダッシュボードで復旧可能か確認
-- `exclude` に追加して保護
-
----
-
-## 出力値 (Outputs)
-
-```yaml
-- id: cleanup
-  uses: harunonsystem/cloudflare-actions/cleanup@v1
-  with: # ...
-
-- name: Notify Slack
-  run: |
-    echo "Deleted: ${{ steps.cleanup.outputs.deleted-count }}"
-```
-
-| 出力値            | 説明                                         |
-| ----------------- | -------------------------------------------- |
-| `deleted-workers` | 削除された Worker 名の配列（JSON）           |
-| `deleted-count`   | 削除された Worker の数                       |
-| `skipped-workers` | 削除失敗した Worker 名の配列                 |
-| `dry-run-results` | ドライランで削除対象となった Worker 名の配列 |
-
----
-
-## サンプルファイル
-
-このディレクトリの実装例：
-
-- **`using-secrets.yml`** - GitHub Secrets を使った基本例
-- **`using-1pass-cli.yml`** - 1Password CLI を使った例
-- **`gitflow-cleanup.yml`** - Git Flow（複数環境）例
-- **`advanced-cleanup.yml`** - ドライラン + Slack 通知例
-
-各ファイルをコピーして `.github/workflows/` に配置し、自分の環境に合わせて編集してください。
+1. Replace `myapp` with your worker name prefix
+2. Configure `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets
+3. Adjust `exclude` patterns for your environments
+4. Set `dry-run: 'false'` for actual deletion

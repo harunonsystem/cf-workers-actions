@@ -6,7 +6,6 @@ inputs:
   node-version:
     description: 'Node.js version to use'
     required: true
-    type: string
 
 runs:
   using: 'composite'
@@ -23,3 +22,4 @@ runs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
       shell: bash
+

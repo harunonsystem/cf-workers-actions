@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 /**
- * prepare-preview-deploy アクションのテンプレート処理ロジックのテスト
+ * Tests for template processing logic of prepare-preview-deploy action
  */
 
 interface TemplateVariables {
@@ -10,9 +10,9 @@ interface TemplateVariables {
 }
 
 /**
- * テンプレート処理関数
- * - {pr-number}: PR番号、なければブランチ名にフォールバック
- * - {branch-name}: ブランチ名
+ * Template processing function
+ * - {pr-number}: PR number, fallback to branch name if not available
+ * - {branch-name}: Branch name
  */
 function processTemplate(template: string, variables: TemplateVariables): string {
   let result = template;
@@ -31,16 +31,16 @@ function processTemplate(template: string, variables: TemplateVariables): string
 }
 
 /**
- * ブランチ名のサニタイズ
- * - スラッシュをハイフンに変換
- * - 無効な文字を削除
+ * Sanitize branch name
+ * - Replace slashes with hyphens
+ * - Remove invalid characters
  */
 function sanitizeBranchName(branchName: string): string {
   return branchName.replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
 }
 
 /**
- * デプロイメントURL生成
+ * Generate deployment URL
  */
 function generateDeploymentUrl(workerName: string, domain: string): string {
   return `https://${workerName}.${domain}`;
