@@ -1,6 +1,6 @@
-# Contributing to Cloudflare Actions
+# Contributing to cf-workers-actions
 
-Thank you for your interest in contributing to Cloudflare Actions! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to cf-workers-actions! This document provides guidelines and information for contributors.
 
 ## 🚀 Getting Started
 
@@ -323,4 +323,4 @@ Contributors will be:
 - Mentioned in release notes for significant features
 - Added to the contributors section (if desired)
 
-Thank you for contributing to Cloudflare Actions! 🚀
+Thank you for contributing to cf-workers-actions! 🚀

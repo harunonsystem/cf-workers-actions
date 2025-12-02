@@ -1,4 +1,4 @@
-# Cloudflare Actions
+# cf-workers-actions
 
 [![CI](https://github.com/harunonsystem/cf-workers-actions/workflows/CI/badge.svg)](https://github.com/harunonsystem/cf-workers-actions/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
