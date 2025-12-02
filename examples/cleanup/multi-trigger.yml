@@ -35,7 +35,7 @@ jobs:
     steps:
       - name: Delete closed PR worker
         id: cleanup
-        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        uses: harunonsystem/cf-workers-actions/cleanup@v1
         with:
           worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -54,7 +54,7 @@ jobs:
     steps:
       - name: Dry-run preview
         id: dryrun
-        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        uses: harunonsystem/cf-workers-actions/cleanup@v1
         with:
           worker-pattern: 'myapp-pr-*'
           # Protect production and staging environments
@@ -71,7 +71,7 @@ jobs:
 
       - name: Actual cleanup
         id: cleanup
-        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        uses: harunonsystem/cf-workers-actions/cleanup@v1
         with:
           worker-pattern: 'myapp-pr-*'
           exclude: 'myapp,myapp-dev,myapp-stg,*-production,*-prod'
@@ -104,7 +104,7 @@ jobs:
     steps:
       - name: Cleanup workers
         id: cleanup
-        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        uses: harunonsystem/cf-workers-actions/cleanup@v1
         with:
           worker-pattern: ${{ github.event.inputs.worker-pattern }}
           exclude: 'myapp,myapp-dev,myapp-stg,*-production,*-prod'

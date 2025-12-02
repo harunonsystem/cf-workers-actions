@@ -27,7 +27,7 @@ jobs:
       # Prepare preview deployment (generate URL and update wrangler.toml)
       - name: Prepare Preview Deployment
         id: prepare
-        uses: harunonsystem/cloudflare-actions/prepare-preview-deploy@v1
+        uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
         with:
           worker-name: 'myapp-pr-{pr-number}'
           environment: 'preview'
@@ -45,7 +45,7 @@ jobs:
       # Comment on PR with deployment status
       - name: Comment on PR
         if: always()
-        uses: harunonsystem/cloudflare-actions/pr-comment@v1
+        uses: harunonsystem/cf-workers-actions/pr-comment@v1
         with:
           deployment-url: ${{ steps.prepare.outputs.deployment-url }}
           deployment-success: ${{ steps.deploy.outcome == 'success' && 'true' || 'false' }}

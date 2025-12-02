@@ -1,4 +1,4 @@
-# Agent Guidelines for cloudflare-actions
+# Agent Guidelines for cf-workers-actions
 
 ## Commands
 

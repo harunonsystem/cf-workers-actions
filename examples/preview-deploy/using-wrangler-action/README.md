@@ -67,7 +67,7 @@ The `prepare-preview-deploy` action automatically updates the `[env.preview]` se
 To use custom domains, specify the `domain` input:
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/prepare-preview-deploy@v1
+- uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
   with:
     worker-name: 'myapp-pr-{pr-number}'
     environment: 'preview'

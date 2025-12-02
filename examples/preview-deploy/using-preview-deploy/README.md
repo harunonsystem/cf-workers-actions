@@ -40,7 +40,7 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
 ### Basic Usage
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/preview-deploy@v1
+- uses: harunonsystem/cf-workers-actions/preview-deploy@v1
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -51,7 +51,7 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
 ### With Custom Domain
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/preview-deploy@v1
+- uses: harunonsystem/cf-workers-actions/preview-deploy@v1
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -72,7 +72,7 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
 ### All-in-one (Deploy Preview)
 ```yaml
 # Just one step!
-- uses: harunonsystem/cloudflare-actions/preview-deploy@v1
+- uses: harunonsystem/cf-workers-actions/preview-deploy@v1
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -83,7 +83,7 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
 ### Modular (Wrangler Action)
 ```yaml
 # Three separate steps
-- uses: harunonsystem/cloudflare-actions/prepare-preview-deploy@v1
+- uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
   id: prepare
   with:
     worker-name: 'myapp-pr-{pr-number}'
@@ -96,7 +96,7 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     command: deploy -e preview
 
-- uses: harunonsystem/cloudflare-actions/pr-comment@v1
+- uses: harunonsystem/cf-workers-actions/pr-comment@v1
   with:
     deployment-url: ${{ steps.prepare.outputs.deployment-url }}
     deployment-name: ${{ steps.prepare.outputs.deployment-name }}

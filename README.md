@@ -1,6 +1,6 @@
 # Cloudflare Actions
 
-[![CI](https://github.com/harunonsystem/cloudflare-actions/workflows/CI/badge.svg)](https://github.com/harunonsystem/cloudflare-actions/actions)
+[![CI](https://github.com/harunonsystem/cf-workers-actions/workflows/CI/badge.svg)](https://github.com/harunonsystem/cf-workers-actions/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A comprehensive suite of modular GitHub Actions for Cloudflare Workers deployment, PR commenting, and cleanup operations.
@@ -24,7 +24,7 @@ A comprehensive suite of modular GitHub Actions for Cloudflare Workers deploymen
 Prepare preview deployments by generating worker names and updating wrangler.toml.
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/prepare-preview-deploy@v1
+- uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
   id: prepare
   with:
     worker-name: 'myapp-pr-{pr-number}'
@@ -48,7 +48,7 @@ Prepare preview deployments by generating worker names and updating wrangler.tom
 All-in-one action that handles URL generation, deployment, and PR commenting.
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/preview-deploy@v1
+- uses: harunonsystem/cf-workers-actions/preview-deploy@v1
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -74,7 +74,7 @@ All-in-one action that handles URL generation, deployment, and PR commenting.
 Post deployment information and preview URLs to Pull Request comments.
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/pr-comment@v1
+- uses: harunonsystem/cf-workers-actions/pr-comment@v1
   with:
     deployment-url: ${{ steps.prepare.outputs.deployment-url }}
     deployment-success: 'true'
@@ -95,7 +95,7 @@ Post deployment information and preview URLs to Pull Request comments.
 Clean up and delete Cloudflare Workers based on patterns or specific names.
 
 ```yaml
-- uses: harunonsystem/cloudflare-actions/cleanup@v1
+- uses: harunonsystem/cf-workers-actions/cleanup@v1
   with:
     worker-pattern: 'myapp-pr-*'
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -136,7 +136,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: harunonsystem/cloudflare-actions/preview-deploy@v1
+      - uses: harunonsystem/cf-workers-actions/preview-deploy@v1
         with:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -166,7 +166,7 @@ jobs:
 
       - name: Prepare Preview Deployment
         id: prepare
-        uses: harunonsystem/cloudflare-actions/prepare-preview-deploy@v1
+        uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
         with:
           worker-name: 'myapp-pr-{pr-number}'
           environment: 'preview'
@@ -181,7 +181,7 @@ jobs:
 
       - name: Comment on PR
         if: always()
-        uses: harunonsystem/cloudflare-actions/pr-comment@v1
+        uses: harunonsystem/cf-workers-actions/pr-comment@v1
         with:
           deployment-url: ${{ steps.prepare.outputs.deployment-url }}
           deployment-name: ${{ steps.prepare.outputs.deployment-name }}
@@ -230,7 +230,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cleanup Preview Worker
-        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        uses: harunonsystem/cf-workers-actions/cleanup@v1
         with:
           worker-pattern: 'myapp-pr-${{ github.event.pull_request.number }}'
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -263,7 +263,7 @@ Add these secrets to your repository settings:
 The actions are built with a modular architecture:
 
 ```
-cloudflare-actions/
+cf-workers-actions/
 ├── prepare-preview-deploy/  # Prepare preview deployments
 ├── preview-deploy/           # All-in-one preview deploy
 ├── pr-comment/               # PR comment action

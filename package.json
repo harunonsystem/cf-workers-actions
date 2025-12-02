@@ -1,5 +1,5 @@
 {
-  "name": "cloudflare-actions",
+  "name": "cf-workers-actions",
   "version": "1.0.0",
   "description": "GitHub Actions for Cloudflare Workers deployment, PR commenting, and cleanup",
   "main": "index.js",

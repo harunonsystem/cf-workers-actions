@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Delete PR worker
         id: cleanup
-        uses: harunonsystem/cloudflare-actions/cleanup@v1
+        uses: harunonsystem/cf-workers-actions/cleanup@v1
         with:
           # Delete worker matching PR number
           # Example: PR #123 -> deletes "myapp-pr-123"

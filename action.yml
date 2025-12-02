@@ -8,10 +8,10 @@ branding:
 
 # This is a composite action that provides access to all sub-actions
 # Users can access individual actions via:
-# - harunonsystem/cloudflare-actions/cleanup@v1
-# - harunonsystem/cloudflare-actions/prepare-preview-deploy@v1
-# - harunonsystem/cloudflare-actions/preview-deploy@v1
-# - harunonsystem/cloudflare-actions/pr-comment@v1
+# - harunonsystem/cf-workers-actions/cleanup@v1
+# - harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
+# - harunonsystem/cf-workers-actions/preview-deploy@v1
+# - harunonsystem/cf-workers-actions/pr-comment@v1
 
 runs:
   using: 'composite'
@@ -21,9 +21,9 @@ runs:
       run: |
         echo "🚀 Cloudflare Actions Suite"
         echo "Available actions:"
-        echo "  - cleanup:                harunonsystem/cloudflare-actions/cleanup@v1"
-        echo "  - prepare-preview-deploy: harunonsystem/cloudflare-actions/prepare-preview-deploy@v1"
-        echo "  - preview-deploy:         harunonsystem/cloudflare-actions/preview-deploy@v1"
-        echo "  - pr-comment:             harunonsystem/cloudflare-actions/pr-comment@v1"
+        echo "  - cleanup:                harunonsystem/cf-workers-actions/cleanup@v1"
+        echo "  - prepare-preview-deploy: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1"
+        echo "  - preview-deploy:         harunonsystem/cf-workers-actions/preview-deploy@v1"
+        echo "  - pr-comment:             harunonsystem/cf-workers-actions/pr-comment@v1"
         echo ""
-        echo "📖 Documentation: https://github.com/harunonsystem/cloudflare-actions"
+        echo "📖 Documentation: https://github.com/harunonsystem/cf-workers-actions"

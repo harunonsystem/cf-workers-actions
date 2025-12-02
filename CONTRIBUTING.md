@@ -16,8 +16,8 @@ Thank you for your interest in contributing to Cloudflare Actions! This document
 2. Clone your fork:
 
    ```bash
-   git clone https://github.com/harunonsystem/cloudflare-actions.git
-   cd cloudflare-actions
+   git clone https://github.com/harunonsystem/cf-workers-actions.git
+   cd cf-workers-actions
    ```
 
 3. Install dependencies:
@@ -161,7 +161,7 @@ The build process:
 ## 📁 Project Structure
 
 ```
-cloudflare-actions/
+cf-workers-actions/
 ├── src/                   # TypeScript source code (development)
 │   ├── deploy/           # Deploy action TypeScript source
 │   │   └── index.ts      # Deploy action entry point
