@@ -1,4 +1,4 @@
-name: 'Cloudflare Actions'
+name: 'CF Workers Actions'
 description: 'Complete suite for Cloudflare Workers deployment, PR commenting, and cleanup'
 author: 'harunonsystem'
 
