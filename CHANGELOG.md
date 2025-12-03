@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2025-12-03
+
+### Added
+
+- Added `github-token` input to resolve authentication error when accessing GitHub API
+
 ## [1.0.1] - 2025-12-03
 
 ### Changed
@@ -81,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Professional documentation with usage examples
 - Community-friendly contribution guidelines
 
-[Unreleased]: https://github.com/harunonsystem/cf-workers-actions/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/harunonsystem/cf-workers-actions/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/harunonsystem/cf-workers-actions/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/harunonsystem/cf-workers-actions/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/harunonsystem/cf-workers-actions/releases/tag/v1.0.0
