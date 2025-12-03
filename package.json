@@ -42,7 +42,6 @@
     "@vercel/ncc": "^0.38.4",
     "@vitest/coverage-v8": "^4.0.14",
     "@vitest/ui": "^4.0.14",
-    "tsx": "^4.6.0",
     "typescript": "^5.3.0",
     "vitest": "^4.0.14",
     "yaml": "^2.8.1"

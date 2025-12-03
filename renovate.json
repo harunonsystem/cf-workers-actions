@@ -16,18 +16,6 @@
       "groupName": "GitHub Actions dependencies",
       "matchPackagePatterns": ["^@actions/"],
       "schedule": ["before 3am on Monday"]
-    },
-    {
-      "matchUpdateTypes": ["minor", "patch"],
-      "matchCurrentVersion": "!/^0/",
-      "automerge": true,
-      "automergeType": "pr",
-      "platformAutomerge": true
-    },
-    {
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["patch"],
-      "automerge": true
     }
   ],
   "vulnerabilityAlerts": {
@@ -39,6 +27,7 @@
   "schedule": ["before 3am on Monday"],
   "prConcurrentLimit": 3,
   "prHourlyLimit": 2,
+  "minimumReleaseAge": "3 days",
   "commitMessagePrefix": "chore(deps):",
   "semanticCommits": "enabled",
   "lockFileMaintenance": {
