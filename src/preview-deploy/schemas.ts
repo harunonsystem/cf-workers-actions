@@ -6,7 +6,7 @@ export const DeployPreviewInputSchema = z.object({
   workerName: z.string().min(1, 'worker-name is required'),
   environment: z.string().default('preview'),
   prNumber: z.string().optional(),
-  domain: z.string().default('workers.dev'),
+  domain: z.string().min(1, 'domain is required'),
   wranglerTomlPath: z.string().default('./wrangler.toml')
 });
 

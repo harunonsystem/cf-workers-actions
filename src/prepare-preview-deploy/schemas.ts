@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const PreparePreviewDeployInputSchema = z.object({
   workerName: z.string().min(1, 'worker-name is required'),
   environment: z.string().min(1, 'environment is required'),
-  domain: z.string().default('workers.dev'),
+  domain: z.string().min(1, 'domain is required'),
   wranglerTomlPath: z.string().default('./wrangler.toml')
 });
 

@@ -35,11 +35,6 @@ async function run(): Promise<void> {
       throw new Error('Input validation failed');
     }
 
-    // Validate inputs
-    if (!inputs.workerPattern && !inputs.workerNames) {
-      throw new Error('Either worker-pattern or worker-names must be provided');
-    }
-
     // API token, account ID, and worker name validation is handled by Cloudflare API
 
     // Initialize Cloudflare API client
