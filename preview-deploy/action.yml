@@ -26,9 +26,8 @@ inputs:
     default: 'preview'
 
   domain:
-    description: 'Custom domain or workers.dev subdomain (e.g., "username.workers.dev" or "example.com")'
-    required: false
-    default: 'username.workers.dev'
+    description: 'Custom domain for deployment URL (e.g., "username.workers.dev" or "example.com")'
+    required: true
 
   wrangler-toml-path:
     description: 'Path to wrangler.toml file'

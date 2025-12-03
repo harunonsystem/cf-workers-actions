@@ -17,9 +17,8 @@ inputs:
     required: true
 
   domain:
-    description: 'Custom domain for deployment URL'
-    required: false
-    default: 'workers.dev'
+    description: 'Custom domain for deployment URL (e.g., "username.workers.dev" or "example.com")'
+    required: true
 
   wrangler-toml-path:
     description: 'Path to wrangler.toml file'

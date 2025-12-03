@@ -71,12 +71,10 @@ describe('Action I/O Consistency Tests', () => {
     test('required inputs should be marked as required', () => {
       expect(actionDef.inputs['worker-name'].required).toBe(true);
       expect(actionDef.inputs.environment.required).toBe(true);
+      expect(actionDef.inputs.domain.required).toBe(true);
     });
 
     test('optional inputs should have defaults or be optional', () => {
-      expect(actionDef.inputs.domain.required).toBe(false);
-      expect(actionDef.inputs.domain.default).toBe('workers.dev');
-
       expect(actionDef.inputs['wrangler-toml-path'].required).toBe(false);
       expect(actionDef.inputs['wrangler-toml-path'].default).toBe('./wrangler.toml');
     });
@@ -116,6 +114,7 @@ describe('Action I/O Consistency Tests', () => {
       expect(actionDef.inputs['cloudflare-api-token'].required).toBe(true);
       expect(actionDef.inputs['cloudflare-account-id'].required).toBe(true);
       expect(actionDef.inputs['worker-name'].required).toBe(true);
+      expect(actionDef.inputs.domain.required).toBe(true);
     });
   });
 
