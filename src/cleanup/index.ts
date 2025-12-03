@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import { CloudflareApi } from '../shared/lib/cloudflare-api';
 import { CLEANUP_ERROR_OUTPUTS, handleActionError } from '../shared/lib/error-handler';
+import { debug } from '../shared/lib/logger';
 import { mapInputs, parseInputs } from '../shared/validation';
 import { CleanupInputSchema } from './schemas';
 
@@ -94,14 +95,14 @@ async function run(): Promise<void> {
       workersToProcess = workersToProcess.filter((name) => {
         // Check exact excluded names
         if (excludeExactNames.has(name)) {
-          core.info(`⏭️  Excluded: ${name} (exact match)`);
+          debug(`⏭️  Excluded: ${name} (exact match)`);
           return false;
         }
 
         // Check excluded patterns
         for (const pattern of excludePatternsRegex) {
           if (pattern.test(name)) {
-            core.info(`⏭️  Excluded: ${name} (matches pattern)`);
+            debug(`⏭️  Excluded: ${name} (matches pattern)`);
             return false;
           }
         }
@@ -161,9 +162,9 @@ async function run(): Promise<void> {
 
     if (inputs.dryRun) {
       // Dry run mode - just list what would be deleted
-      core.info(`🔍 DRY RUN MODE: Would delete ${workersToProcess.length} workers:`);
+      core.info(`🔍 DRY RUN MODE: Would delete ${workersToProcess.length} workers`);
       for (const workerName of workersToProcess) {
-        core.info(`  - ${workerName}`);
+        debug(`  - ${workerName}`);
       }
 
       // Set dry run outputs

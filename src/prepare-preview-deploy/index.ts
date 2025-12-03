@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { handleActionError } from '../shared/lib/error-handler';
+import { debug } from '../shared/lib/logger';
 import { mapInputs, parseInputs } from '../shared/validation';
 import { PreparePreviewDeployInputSchema } from './schemas.js';
 
@@ -102,8 +103,12 @@ async function updateWranglerToml(
     // Write back
     fs.writeFileSync(tomlPath, lines.join('\n'));
 
-    core.info('Updated wrangler.toml:');
-    core.info(fs.readFileSync(tomlPath, 'utf8'));
+    // Only show full contents in debug mode
+    const updatedContent = fs.readFileSync(tomlPath, 'utf8');
+    debug(`Updated wrangler.toml:\n${updatedContent}`);
+    if (!process.env.ACTIONS_STEP_DEBUG) {
+      core.info('✅ Updated wrangler.toml for preview environment');
+    }
   } catch (error) {
     // Restore backup on failure
     fs.copyFileSync(backupPath, tomlPath);
