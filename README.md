@@ -29,13 +29,14 @@ Prepare preview deployments by generating worker names and updating wrangler.tom
   with:
     worker-name: 'myapp-pr-{pr-number}'
     environment: 'preview'
+    domain: 'username.workers.dev'
 ```
 
 **Inputs:**
 
 - `worker-name` (required): Worker name template (supports `{pr-number}`, `{branch-name}`)
 - `environment` (required): Deployment environment for wrangler.toml `[env.xxx]` section
-- `domain`: Custom domain (default: `workers.dev`)
+- `domain` (required): Custom domain for deployment URL (e.g., `username.workers.dev` or `example.com`)
 - `wrangler-toml-path`: Path to wrangler.toml (default: `./wrangler.toml`)
 
 **Outputs:**
@@ -53,6 +54,7 @@ All-in-one action that handles URL generation, deployment, and PR commenting.
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     worker-name: 'myapp-pr-{pr-number}'
+    domain: 'username.workers.dev'
 ```
 
 **Inputs:**
@@ -60,8 +62,8 @@ All-in-one action that handles URL generation, deployment, and PR commenting.
 - `cloudflare-api-token` (required): Cloudflare API Token
 - `cloudflare-account-id` (required): Cloudflare Account ID
 - `worker-name` (required): Worker name template
+- `domain` (required): Custom domain for deployment URL (e.g., `username.workers.dev` or `example.com`)
 - `environment`: Deployment environment (default: `preview`)
-- `domain`: Custom domain (default: `workers.dev`)
 
 **Outputs:**
 
@@ -170,6 +172,7 @@ jobs:
         with:
           worker-name: 'myapp-pr-{pr-number}'
           environment: 'preview'
+          domain: 'username.workers.dev'
 
       - name: Deploy to Cloudflare Workers
         id: deploy
