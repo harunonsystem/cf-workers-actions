@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2025-12-03
+
+### Added
+
+- **Debug Mode**: Added debug mode to control log verbosity ([#9](https://github.com/harunonsystem/cf-workers-actions/issues/9), [#10](https://github.com/harunonsystem/cf-workers-actions/pull/10))
+  - Shared logger utility respecting `ACTIONS_STEP_DEBUG` environment variable
+  - Reduced default log output for cleaner CI/CD workflows
+  - Full diagnostic information available when debug mode enabled
+  - Applied to `prepare-preview-deploy` and `cleanup` actions
+- **Renovate**: Added automated dependency management configuration ([#11](https://github.com/harunonsystem/cf-workers-actions/pull/11))
+  - pnpm support for transitive dependencies
+  - Weekly update schedule (Monday mornings JST)
+  - Security vulnerability alerts
+  - 3-day minimum release age for stability
+
+### Security
+
+- **Vite**: Updated vite from 7.1.7 to 7.2.6 via vitest updates ([#1](https://github.com/harunonsystem/cf-workers-actions/security/dependabot/1), [#11](https://github.com/harunonsystem/cf-workers-actions/pull/11))
+  - Fixes CVE affecting vite 7.1.0-7.1.10 (server.fs.deny bypass on Windows)
+  - Updated vitest packages from 4.0.13 to 4.0.14
+
+### Changed
+
+- Removed unused `tsx` development dependency ([#11](https://github.com/harunonsystem/cf-workers-actions/pull/11))
+
 ## [1.0.2] - 2025-12-03
 
 ### Added
@@ -87,7 +112,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Professional documentation with usage examples
 - Community-friendly contribution guidelines
 
-[Unreleased]: https://github.com/harunonsystem/cf-workers-actions/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/harunonsystem/cf-workers-actions/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/harunonsystem/cf-workers-actions/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/harunonsystem/cf-workers-actions/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/harunonsystem/cf-workers-actions/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/harunonsystem/cf-workers-actions/releases/tag/v1.0.0
