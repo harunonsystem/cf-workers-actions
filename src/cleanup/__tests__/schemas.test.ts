@@ -58,6 +58,55 @@ describe('Cleanup Schemas', () => {
         expect.stringContaining('Input validation failed')
       );
     });
+
+    it('should parse valid inputs with worker names', () => {
+      const raw = {
+        workerNames: ['worker1', 'worker2'],
+        cloudflareApiToken: 'token123',
+        cloudflareAccountId: 'account123',
+        dryRun: false
+      };
+      const result = parseInputs(CleanupInputSchema, raw);
+      expect(result).toEqual({
+        workerNames: ['worker1', 'worker2'],
+        cloudflareApiToken: 'token123',
+        cloudflareAccountId: 'account123',
+        dryRun: false
+      });
+      expect(mockSetFailed).not.toHaveBeenCalled();
+    });
+
+    it('should fail when neither worker-pattern nor worker-names is provided', () => {
+      const raw = {
+        cloudflareApiToken: 'token123',
+        cloudflareAccountId: 'account123',
+        dryRun: true
+      };
+      const result = parseInputs(CleanupInputSchema, raw);
+      expect(result).toBeNull();
+      expect(mockSetFailed).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Either worker-pattern or worker-names must be provided, but not both'
+        )
+      );
+    });
+
+    it('should fail when both worker-pattern and worker-names are provided', () => {
+      const raw = {
+        workerPattern: 'test-*',
+        workerNames: ['worker1', 'worker2'],
+        cloudflareApiToken: 'token123',
+        cloudflareAccountId: 'account123',
+        dryRun: true
+      };
+      const result = parseInputs(CleanupInputSchema, raw);
+      expect(result).toBeNull();
+      expect(mockSetFailed).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Either worker-pattern or worker-names must be provided, but not both'
+        )
+      );
+    });
   });
 
   describe('CleanupOutputSchema', () => {
