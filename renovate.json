@@ -1,0 +1,37 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":separateMajorReleases"
+  ],
+  "packageRules": [
+    {
+      "groupName": "vitest packages",
+      "matchPackagePatterns": ["^vitest$", "^@vitest/"],
+      "schedule": ["before 3am on Monday"]
+    },
+    {
+      "groupName": "GitHub Actions dependencies",
+      "matchPackagePatterns": ["^@actions/"],
+      "schedule": ["before 3am on Monday"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "assignees": ["@harunonsystem"]
+  },
+  "labels": ["dependencies"],
+  "timezone": "Asia/Tokyo",
+  "schedule": ["before 3am on Monday"],
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "minimumReleaseAge": "3 days",
+  "commitMessagePrefix": "chore(deps):",
+  "semanticCommits": "enabled",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 3am on the first day of the month"]
+  }
+}
