@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2025-12-03
+
+### Changed
+
+- Switched from TypeScript compilation to @vercel/ncc bundling for distributable files ([#8](https://github.com/harunonsystem/cf-workers-actions/pull/8))
+- Made `domain` parameter required for better deployment reliability ([#8](https://github.com/harunonsystem/cf-workers-actions/pull/8))
+
+### Fixed
+
+- Fixed missing @actions/core dependency at runtime by bundling all dependencies ([#7](https://github.com/harunonsystem/cf-workers-actions/issues/7), [#8](https://github.com/harunonsystem/cf-workers-actions/pull/8))
+- Added mutual exclusivity validation for `worker_pattern` and `worker_names` in cleanup action ([#6](https://github.com/harunonsystem/cf-workers-actions/issues/6), [#8](https://github.com/harunonsystem/cf-workers-actions/pull/8))
+
+
 ## [1.0.0] - 2025-12-02
 
 ### Added
@@ -67,3 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive branding and metadata
 - Professional documentation with usage examples
 - Community-friendly contribution guidelines
+
+[Unreleased]: https://github.com/harunonsystem/cf-workers-actions/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/harunonsystem/cf-workers-actions/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/harunonsystem/cf-workers-actions/releases/tag/v1.0.0
