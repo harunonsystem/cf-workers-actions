@@ -20,6 +20,11 @@ inputs:
     description: 'Name of the deployed worker'
     required: true
 
+  github-token:
+    description: 'GitHub token for commenting on PRs'
+    required: false
+    default: ${{ github.token }}
+
 outputs:
   comment-id:
     description: 'ID of the created or updated comment'

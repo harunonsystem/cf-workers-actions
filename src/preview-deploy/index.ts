@@ -130,9 +130,10 @@ async function createOrUpdateComment(
   prNumber: number,
   deploymentUrl: string,
   deploymentName: string,
-  deploymentSuccess: boolean
+  deploymentSuccess: boolean,
+  githubToken?: string
 ): Promise<void> {
-  const token = process.env.GITHUB_TOKEN;
+  const token = githubToken || process.env.GITHUB_TOKEN;
   if (!token) {
     core.warning('GITHUB_TOKEN not found, skipping PR comment');
     return;
@@ -196,7 +197,8 @@ async function run(): Promise<void> {
       'worker-name': { required: true },
       environment: { required: false, default: 'preview' },
       domain: { required: false, default: 'workers.dev' },
-      'wrangler-toml-path': { required: false, default: './wrangler.toml' }
+      'wrangler-toml-path': { required: false, default: './wrangler.toml' },
+      'github-token': { required: false }
     });
 
     const inputs = parseInputs(DeployPreviewInputSchema, rawInputs);
@@ -249,7 +251,13 @@ async function run(): Promise<void> {
     // Step 4: Comment on PR (if pr-number provided or detected)
     const prNumberInt = prNumber ? parseInt(prNumber, 10) : undefined;
     if (prNumberInt && !Number.isNaN(prNumberInt)) {
-      await createOrUpdateComment(prNumberInt, deploymentUrl, workerName, deploymentSuccess);
+      await createOrUpdateComment(
+        prNumberInt,
+        deploymentUrl,
+        workerName,
+        deploymentSuccess,
+        rawInputs.githubToken as string | undefined
+      );
       core.info('✅ PR comment posted');
     }
 

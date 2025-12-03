@@ -90,7 +90,8 @@ describe('Action I/O Consistency Tests', () => {
         'worker-name',
         'environment',
         'domain',
-        'wrangler-toml-path'
+        'wrangler-toml-path',
+        'github-token'
       ];
       const actualInputs = Object.keys(actionDef.inputs);
 

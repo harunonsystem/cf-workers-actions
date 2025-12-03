@@ -72,7 +72,8 @@ async function run(): Promise<void> {
     const rawInputs = mapInputs({
       'deployment-url': { required: true },
       'deployment-success': { required: true },
-      'deployment-name': { required: true }
+      'deployment-name': { required: true },
+      'github-token': { required: false }
     });
 
     const inputs = parseInputs(PrCommentInputSchema, {
@@ -98,10 +99,12 @@ async function run(): Promise<void> {
     core.info(`Deployment name: ${inputs.deploymentName}`);
     core.info(`Deployment success: ${inputs.deploymentSuccess}`);
 
-    // Get GitHub token
-    const token = process.env.GITHUB_TOKEN;
+    // Get GitHub token (input takes precedence over environment variable)
+    const token = (rawInputs.githubToken as string) || process.env.GITHUB_TOKEN;
     if (!token) {
-      throw new Error('GITHUB_TOKEN is required');
+      throw new Error(
+        'GITHUB_TOKEN is required. Please provide it via github-token input or ensure it is available in the environment.'
+      );
     }
 
     const octokit = github.getOctokit(token);

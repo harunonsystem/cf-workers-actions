@@ -34,6 +34,10 @@ inputs:
     required: false
     default: './wrangler.toml'
 
+  github-token:
+    description: 'GitHub token for commenting on PRs'
+    required: false
+    default: ${{ github.token }}
 
 outputs:
   deployment-url:
