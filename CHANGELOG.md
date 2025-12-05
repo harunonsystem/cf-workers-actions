@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **worker-prefix and worker-numbers support in cleanup action**: Added flexible worker naming support
+  - `worker-prefix` input to specify prefix (e.g., "myapp-pr-")
+  - `worker-numbers` input for numeric identifiers (e.g., "1,2,3")
+  - `worker-names` input for full names (overrides prefix+numbers)
+  - Automatic expansion of prefix+numbers to full worker names
+
 ## [1.0.3] - 2025-12-03
 
 ### Added

@@ -19,7 +19,8 @@
     "format:check": "biome format .",
     "prepare": "pnpm run build",
     "release:check": "pnpm run check && echo '✅ Ready for release!'",
-    "version": "pnpm run build && git add dist/"
+    "version": "pnpm run build && git add dist/",
+    "release": "changeset publish && git push --follow-tags"
   },
   "keywords": [
     "github-actions",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.7",
+    "@changesets/cli": "^2.29.8",
     "@types/node": "^24.10.1",
     "@vercel/ncc": "^0.38.4",
     "@vitest/coverage-v8": "^4.0.14",
