@@ -86,7 +86,7 @@ describe('Cleanup Schemas', () => {
       expect(result).toBeNull();
       expect(mockSetFailed).toHaveBeenCalledWith(
         expect.stringContaining(
-          'Either worker-pattern or worker-names must be provided, but not both'
+          'Either (worker-names or worker-prefix+worker-numbers) or worker-pattern must be provided'
         )
       );
     });
@@ -103,7 +103,7 @@ describe('Cleanup Schemas', () => {
       expect(result).toBeNull();
       expect(mockSetFailed).toHaveBeenCalledWith(
         expect.stringContaining(
-          'Either worker-pattern or worker-names must be provided, but not both'
+          'Either (worker-names or worker-prefix+worker-numbers) or worker-pattern must be provided'
         )
       );
     });

@@ -16,14 +16,26 @@ async function run(): Promise<void> {
       exclude: { required: false }
     });
 
-    // Parse worker names separately
+    // Parse worker names, numbers, and prefix
     const workerNamesInput = core.getInput('worker-names');
+    const workerNumbersInput = core.getInput('worker-numbers');
+    const workerPrefix = core.getInput('worker-prefix');
     let workerNames: string[] | undefined;
+
+    // Priority: full names > prefix+numbers > pattern
     if (workerNamesInput) {
+      // Use full names (overrides prefix+numbers)
       workerNames = workerNamesInput
         .split(',')
         .map((name) => name.trim())
         .filter(Boolean);
+    } else if (workerNumbersInput && workerPrefix) {
+      // Combine prefix with numbers
+      const numbers = workerNumbersInput
+        .split(',')
+        .map((num) => num.trim())
+        .filter(Boolean);
+      workerNames = numbers.map((num) => `${workerPrefix}${num}`);
     }
 
     // Validate inputs with Zod

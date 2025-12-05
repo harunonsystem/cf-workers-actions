@@ -12,8 +12,16 @@ inputs:
     description: 'Pattern for workers to delete (e.g., "myapp-pr-*")'
     required: false
 
+  worker-prefix:
+    description: 'Worker prefix (e.g., "myapp-pr-" or "example-")'
+    required: false
+
+  worker-numbers:
+    description: 'Numbers to delete (e.g., "1,2,3"). Used with worker-prefix to generate full worker names'
+    required: false
+
   worker-names:
-    description: 'Specific worker names to delete (comma-separated)'
+    description: 'Full names (optional, overrides prefix+numbers) (comma-separated)'
     required: false
 
   cloudflare-api-token:
