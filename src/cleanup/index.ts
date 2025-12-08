@@ -5,6 +5,7 @@ import { debug } from '../shared/lib/logger';
 import { mapInputs, parseInputs } from '../shared/validation';
 import { CleanupInputSchema } from './schemas';
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: TODO: refactor this function
 async function run(): Promise<void> {
   try {
     // Map and validate inputs

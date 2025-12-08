@@ -234,6 +234,4 @@ describe('CloudflareApi', () => {
       );
     });
   });
-
-
 });

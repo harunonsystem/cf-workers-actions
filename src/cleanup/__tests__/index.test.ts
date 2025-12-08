@@ -73,8 +73,6 @@ describe('cleanup action integration', () => {
       return '';
     });
 
-
-
     await run();
 
     expect(coreMocks.info).toHaveBeenCalledWith('Processing specific workers: worker1, worker2');
@@ -102,8 +100,6 @@ describe('cleanup action integration', () => {
       return '';
     });
 
-
-
     await run();
 
     expect(coreMocks.info).toHaveBeenCalledWith(
@@ -124,6 +120,7 @@ describe('cleanup action integration', () => {
       return mockCf;
     });
 
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: test mock setup
     coreMocks.getInput.mockImplementation((name: string) => {
       if (name === 'worker-names') return 'custom-worker-1,custom-worker-2';
       if (name === 'worker-numbers') return '1,2,3'; // Should be ignored
@@ -133,8 +130,6 @@ describe('cleanup action integration', () => {
       if (name === 'dry-run') return 'true';
       return '';
     });
-
-
 
     await run();
 

@@ -109,5 +109,4 @@ export class CloudflareApi {
       throw error;
     }
   }
-
 }
