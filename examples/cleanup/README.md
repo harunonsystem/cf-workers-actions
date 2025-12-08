@@ -1,6 +1,6 @@
 # Cleanup Action Examples
 
-Clean up and delete Cloudflare Workers based on patterns or specific names.
+Clean up and delete Cloudflare Workers based on specific names.
 
 ## Quick Start
 
@@ -17,17 +17,13 @@ worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
 ### 2. [multi-trigger.yml](./multi-trigger.yml)
 **Production-ready** - Multiple triggers with protection
 
-- ✅ Auto-delete on PR close
-- ✅ Scheduled cleanup (daily)
 - ✅ Manual execution via workflow_dispatch
 - ✅ Environment protection with `exclude`
 - ✅ Dry-run preview
 
 ---
 
-## Two Deletion Modes
-
-### Mode 1: Exact Match (`worker-names`)
+### Deletion Mode: Exact Match (`worker-names`)
 Delete specific workers by name
 
 ```yaml
@@ -36,16 +32,7 @@ worker-names: 'myapp-pr-1,myapp-pr-2'
 
 **Result**: Only `myapp-pr-1` and `myapp-pr-2` are deleted
 
-### Mode 2: Pattern Match (`worker-pattern`)
-Delete all workers matching a pattern
 
-```yaml
-worker-pattern: 'myapp-pr-*'
-```
-
-**Result**: All workers starting with `myapp-pr-` are deleted
-
-> ⚠️ **Important**: Specify exactly ONE of `worker-names` or `worker-pattern`, not both
 
 ---
 
@@ -54,8 +41,8 @@ worker-pattern: 'myapp-pr-*'
 Use `exclude` to protect production and staging workers:
 
 ```yaml
-worker-pattern: 'myapp-pr-*'
-exclude: 'myapp,myapp-dev,myapp-stg,*-production'
+worker-names: 'myapp-pr-1'
+exclude: 'myapp,myapp-dev,myapp-stg'
 ```
 
 **Supports**:
@@ -69,7 +56,7 @@ exclude: 'myapp,myapp-dev,myapp-stg,*-production'
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `worker-names` | Specific worker names (comma-separated) | No | - |
-| `worker-pattern` | Pattern for workers to delete (e.g., `myapp-pr-*`) | No | - |
+
 | `exclude` | Workers/patterns to exclude from deletion | No | - |
 | `dry-run` | Preview mode (`true` = no deletion) | No | `true` |
 | `cloudflare-api-token` | Cloudflare API Token | Yes | - |

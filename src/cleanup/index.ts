@@ -9,7 +9,9 @@ async function run(): Promise<void> {
   try {
     // Map and validate inputs
     const rawInputs = mapInputs({
-      'worker-pattern': { required: false },
+      'worker-names': { required: false },
+      'worker-numbers': { required: false },
+      'worker-prefix': { required: false },
       'cloudflare-api-token': { required: true },
       'cloudflare-account-id': { required: true },
       'dry-run': { required: false, default: 'true' },
@@ -60,12 +62,6 @@ async function run(): Promise<void> {
       // Use specific worker names
       workersToProcess = inputs.workerNames;
       core.info(`Processing specific workers: ${inputs.workerNames.join(', ')}`);
-    } else if (inputs.workerPattern) {
-      // Find workers by pattern
-      workersToProcess = await cf.findWorkersByPattern(inputs.workerPattern);
-      core.info(
-        `Found ${workersToProcess.length} workers matching pattern: ${inputs.workerPattern}`
-      );
     }
 
     // Apply exclusion filter (supports both exact names and patterns)

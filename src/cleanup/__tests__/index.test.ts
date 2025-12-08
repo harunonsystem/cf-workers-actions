@@ -36,7 +36,6 @@ describe('cleanup action integration', () => {
 
   test('should require either worker-pattern or worker-names', async () => {
     const mockCf = {
-      findWorkersByPattern: vi.fn(),
       deleteWorker: vi.fn()
     };
     // biome-ignore lint/complexity/useArrowFunction: Mock implementation must be a function to support 'new' operator
@@ -53,15 +52,12 @@ describe('cleanup action integration', () => {
     await run();
 
     expect(coreMocks.setFailed).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'Either (worker-names or worker-prefix+worker-numbers) or worker-pattern must be provided'
-      )
+      expect.stringContaining('Input validation failed')
     );
   });
 
   test('should process specific worker names', async () => {
     const mockCf = {
-      findWorkersByPattern: vi.fn(),
       deleteWorker: vi.fn()
     };
     // biome-ignore lint/complexity/useArrowFunction: Mock implementation must be a function to support 'new' operator
@@ -77,7 +73,7 @@ describe('cleanup action integration', () => {
       return '';
     });
 
-    mockCf.findWorkersByPattern.mockResolvedValue([]);
+
 
     await run();
 
@@ -90,7 +86,6 @@ describe('cleanup action integration', () => {
 
   test('should expand worker numbers with prefix', async () => {
     const mockCf = {
-      findWorkersByPattern: vi.fn(),
       deleteWorker: vi.fn()
     };
     // biome-ignore lint/complexity/useArrowFunction: Mock implementation must be a function to support 'new' operator
@@ -107,7 +102,7 @@ describe('cleanup action integration', () => {
       return '';
     });
 
-    mockCf.findWorkersByPattern.mockResolvedValue([]);
+
 
     await run();
 
@@ -122,7 +117,6 @@ describe('cleanup action integration', () => {
 
   test('should use full names when provided (overrides prefix+numbers)', async () => {
     const mockCf = {
-      findWorkersByPattern: vi.fn(),
       deleteWorker: vi.fn()
     };
     // biome-ignore lint/complexity/useArrowFunction: Mock implementation must be a function to support 'new' operator
@@ -140,7 +134,7 @@ describe('cleanup action integration', () => {
       return '';
     });
 
-    mockCf.findWorkersByPattern.mockResolvedValue([]);
+
 
     await run();
 

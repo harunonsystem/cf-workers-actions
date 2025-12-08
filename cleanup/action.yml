@@ -8,10 +8,6 @@ branding:
   color: 'red'
 
 inputs:
-  worker-pattern:
-    description: 'Pattern for workers to delete (e.g., "myapp-pr-*")'
-    required: false
-
   worker-prefix:
     description: 'Worker prefix (e.g., "myapp-pr-" or "example-")'
     required: false

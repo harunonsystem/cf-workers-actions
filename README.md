@@ -10,7 +10,7 @@ A comprehensive suite of modular GitHub Actions for Cloudflare Workers deploymen
 - **Prepare Preview Deploy**: Generate URLs and update wrangler.toml for preview deployments
 - **Preview Deploy**: All-in-one action combining URL generation, deployment, and PR comments
 - **PR Comment**: Automatically post deployment URLs and status to PR comments
-- **Cleanup**: Clean up workers based on patterns or specific names
+- **Cleanup**: Clean up and delete Cloudflare Workers based on specific names
 - **Modular Architecture**: Mix and match actions as needed, compatible with official Cloudflare actions
 - **TypeScript First**: Written in TypeScript with complete type safety and definitions
 - **Ultra-Fast Tooling**: Linting and formatting with Biome (replacing Oxlint & Prettier)
@@ -64,6 +64,8 @@ All-in-one action that handles URL generation, deployment, and PR commenting.
 - `worker-name` (required): Worker name template
 - `domain` (required): Custom domain for deployment URL (e.g., `username.workers.dev` or `example.com`)
 - `environment`: Deployment environment (default: `preview`)
+- `wrangler-toml-path`: Path to wrangler.toml (default: `./wrangler.toml`)
+- `github-token`: GitHub token for PR comments (default: `github.token`)
 
 **Outputs:**
 
@@ -86,7 +88,8 @@ Post deployment information and preview URLs to Pull Request comments.
 
 - `deployment-url` (required): URL of the deployed preview
 - `deployment-success` (required): Deployment status (`true` or `false`)
-- `deployment-name`: Name of the deployed worker
+- `deployment-name` (required): Name of the deployed worker
+- `github-token`: GitHub token for PR comments (default: `github.token`)
 
 **Outputs:**
 
@@ -94,28 +97,32 @@ Post deployment information and preview URLs to Pull Request comments.
 
 ### Cleanup (`cleanup`)
 
-Clean up and delete Cloudflare Workers based on patterns or specific names.
+Clean up and delete Cloudflare Workers based on specific names.
 
 ```yaml
 - uses: harunonsystem/cf-workers-actions/cleanup@v1
   with:
-    worker-pattern: 'myapp-pr-*'
+    worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
 
 **Inputs:**
 
-- `worker-pattern`: Pattern for workers to delete (supports wildcards)
 - `worker-names`: Specific worker names to delete (comma-separated)
+- `worker-prefix`: Worker prefix (e.g., `myapp-pr-`)
+- `worker-numbers`: Numbers to delete (e.g., `1,2,3`). Used with `worker-prefix`
 - `cloudflare-api-token` (required): Cloudflare API Token
 - `cloudflare-account-id` (required): Cloudflare Account ID
-- `dry-run`: Only list workers without deleting (default: `false`)
+- `dry-run`: List workers without deleting (default: `true`)
+- `exclude`: Workers/patterns to exclude from deletion
 
 **Outputs:**
 
 - `deleted-workers`: List of deleted worker names (JSON array)
 - `deleted-count`: Number of workers deleted
+- `skipped-workers`: List of skipped workers (JSON array)
+- `dry-run-results`: Workers that would be deleted in dry-run (JSON array)
 
 ## 🔧 Complete Workflow Examples
 
@@ -235,7 +242,7 @@ jobs:
       - name: Cleanup Preview Worker
         uses: harunonsystem/cf-workers-actions/cleanup@v1
         with:
-          worker-pattern: 'myapp-pr-${{ github.event.pull_request.number }}'
+          worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
@@ -327,11 +334,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
-
-## 📊 Marketplace Stats
-
-- **Version**: 1.0.0
-- **Stars**: ⭐ Star this repo to support the project!
 
 ---
 
