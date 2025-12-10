@@ -56,7 +56,6 @@ exclude: 'myapp,myapp-dev,myapp-stg'
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `worker-names` | Specific worker names (comma-separated) | No | - |
-
 | `exclude` | Workers/patterns to exclude from deletion | No | - |
 | `dry-run` | Preview mode (`true` = no deletion) | No | `true` |
 | `cloudflare-api-token` | Cloudflare API Token | Yes | - |
