@@ -91,6 +91,7 @@ name = "my-app-preview"
     // Mock process.env
     process.env.GITHUB_REF = 'refs/heads/test-branch';
     process.env.GITHUB_SHA = 'test-sha';
+    delete process.env.GITHUB_HEAD_REF; // Clear GITHUB_HEAD_REF for clean test state
 
     // Mock getOctokit
     vi.mocked(github.getOctokit).mockReturnValue({
