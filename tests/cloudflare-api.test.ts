@@ -234,47 +234,4 @@ describe('CloudflareApi', () => {
       );
     });
   });
-
-  describe('findWorkersByPattern', () => {
-    beforeEach(() => {
-      const mockWorkers = [
-        { id: 'project-pr-123' },
-        { id: 'project-pr-456' },
-        { id: 'project-main' },
-        { id: 'other-worker' }
-      ];
-
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValueOnce({
-          success: true,
-          result: mockWorkers
-        })
-      });
-    });
-
-    test('should find workers matching wildcard pattern', async () => {
-      const result = await api.findWorkersByPattern('project-pr-*');
-
-      expect(result).toEqual(['project-pr-123', 'project-pr-456']);
-    });
-
-    test('should return all workers for * pattern', async () => {
-      const result = await api.findWorkersByPattern('*');
-
-      expect(result).toEqual(['project-pr-123', 'project-pr-456', 'project-main', 'other-worker']);
-    });
-
-    test('should find workers matching specific pattern', async () => {
-      const result = await api.findWorkersByPattern('project-main');
-
-      expect(result).toEqual(['project-main']);
-    });
-
-    test('should return empty array for no matches', async () => {
-      const result = await api.findWorkersByPattern('nonexistent-*');
-
-      expect(result).toEqual([]);
-    });
-  });
 });

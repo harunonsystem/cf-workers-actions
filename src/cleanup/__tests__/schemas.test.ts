@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { z } from 'zod';
 import { parseInputs, setOutputsValidated } from '../../shared/validation';
 import { CleanupInputSchema, CleanupOutputSchema } from '../schemas';
 
@@ -11,6 +12,9 @@ vi.mock('@actions/core', () => ({
 const mockSetFailed = vi.mocked(core.setFailed);
 const mockSetOutput = vi.mocked(core.setOutput);
 
+type CleanupInput = z.input<typeof CleanupInputSchema>;
+type CleanupOutput = z.input<typeof CleanupOutputSchema>;
+
 describe('Cleanup Schemas', () => {
   beforeEach(() => {
     mockSetFailed.mockClear();
@@ -18,26 +22,26 @@ describe('Cleanup Schemas', () => {
   });
 
   describe('CleanupInputSchema', () => {
-    it('should parse valid inputs with worker pattern', () => {
-      const raw = {
-        workerPattern: 'test-*',
+    it('should parse valid inputs with worker names', () => {
+      const raw: CleanupInput = {
+        workerNames: ['worker1', 'worker2'],
         cloudflareApiToken: 'token123',
         cloudflareAccountId: 'account123',
-        dryRun: true
+        dryRun: false
       };
       const result = parseInputs(CleanupInputSchema, raw);
       expect(result).toEqual({
-        workerPattern: 'test-*',
+        workerNames: ['worker1', 'worker2'],
         cloudflareApiToken: 'token123',
         cloudflareAccountId: 'account123',
-        dryRun: true
+        dryRun: false
       });
       expect(mockSetFailed).not.toHaveBeenCalled();
     });
 
     it('should fail on missing required cloudflareApiToken', () => {
-      const raw = {
-        workerPattern: 'test-*',
+      const raw: Partial<CleanupInput> = {
+        workerNames: ['test'],
         cloudflareAccountId: 'account123'
       };
       const result = parseInputs(CleanupInputSchema, raw);
@@ -48,8 +52,8 @@ describe('Cleanup Schemas', () => {
     });
 
     it('should fail on missing required cloudflareAccountId', () => {
-      const raw = {
-        workerPattern: 'test-*',
+      const raw: Partial<CleanupInput> = {
+        workerNames: ['test'],
         cloudflareApiToken: 'token123'
       };
       const result = parseInputs(CleanupInputSchema, raw);
@@ -59,59 +63,57 @@ describe('Cleanup Schemas', () => {
       );
     });
 
-    it('should parse valid inputs with worker names', () => {
-      const raw = {
-        workerNames: ['worker1', 'worker2'],
+    it('should fail when workerNames is missing', () => {
+      const raw: Partial<CleanupInput> = {
         cloudflareApiToken: 'token123',
         cloudflareAccountId: 'account123',
-        dryRun: false
+        dryRun: true
+      };
+      const result = parseInputs(CleanupInputSchema, raw);
+      expect(result).toBeNull();
+      expect(mockSetFailed).toHaveBeenCalledWith(
+        expect.stringContaining('Input validation failed')
+      );
+    });
+
+    it('should use default value for dryRun when not provided', () => {
+      const raw: CleanupInput = {
+        workerNames: ['worker1'],
+        cloudflareApiToken: 'token123',
+        cloudflareAccountId: 'account123'
       };
       const result = parseInputs(CleanupInputSchema, raw);
       expect(result).toEqual({
-        workerNames: ['worker1', 'worker2'],
+        workerNames: ['worker1'],
         cloudflareApiToken: 'token123',
         cloudflareAccountId: 'account123',
-        dryRun: false
+        dryRun: true
       });
       expect(mockSetFailed).not.toHaveBeenCalled();
     });
 
-    it('should fail when neither worker-pattern nor worker-names is provided', () => {
-      const raw = {
+    it('should accept optional exclude field', () => {
+      const raw: CleanupInput = {
+        workerNames: ['worker1'],
         cloudflareApiToken: 'token123',
         cloudflareAccountId: 'account123',
-        dryRun: true
+        exclude: 'production,staging'
       };
       const result = parseInputs(CleanupInputSchema, raw);
-      expect(result).toBeNull();
-      expect(mockSetFailed).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'Either worker-pattern or worker-names must be provided, but not both'
-        )
-      );
-    });
-
-    it('should fail when both worker-pattern and worker-names are provided', () => {
-      const raw = {
-        workerPattern: 'test-*',
-        workerNames: ['worker1', 'worker2'],
+      expect(result).toEqual({
+        workerNames: ['worker1'],
         cloudflareApiToken: 'token123',
         cloudflareAccountId: 'account123',
+        exclude: 'production,staging',
         dryRun: true
-      };
-      const result = parseInputs(CleanupInputSchema, raw);
-      expect(result).toBeNull();
-      expect(mockSetFailed).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'Either worker-pattern or worker-names must be provided, but not both'
-        )
-      );
+      });
+      expect(mockSetFailed).not.toHaveBeenCalled();
     });
   });
 
   describe('CleanupOutputSchema', () => {
     it('should validate cleanup outputs', () => {
-      const outputs = {
+      const outputs: CleanupOutput = {
         deletedWorkers: ['worker1', 'worker2'],
         deletedCount: 2,
         skippedWorkers: [],
@@ -121,7 +123,7 @@ describe('Cleanup Schemas', () => {
     });
 
     it('should handle empty cleanup outputs', () => {
-      const outputs = {
+      const outputs: CleanupOutput = {
         deletedWorkers: [],
         deletedCount: 0,
         skippedWorkers: [],

@@ -3,21 +3,23 @@ name: Multi-Trigger Cleanup
 
 # Production-ready cleanup with multiple triggers:
 # 1. Auto-delete when PR is closed
-# 2. Scheduled cleanup (daily)
-# 3. Manual execution via workflow_dispatch
+# 2. Manual execution via workflow_dispatch
 on:
   pull_request:
     types: [closed]
 
-  schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
-
   workflow_dispatch:
     inputs:
-      worker-pattern:
-        description: 'Worker pattern to delete (e.g., "myapp-pr-*")'
+      worker-names:
+        description: 'Worker names to delete (comma separated)'
         required: false
-        default: 'myapp-pr-*'
+        default: 'myapp-pr-1'
+      worker-prefix:
+        description: 'Worker prefix (e.g., "myapp-pr-")'
+        required: false
+      worker-numbers:
+        description: 'Worker numbers to delete (e.g., "1,2,3")'
+        required: false
       dry-run:
         description: 'Dry run mode (true=preview only, false=actual deletion)'
         required: false
@@ -27,7 +29,7 @@ permissions:
   contents: read
 
 jobs:
-  # ===== 1. Auto-delete when PR is closed =====
+
   pr-cleanup:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
@@ -46,57 +48,6 @@ jobs:
         run: |
           echo "✅ Deleted worker: myapp-pr-${{ github.event.pull_request.number }}"
 
-  # ===== 2. Scheduled cleanup (with exclusions) =====
-  scheduled-cleanup:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
-
-    steps:
-      - name: Dry-run preview
-        id: dryrun
-        uses: harunonsystem/cf-workers-actions/cleanup@v1
-        with:
-          worker-pattern: 'myapp-pr-*'
-          # Protect production and staging environments
-          exclude: 'myapp,myapp-dev,myapp-stg,*-production,*-prod'
-          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          dry-run: 'true'
-
-      - name: Show dry-run results
-        run: |
-          echo "Would delete these workers:"
-          echo "${{ steps.dryrun.outputs.dry-run-results }}"
-          echo "Total count: ${{ steps.dryrun.outputs.deleted-count }}"
-
-      - name: Actual cleanup
-        id: cleanup
-        uses: harunonsystem/cf-workers-actions/cleanup@v1
-        with:
-          worker-pattern: 'myapp-pr-*'
-          exclude: 'myapp,myapp-dev,myapp-stg,*-production,*-prod'
-          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          dry-run: 'false'
-
-      - name: Summary
-        run: |
-          echo "✅ Cleanup completed"
-          echo "Deleted: ${{ steps.cleanup.outputs.deleted-count }} workers"
-          echo "Skipped: ${{ steps.cleanup.outputs.skipped-workers }}"
-
-      # Optional: Notify via Slack (uncomment and configure)
-      # - name: Notify Slack
-      #   if: success()
-      #   uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117 # v1.24.0
-      #   with:
-      #     webhook-url: ${{ secrets.SLACK_WEBHOOK }}
-      #     payload: |
-      #       {
-      #         "text": "✅ Cleanup: deleted ${{ steps.cleanup.outputs.deleted-count }}"
-      #       }
-
-  # ===== 3. Manual execution =====
   manual-cleanup:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
@@ -106,7 +57,9 @@ jobs:
         id: cleanup
         uses: harunonsystem/cf-workers-actions/cleanup@v1
         with:
-          worker-pattern: ${{ github.event.inputs.worker-pattern }}
+          worker-names: ${{ github.event.inputs.worker-names }}
+          worker-prefix: ${{ github.event.inputs.worker-prefix }}
+          worker-numbers: ${{ github.event.inputs.worker-numbers }}
           exclude: 'myapp,myapp-dev,myapp-stg,*-production,*-prod'
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -114,7 +67,9 @@ jobs:
 
       - name: Show results
         run: |
-          echo "Pattern: ${{ github.event.inputs.worker-pattern }}"
+          echo "Names: ${{ github.event.inputs.worker-names }}"
+          echo "Prefix: ${{ github.event.inputs.worker-prefix }}"
+          echo "Numbers: ${{ github.event.inputs.worker-numbers }}"
           echo "Dry-run: ${{ github.event.inputs.dry-run }}"
 
           if [ "${{ github.event.inputs.dry-run }}" = "true" ]; then

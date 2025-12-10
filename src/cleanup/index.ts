@@ -5,25 +5,40 @@ import { debug } from '../shared/lib/logger';
 import { mapInputs, parseInputs } from '../shared/validation';
 import { CleanupInputSchema } from './schemas';
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: TODO: refactor this function
 async function run(): Promise<void> {
   try {
     // Map and validate inputs
     const rawInputs = mapInputs({
-      'worker-pattern': { required: false },
+      'worker-names': { required: false },
+      'worker-numbers': { required: false },
+      'worker-prefix': { required: false },
       'cloudflare-api-token': { required: true },
       'cloudflare-account-id': { required: true },
       'dry-run': { required: false, default: 'true' },
       exclude: { required: false }
     });
 
-    // Parse worker names separately
+    // Parse worker names, numbers, and prefix
     const workerNamesInput = core.getInput('worker-names');
+    const workerNumbersInput = core.getInput('worker-numbers');
+    const workerPrefix = core.getInput('worker-prefix');
     let workerNames: string[] | undefined;
+
+    // Priority: full names > prefix+numbers > pattern
     if (workerNamesInput) {
+      // Use full names (overrides prefix+numbers)
       workerNames = workerNamesInput
         .split(',')
         .map((name) => name.trim())
         .filter(Boolean);
+    } else if (workerNumbersInput && workerPrefix) {
+      // Combine prefix with numbers
+      const numbers = workerNumbersInput
+        .split(',')
+        .map((num) => num.trim())
+        .filter(Boolean);
+      workerNames = numbers.map((num) => `${workerPrefix}${num}`);
     }
 
     // Validate inputs with Zod
@@ -48,12 +63,6 @@ async function run(): Promise<void> {
       // Use specific worker names
       workersToProcess = inputs.workerNames;
       core.info(`Processing specific workers: ${inputs.workerNames.join(', ')}`);
-    } else if (inputs.workerPattern) {
-      // Find workers by pattern
-      workersToProcess = await cf.findWorkersByPattern(inputs.workerPattern);
-      core.info(
-        `Found ${workersToProcess.length} workers matching pattern: ${inputs.workerPattern}`
-      );
     }
 
     // Apply exclusion filter (supports both exact names and patterns)

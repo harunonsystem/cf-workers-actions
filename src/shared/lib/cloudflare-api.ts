@@ -109,21 +109,4 @@ export class CloudflareApi {
       throw error;
     }
   }
-
-  /**
-   * Find workers matching pattern
-   */
-  async findWorkersByPattern(pattern: string): Promise<string[]> {
-    const workers = await this.listWorkers();
-
-    if (!pattern || pattern === '*') {
-      return workers.map((w) => w.id);
-    }
-
-    // Convert pattern to regex
-    const regexPattern = pattern.replace(/\*/g, '.*').replace(/\?/g, '.');
-    const regex = new RegExp(`^${regexPattern}$`);
-
-    return workers.map((w) => w.id).filter((name) => regex.test(name));
-  }
 }
