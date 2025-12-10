@@ -91,6 +91,7 @@ name = "my-app-preview"
     // Mock process.env
     process.env.GITHUB_REF = 'refs/heads/test-branch';
     process.env.GITHUB_SHA = 'test-sha';
+    delete process.env.GITHUB_HEAD_REF; // Clear GITHUB_HEAD_REF for clean test state
 
     // Mock getOctokit
     vi.mocked(github.getOctokit).mockReturnValue({
@@ -132,15 +133,22 @@ name = "my-app-preview"
       'cloudflare-account-id': 'fake-account-id'
     };
 
+    // Mock PR environment variables
+    process.env.GITHUB_HEAD_REF = 'feature/awesome-feature';
+    process.env.GITHUB_REF = 'refs/pull/123/merge';
+
     // Mock github context with payload
     Object.defineProperty(github, 'context', {
       value: {
         repo: { owner: 'test-owner', repo: 'test-repo' },
         sha: 'test-sha',
-        ref: 'refs/heads/test-branch',
+        ref: 'refs/pull/123/merge',
         payload: {
           pull_request: {
-            number: 123
+            number: 123,
+            head: {
+              ref: 'feature/awesome-feature'
+            }
           }
         }
       },
@@ -181,7 +189,8 @@ name = "my-app-preview"
       'cloudflare-account-id': 'fake-account-id'
     };
 
-    // Mock branch name
+    // Mock direct push environment variables (not a PR)
+    delete process.env.GITHUB_HEAD_REF; // Not set for direct pushes
     process.env.GITHUB_REF = 'refs/heads/feature/test';
 
     Object.defineProperty(github, 'context', {
@@ -202,5 +211,53 @@ name = "my-app-preview"
 
     // Should NOT post comment if pr-number is missing
     expect(mockCreateComment).not.toHaveBeenCalled();
+  });
+
+  test('should use branch name from GITHUB_HEAD_REF for PR with {branch-name} template', async () => {
+    inputs = {
+      'worker-name': 'myapp-{branch-name}',
+      environment: 'preview',
+      domain: 'workers.dev',
+      'cloudflare-api-token': 'fake-token',
+      'cloudflare-account-id': 'fake-account-id'
+    };
+
+    // Mock PR environment: GITHUB_HEAD_REF should be used instead of GITHUB_REF
+    process.env.GITHUB_HEAD_REF = 'feature/new-ui';
+    process.env.GITHUB_REF = 'refs/pull/79/merge'; // This should NOT be used
+
+    Object.defineProperty(github, 'context', {
+      value: {
+        repo: { owner: 'test-owner', repo: 'test-repo' },
+        sha: 'bbebc72',
+        ref: 'refs/pull/79/merge',
+        payload: {
+          pull_request: {
+            number: 79,
+            head: {
+              ref: 'feature/new-ui'
+            }
+          }
+        }
+      },
+      writable: true
+    });
+
+    await runAction();
+
+    // Should use sanitized branch name from GITHUB_HEAD_REF, not refs/pull/79/merge
+    expect(outputs['deployment-url']).toBe('https://myapp-feature-new-ui.workers.dev');
+    expect(outputs['deployment-name']).toBe('myapp-feature-new-ui');
+    expect(outputs['deployment-success']).toBe('true');
+
+    // Should post PR comment with correct branch name
+    expect(mockCreateComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        owner: 'test-owner',
+        repo: 'test-repo',
+        issue_number: 79,
+        body: expect.stringContaining('feature-new-ui') // Branch name in comment
+      })
+    );
   });
 });

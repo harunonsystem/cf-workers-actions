@@ -35,8 +35,12 @@ function processTemplate(
  * Get sanitized branch name from GitHub ref
  */
 function getSanitizedBranchName(): string {
+  // For pull requests, use GITHUB_HEAD_REF which contains the source branch name
+  // For pushes, use GITHUB_REF and strip the refs/heads/ prefix
+  const headRef = process.env.GITHUB_HEAD_REF;
   const ref = process.env.GITHUB_REF || '';
-  const branchName = ref.replace(/^refs\/heads\//, '');
+
+  const branchName = headRef || ref.replace(/^refs\/heads\//, '');
   // Replace / with - and remove invalid characters
   return branchName.replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
 }
