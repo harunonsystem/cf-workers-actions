@@ -26,10 +26,26 @@ jobs:
           node-version: 20.x
 
       - name: Create Release Pull Request or Publish
+        id: changesets
         uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1.5.3
         with:
           title: '🚀 Release Preview'
           commit: 'chore: release'
           publish: pnpm exec changeset tag
+          createGithubReleases: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Draft Release
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}
+          TAG="v$VERSION"
+          echo "Creating draft release for $TAG"
+          gh release create "$TAG" \
+            --draft \
+            --title "$TAG" \
+            --generate-notes
+
