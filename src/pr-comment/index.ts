@@ -16,7 +16,12 @@ async function createOrUpdateComment(
 ): Promise<void> {
   const { owner, repo } = github.context.repo;
   const commitSha = github.context.sha.substring(0, 7);
-  const branchName = github.context.ref.replace(/^refs\/heads\//, '');
+  // For pull requests, get branch name from pull_request.head.ref
+  // For pushes, use GITHUB_REF or context.ref
+  const branchName =
+    github.context.payload.pull_request?.head?.ref ||
+    process.env.GITHUB_HEAD_REF ||
+    github.context.ref.replace(/^refs\/heads\//, '');
 
   const statusIcon = deploymentSuccess ? '✅' : '❌';
   const statusText = deploymentSuccess ? 'Success' : 'Failed';
