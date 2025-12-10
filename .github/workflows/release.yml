@@ -49,14 +49,3 @@ jobs:
             --title "$TAG" \
             --generate-notes
 
-      - name: Update Major Tag
-        if: steps.changesets.outputs.published == 'true'
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          VERSION=${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}
-          MAJOR_VERSION=$(echo "$VERSION" | cut -d. -f1)
-          if [ -n "$MAJOR_VERSION" ]; then
-            git tag -fa "v$MAJOR_VERSION" -m "Update v$MAJOR_VERSION to $VERSION"
-            git push origin "v$MAJOR_VERSION" --force
-          fi
