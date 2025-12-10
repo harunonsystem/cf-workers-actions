@@ -1,6 +1,6 @@
 {
   "name": "cf-workers-actions",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "GitHub Actions for Cloudflare Workers deployment, PR commenting, and cleanup",
   "main": "index.js",
   "packageManager": "pnpm@10.17.1",
