@@ -145,6 +145,13 @@ async function createOrUpdateComment(
 
   const octokit = github.getOctokit(token);
   const { owner, repo } = github.context.repo;
+  const commitSha = github.context.sha.substring(0, 7);
+  // For pull requests, get branch name from pull_request.head.ref
+  // For pushes, use GITHUB_REF or context.ref
+  const branchName =
+    github.context.payload.pull_request?.head?.ref ||
+    process.env.GITHUB_HEAD_REF ||
+    github.context.ref.replace(/^refs\/heads\//, '');
 
   // Find existing comment
   const { data: comments } = await octokit.rest.issues.listComments({
@@ -162,13 +169,15 @@ async function createOrUpdateComment(
   const statusIcon = deploymentSuccess ? '✅' : '❌';
   const statusText = deploymentSuccess ? 'Success' : 'Failed';
   const body = `## 🚀 Preview Deployment
-  
-**Preview URL:** ${deploymentSuccess ? `[${deploymentUrl}](${deploymentUrl})` : 'Deployment Failed'}
-**Status:** ${statusIcon} ${statusText}
-**Worker Name:** \`${deploymentName}\`
-**Environment:** \`${process.env.NODE_ENV || 'preview'}\`
 
-${deploymentSuccess ? 'This preview will be updated on new commits.' : 'Check logs for details.'}`;
+**Preview URL:** ${deploymentSuccess ? `[${deploymentUrl}](${deploymentUrl})` : `[Deploy failed - check logs](https://github.com/${owner}/${repo}/actions)`}
+
+**Build Status:** ${statusIcon} ${statusText}
+**Worker Name:** \`${deploymentName}\`
+**Commit:** ${commitSha}
+**Branch:** \`${branchName}\`
+
+${deploymentSuccess ? 'This preview will be automatically updated when you push new commits to this PR.' : 'Please check the workflow logs for details.'}`;
 
   if (existingComment) {
     await octokit.rest.issues.updateComment({
