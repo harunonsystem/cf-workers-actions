@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { handleActionError } from '../shared/lib/error-handler';
 import { mapInputs, parseInputs } from '../shared/validation';
+import { getBranchName, getCommitSha } from '../shared/lib/github-utils';
 import { PrCommentInputSchema } from './schemas.js';
 
 /**
@@ -15,13 +16,8 @@ async function createOrUpdateComment(
   deploymentSuccess: boolean
 ): Promise<void> {
   const { owner, repo } = github.context.repo;
-  const commitSha = github.context.sha.substring(0, 7);
-  // For pull requests, get branch name from pull_request.head.ref
-  // For pushes, use GITHUB_REF or context.ref
-  const branchName =
-    github.context.payload.pull_request?.head?.ref ||
-    process.env.GITHUB_HEAD_REF ||
-    github.context.ref.replace(/^refs\/heads\//, '');
+  const commitSha = getCommitSha();
+  const branchName = getBranchName();
 
   const statusIcon = deploymentSuccess ? '✅' : '❌';
   const statusText = deploymentSuccess ? 'Success' : 'Failed';

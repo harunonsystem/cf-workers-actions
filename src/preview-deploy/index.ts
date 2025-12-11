@@ -3,6 +3,7 @@ import * as exec from '@actions/exec';
 import * as github from '@actions/github';
 import { handleActionError } from '../shared/lib/error-handler';
 import { mapInputs, parseInputs } from '../shared/validation';
+import { getSanitizedBranchName, getBranchName, getCommitSha } from '../shared/lib/github-utils';
 import { DeployPreviewInputSchema } from './schemas.js';
 
 /**
@@ -28,20 +29,6 @@ function processTemplate(
   result = result.replace(/[^a-zA-Z0-9-]/g, '');
 
   return result;
-}
-
-/**
- * Get sanitized branch name from GitHub ref
- */
-function getSanitizedBranchName(): string {
-  // For pull requests, use GITHUB_HEAD_REF which contains the source branch name
-  // For pushes, use GITHUB_REF and strip the refs/heads/ prefix
-  const headRef = process.env.GITHUB_HEAD_REF;
-  const ref = process.env.GITHUB_REF || '';
-
-  const branchName = headRef || ref.replace(/^refs\/heads\//, '');
-  // Replace / with - and remove invalid characters
-  return branchName.replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
 }
 
 /**
@@ -145,13 +132,8 @@ async function createOrUpdateComment(
 
   const octokit = github.getOctokit(token);
   const { owner, repo } = github.context.repo;
-  const commitSha = github.context.sha.substring(0, 7);
-  // For pull requests, get branch name from pull_request.head.ref
-  // For pushes, use GITHUB_REF or context.ref
-  const branchName =
-    github.context.payload.pull_request?.head?.ref ||
-    process.env.GITHUB_HEAD_REF ||
-    github.context.ref.replace(/^refs\/heads\//, '');
+  const commitSha = getCommitSha();
+  const branchName = getBranchName();
 
   // Find existing comment
   const { data: comments } = await octokit.rest.issues.listComments({
