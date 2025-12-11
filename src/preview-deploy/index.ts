@@ -3,91 +3,11 @@ import * as exec from '@actions/exec';
 import * as github from '@actions/github';
 import { handleActionError } from '../shared/lib/error-handler';
 import { mapInputs, parseInputs } from '../shared/validation';
-import { getSanitizedBranchName, getBranchName, getCommitSha } from '../shared/lib/github-utils';
+import { getSanitizedBranchName } from '../shared/lib/github-utils';
+import { processTemplate } from '../shared/lib/template-utils';
+import { updateWranglerToml } from '../shared/lib/wrangler-utils';
+import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
 import { DeployPreviewInputSchema } from './schemas.js';
-
-/**
- * Process template variables in worker name
- */
-function processTemplate(
-  template: string,
-  variables: {
-    prNumber?: string;
-    branchName: string;
-  }
-): string {
-  let result = template;
-
-  // Replace {pr-number} with PR number if available, otherwise fall back to branch-name
-  const prIdentifier = variables.prNumber || variables.branchName;
-  result = result.replace(/\{pr-number\}/g, prIdentifier);
-
-  // Replace {branch-name} with branch name
-  result = result.replace(/\{branch-name\}/g, variables.branchName);
-
-  // Sanitize: remove invalid characters (only alphanumeric and dashes allowed)
-  result = result.replace(/[^a-zA-Z0-9-]/g, '');
-
-  return result;
-}
-
-/**
- * Update wrangler.toml with worker name
- */
-async function updateWranglerToml(
-  tomlPath: string,
-  environment: string,
-  workerName: string
-): Promise<void> {
-  // We use sed to update wrangler.toml for simplicity in this action
-  // In a real implementation, we might want to use a TOML parser
-  // But since we want to preserve comments and structure, regex replacement is often safer for simple edits
-
-  // Note: This implementation assumes standard wrangler.toml formatting
-  // It looks for [env.{environment}] and updates/adds name = "{workerName}"
-
-  // For this action, we'll use a simplified approach:
-  // We will use the prepare-preview-deploy logic if we were importing it,
-  // but here we will just use a simple replacement or assume the user uses prepare-preview-deploy separately?
-  // No, preview-deploy is a "batteries included" action.
-
-  // Let's use the same logic as prepare-preview-deploy (simplified for this file)
-  // Actually, we can just use the same implementation logic.
-
-  const fs = await import('node:fs');
-
-  if (!fs.existsSync(tomlPath)) {
-    throw new Error(`wrangler.toml not found at ${tomlPath}`);
-  }
-
-  const content = fs.readFileSync(tomlPath, 'utf8');
-  const lines = content.split('\n');
-  const envSection = `[env.${environment}]`;
-  const envIndex = lines.findIndex((line) => line.trim() === envSection);
-
-  if (envIndex === -1) {
-    throw new Error(`[env.${environment}] section not found in wrangler.toml`);
-  }
-
-  // Find name in section
-  let nameUpdated = false;
-  for (let i = envIndex + 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (line.startsWith('[')) break; // Next section
-    if (line.startsWith('name =')) {
-      lines[i] = `name = "${workerName}"`;
-      nameUpdated = true;
-      break;
-    }
-  }
-
-  if (!nameUpdated) {
-    // Insert name after section header
-    lines.splice(envIndex + 1, 0, `name = "${workerName}"`);
-  }
-
-  fs.writeFileSync(tomlPath, lines.join('\n'));
-}
 
 /**
  * Deploy worker using wrangler
@@ -111,70 +31,6 @@ async function deployWorker(
   } catch (error) {
     core.error(`Deployment failed: ${error}`);
     return false;
-  }
-}
-
-/**
- * Create or update PR comment
- */
-async function createOrUpdateComment(
-  prNumber: number,
-  deploymentUrl: string,
-  deploymentName: string,
-  deploymentSuccess: boolean,
-  githubToken?: string
-): Promise<void> {
-  const token = githubToken || process.env.GITHUB_TOKEN;
-  if (!token) {
-    core.warning('GITHUB_TOKEN not found, skipping PR comment');
-    return;
-  }
-
-  const octokit = github.getOctokit(token);
-  const { owner, repo } = github.context.repo;
-  const commitSha = getCommitSha();
-  const branchName = getBranchName();
-
-  // Find existing comment
-  const { data: comments } = await octokit.rest.issues.listComments({
-    owner,
-    repo,
-    issue_number: prNumber
-  });
-
-  const existingComment = comments.find(
-    (comment) =>
-      comment.user?.login === 'github-actions[bot]' &&
-      comment.body?.includes('🚀 Preview Deployment')
-  );
-
-  const statusIcon = deploymentSuccess ? '✅' : '❌';
-  const statusText = deploymentSuccess ? 'Success' : 'Failed';
-  const body = `## 🚀 Preview Deployment
-
-**Preview URL:** ${deploymentSuccess ? `[${deploymentUrl}](${deploymentUrl})` : `[Deploy failed - check logs](https://github.com/${owner}/${repo}/actions)`}
-
-**Build Status:** ${statusIcon} ${statusText}
-**Worker Name:** \`${deploymentName}\`
-**Commit:** ${commitSha}
-**Branch:** \`${branchName}\`
-
-${deploymentSuccess ? 'This preview will be automatically updated when you push new commits to this PR.' : 'Please check the workflow logs for details.'}`;
-
-  if (existingComment) {
-    await octokit.rest.issues.updateComment({
-      owner,
-      repo,
-      comment_id: existingComment.id,
-      body
-    });
-  } else {
-    await octokit.rest.issues.createComment({
-      owner,
-      repo,
-      issue_number: prNumber,
-      body
-    });
   }
 }
 
@@ -246,14 +102,20 @@ async function run(): Promise<void> {
     // Step 4: Comment on PR (if pr-number provided or detected)
     const prNumberInt = prNumber ? parseInt(prNumber, 10) : undefined;
     if (prNumberInt && !Number.isNaN(prNumberInt)) {
-      await createOrUpdateComment(
-        prNumberInt,
-        deploymentUrl,
-        workerName,
-        deploymentSuccess,
-        rawInputs.githubToken as string | undefined
-      );
-      core.info('✅ PR comment posted');
+      const token = (rawInputs.githubToken as string) || process.env.GITHUB_TOKEN;
+      if (token) {
+        const octokit = github.getOctokit(token);
+        await createOrUpdatePreviewComment(
+          octokit,
+          prNumberInt,
+          deploymentUrl,
+          workerName,
+          deploymentSuccess
+        );
+        core.info('✅ PR comment posted');
+      } else {
+        core.warning('GITHUB_TOKEN not found, skipping PR comment');
+      }
     }
 
     // Set outputs
