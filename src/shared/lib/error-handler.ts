@@ -1,6 +1,15 @@
 import * as core from '@actions/core';
 
 /**
+ * Extract error message from unknown error type
+ * @param error - The error (Error object or unknown)
+ * @returns Error message string
+ */
+export function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
  * Context for action error handling
  */
 export interface ActionErrorContext {
@@ -38,7 +47,7 @@ export async function handleActionError(
   context: ActionErrorContext
 ): Promise<void> {
   // Extract error message
-  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorMessage = getErrorMessage(error);
 
   // Log the error
   const fullMessage = context.context

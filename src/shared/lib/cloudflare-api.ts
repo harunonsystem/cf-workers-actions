@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import type { CloudflareApiResponse, CloudflareWorker } from '../types';
+import { getErrorMessage } from './error-handler';
 
 /**
  * Cloudflare API client wrapper
@@ -56,8 +57,7 @@ export class CloudflareApi {
 
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      core.error(`Cloudflare API request failed: ${errorMessage}`);
+      core.error(`Cloudflare API request failed: ${getErrorMessage(error)}`);
       throw error;
     }
   }
@@ -84,7 +84,7 @@ export class CloudflareApi {
       );
       return response.result || null;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = getErrorMessage(error);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         return null;
       }
@@ -101,7 +101,7 @@ export class CloudflareApi {
       core.info(`Successfully deleted worker: ${workerName}`);
       return true;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = getErrorMessage(error);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         core.warning(`Worker not found: ${workerName}`);
         return false;

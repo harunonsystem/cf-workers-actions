@@ -1,7 +1,12 @@
 import * as core from '@actions/core';
 import { CloudflareApi } from '../shared/lib/cloudflare-api';
-import { CLEANUP_ERROR_OUTPUTS, handleActionError } from '../shared/lib/error-handler';
+import {
+  CLEANUP_ERROR_OUTPUTS,
+  getErrorMessage,
+  handleActionError
+} from '../shared/lib/error-handler';
 import { debug } from '../shared/lib/logger';
+import { parseCommaSeparatedList, sleep } from '../shared/lib/string-utils';
 import { mapInputs, parseInputs } from '../shared/validation';
 import { CleanupInputSchema } from './schemas';
 
@@ -28,16 +33,10 @@ async function run(): Promise<void> {
     // Priority: full names > prefix+numbers > pattern
     if (workerNamesInput) {
       // Use full names (overrides prefix+numbers)
-      workerNames = workerNamesInput
-        .split(',')
-        .map((name) => name.trim())
-        .filter(Boolean);
+      workerNames = parseCommaSeparatedList(workerNamesInput);
     } else if (workerNumbersInput && workerPrefix) {
       // Combine prefix with numbers
-      const numbers = workerNumbersInput
-        .split(',')
-        .map((num) => num.trim())
-        .filter(Boolean);
+      const numbers = parseCommaSeparatedList(workerNumbersInput);
       workerNames = numbers.map((num) => `${workerPrefix}${num}`);
     }
 
@@ -70,10 +69,7 @@ async function run(): Promise<void> {
     const excludePatternsRegex: RegExp[] = [];
 
     if (inputs.exclude) {
-      const items = inputs.exclude
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean);
+      const items = parseCommaSeparatedList(inputs.exclude);
 
       const exactNames: string[] = [];
       const patterns: string[] = [];
@@ -150,7 +146,7 @@ async function run(): Promise<void> {
       try {
         return await cf.deleteWorker(workerName);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage = getErrorMessage(error);
 
         // Handle rate limiting with exponential backoff
         if (
@@ -161,7 +157,7 @@ async function run(): Promise<void> {
           core.warning(
             `⏰ Rate limit hit for ${workerName}, waiting ${backoffDelay / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})...`
           );
-          await new Promise((resolve) => setTimeout(resolve, backoffDelay));
+          await sleep(backoffDelay);
           return deleteWithRetry(workerName, retryCount + 1);
         }
 
@@ -208,13 +204,12 @@ async function run(): Promise<void> {
             core.warning(`⚠️  Skipped (not found): ${workerName}`);
           }
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           skippedWorkers.push(workerName);
-          core.error(`❌ Failed to delete ${workerName}: ${errorMessage}`);
+          core.error(`❌ Failed to delete ${workerName}: ${getErrorMessage(error)}`);
         }
 
         // Apply rate limiting delay between deletions
-        await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_DELAY));
+        await sleep(RATE_LIMIT_DELAY);
       }
 
       // Set outputs
