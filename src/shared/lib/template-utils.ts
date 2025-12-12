@@ -11,10 +11,7 @@ interface TemplateVariables {
  * Process template variables in worker name
  * Replaces {pr-number} and {branch-name} placeholders with actual values
  */
-export function processTemplate(
-  template: string,
-  variables: TemplateVariables
-): string {
+export function processTemplate(template: string, variables: TemplateVariables): string {
   let result = template;
 
   // Replace {pr-number} with PR number if available, otherwise fall back to branch-name

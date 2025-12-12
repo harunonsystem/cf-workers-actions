@@ -2,11 +2,11 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
 import { handleActionError } from '../shared/lib/error-handler';
-import { mapInputs, parseInputs } from '../shared/validation';
-import { getSanitizedBranchName } from '../shared/lib/github-utils';
+import { getGithubToken, getSanitizedBranchName } from '../shared/lib/github-utils';
+import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
 import { processTemplate } from '../shared/lib/template-utils';
 import { updateWranglerToml } from '../shared/lib/wrangler-utils';
-import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
+import { mapInputs, parseInputs } from '../shared/validation';
 import { DeployPreviewInputSchema } from './schemas.js';
 
 /**
@@ -102,8 +102,8 @@ async function run(): Promise<void> {
     // Step 4: Comment on PR (if pr-number provided or detected)
     const prNumberInt = prNumber ? parseInt(prNumber, 10) : undefined;
     if (prNumberInt && !Number.isNaN(prNumberInt)) {
-      const token = (rawInputs.githubToken as string) || process.env.GITHUB_TOKEN;
-      if (token) {
+      try {
+        const token = getGithubToken(rawInputs.githubToken as string);
         const octokit = github.getOctokit(token);
         await createOrUpdatePreviewComment(
           octokit,
@@ -113,7 +113,7 @@ async function run(): Promise<void> {
           deploymentSuccess
         );
         core.info('✅ PR comment posted');
-      } else {
+      } catch {
         core.warning('GITHUB_TOKEN not found, skipping PR comment');
       }
     }

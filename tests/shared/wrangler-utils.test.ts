@@ -1,6 +1,6 @@
-import { describe, expect, test, beforeEach, vi } from 'vitest';
 import * as fs from 'node:fs';
 import * as core from '@actions/core';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 // Mock dependencies
 vi.mock('node:fs');
@@ -39,9 +39,7 @@ vars = { ENV = "preview" }`;
         mockTomlPath,
         expect.stringContaining('name = "new-worker-name"')
       );
-      expect(core.info).toHaveBeenCalledWith(
-        expect.stringContaining('✅ Updated existing name')
-      );
+      expect(core.info).toHaveBeenCalledWith(expect.stringContaining('✅ Updated existing name'));
     });
 
     test('should add name if not present in environment section', async () => {
@@ -70,9 +68,9 @@ vars = { ENV = "preview" }`;
     test('should throw error if file does not exist', async () => {
       vi.mocked(fs.existsSync).mockReturnValue(false);
 
-      await expect(
-        updateWranglerToml(mockTomlPath, 'preview', 'test-worker')
-      ).rejects.toThrow('wrangler.toml not found');
+      await expect(updateWranglerToml(mockTomlPath, 'preview', 'test-worker')).rejects.toThrow(
+        'wrangler.toml not found'
+      );
     });
 
     test('should throw error if environment section not found', async () => {
@@ -83,9 +81,9 @@ main = "src/index.ts"`;
       vi.mocked(fs.readFileSync).mockReturnValue(existingToml);
       vi.mocked(fs.copyFileSync).mockImplementation(() => {});
 
-      await expect(
-        updateWranglerToml(mockTomlPath, 'preview', 'test-worker')
-      ).rejects.toThrow('[env.preview] section not found');
+      await expect(updateWranglerToml(mockTomlPath, 'preview', 'test-worker')).rejects.toThrow(
+        '[env.preview] section not found'
+      );
     });
 
     test('should restore backup on failure', async () => {
@@ -101,9 +99,9 @@ name = "old-name"`;
         throw new Error('Write failed');
       });
 
-      await expect(
-        updateWranglerToml(mockTomlPath, 'preview', 'test-worker')
-      ).rejects.toThrow('Write failed');
+      await expect(updateWranglerToml(mockTomlPath, 'preview', 'test-worker')).rejects.toThrow(
+        'Write failed'
+      );
 
       // Should restore backup
       expect(fs.copyFileSync).toHaveBeenCalledWith(mockBackupPath, mockTomlPath);
@@ -126,9 +124,7 @@ name = "old-name"`;
       await updateWranglerToml(mockTomlPath, 'preview', 'new-name');
 
       expect(fs.copyFileSync).toHaveBeenCalledWith(mockTomlPath, mockBackupPath);
-      expect(core.info).toHaveBeenCalledWith(
-        expect.stringContaining('✅ Created backup')
-      );
+      expect(core.info).toHaveBeenCalledWith(expect.stringContaining('✅ Created backup'));
     });
 
     test('should handle multiple environment sections', async () => {
@@ -223,9 +219,7 @@ compatibility_date = "2023-01-01"`;
       const updatedContent = writeCall[1] as string;
       const lines = updatedContent.split('\n');
 
-      const previewIndex = lines.findIndex((line) =>
-        line.includes('[env.preview]')
-      );
+      const previewIndex = lines.findIndex((line) => line.includes('[env.preview]'));
       expect(lines[previewIndex + 1]).toContain('name = "test-name"');
     });
   });

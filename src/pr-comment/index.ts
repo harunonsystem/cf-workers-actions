@@ -1,8 +1,9 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { handleActionError } from '../shared/lib/error-handler';
-import { mapInputs, parseInputs } from '../shared/validation';
+import { getGithubToken } from '../shared/lib/github-utils';
 import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
+import { mapInputs, parseInputs } from '../shared/validation';
 import { PrCommentInputSchema } from './schemas.js';
 
 async function run(): Promise<void> {
@@ -39,13 +40,7 @@ async function run(): Promise<void> {
     core.info(`Deployment success: ${inputs.deploymentSuccess}`);
 
     // Get GitHub token (input takes precedence over environment variable)
-    const token = (rawInputs.githubToken as string) || process.env.GITHUB_TOKEN;
-    if (!token) {
-      throw new Error(
-        'GITHUB_TOKEN is required. Please provide it via github-token input or ensure it is available in the environment.'
-      );
-    }
-
+    const token = getGithubToken(rawInputs.githubToken as string);
     const octokit = github.getOctokit(token);
 
     // Create or update comment

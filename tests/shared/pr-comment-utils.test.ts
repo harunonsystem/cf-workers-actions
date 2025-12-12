@@ -1,6 +1,5 @@
-import { describe, expect, test, beforeEach, vi } from 'vitest';
 import * as github from '@actions/github';
-import * as core from '@actions/core';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 // Mock dependencies
 vi.mock('@actions/github');
@@ -10,8 +9,8 @@ vi.mock('../../src/shared/lib/github-utils', () => ({
   getCommitSha: vi.fn(() => 'abc123d')
 }));
 
-import { createOrUpdatePreviewComment } from '../../src/shared/lib/pr-comment-utils';
 import { getBranchName, getCommitSha } from '../../src/shared/lib/github-utils';
+import { createOrUpdatePreviewComment } from '../../src/shared/lib/pr-comment-utils';
 
 describe('pr-comment-utils', () => {
   let mockOctokit: any;
@@ -227,9 +226,7 @@ describe('pr-comment-utils', () => {
       );
 
       const createCall = mockCreateComment.mock.calls[0][0];
-      expect(createCall.body).toContain(
-        'https://github.com/test-owner/test-repo/actions'
-      );
+      expect(createCall.body).toContain('https://github.com/test-owner/test-repo/actions');
       expect(createCall.body).toContain('Deploy failed - check logs');
     });
 
@@ -246,9 +243,7 @@ describe('pr-comment-utils', () => {
       );
 
       const createCall = mockCreateComment.mock.calls[0][0];
-      expect(createCall.body).toContain(
-        'automatically updated when you push new commits'
-      );
+      expect(createCall.body).toContain('automatically updated when you push new commits');
     });
 
     test('should include check logs message on failure', async () => {

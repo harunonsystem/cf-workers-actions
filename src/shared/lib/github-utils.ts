@@ -1,6 +1,22 @@
 import * as github from '@actions/github';
 
 /**
+ * Get GitHub token from input or environment variable
+ * @param inputToken - Optional token from action input
+ * @returns GitHub token
+ * @throws Error if token is not available
+ */
+export function getGithubToken(inputToken?: string): string {
+  const token = inputToken || process.env.GITHUB_TOKEN;
+  if (!token) {
+    throw new Error(
+      'GITHUB_TOKEN is required. Please provide it via github-token input or ensure it is available in the environment.'
+    );
+  }
+  return token;
+}
+
+/**
  * Get branch name from GitHub context
  * For pull requests, uses GITHUB_HEAD_REF or pull_request.head.ref
  * For pushes, uses GITHUB_REF

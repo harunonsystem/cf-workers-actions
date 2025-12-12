@@ -1,10 +1,10 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { handleActionError } from '../shared/lib/error-handler';
-import { mapInputs, parseInputs } from '../shared/validation';
 import { getSanitizedBranchName } from '../shared/lib/github-utils';
 import { processTemplate } from '../shared/lib/template-utils';
 import { updateWranglerToml } from '../shared/lib/wrangler-utils';
+import { mapInputs, parseInputs } from '../shared/validation';
 import { PreparePreviewDeployInputSchema } from './schemas.js';
 
 async function run(): Promise<void> {

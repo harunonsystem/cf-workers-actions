@@ -1,5 +1,5 @@
-import { describe, expect, test, beforeEach, afterEach, vi } from 'vitest';
 import * as github from '@actions/github';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 // Mock @actions/github
 vi.mock('@actions/github');
@@ -7,8 +7,9 @@ vi.mock('@actions/github');
 // Import functions to test
 import {
   getBranchName,
-  getSanitizedBranchName,
-  getCommitSha
+  getCommitSha,
+  getGithubToken,
+  getSanitizedBranchName
 } from '../../src/shared/lib/github-utils';
 
 describe('github-utils', () => {
@@ -16,6 +17,7 @@ describe('github-utils', () => {
     // Clear environment variables
     delete process.env.GITHUB_HEAD_REF;
     delete process.env.GITHUB_REF;
+    delete process.env.GITHUB_TOKEN;
 
     // Reset github context mock
     Object.defineProperty(github, 'context', {
@@ -247,6 +249,41 @@ describe('github-utils', () => {
 
       const shortSha = getCommitSha();
       expect(shortSha).toBe('bbebc72');
+    });
+  });
+
+  describe('getGithubToken', () => {
+    test('should return input token when provided', () => {
+      const token = getGithubToken('my-input-token');
+      expect(token).toBe('my-input-token');
+    });
+
+    test('should return environment token when input is undefined', () => {
+      process.env.GITHUB_TOKEN = 'env-token';
+      const token = getGithubToken(undefined);
+      expect(token).toBe('env-token');
+    });
+
+    test('should return environment token when input is empty string', () => {
+      process.env.GITHUB_TOKEN = 'env-token';
+      const token = getGithubToken('');
+      expect(token).toBe('env-token');
+    });
+
+    test('should prefer input token over environment token', () => {
+      process.env.GITHUB_TOKEN = 'env-token';
+      const token = getGithubToken('input-token');
+      expect(token).toBe('input-token');
+    });
+
+    test('should throw error when no token available', () => {
+      expect(() => getGithubToken(undefined)).toThrow(
+        'GITHUB_TOKEN is required. Please provide it via github-token input or ensure it is available in the environment.'
+      );
+    });
+
+    test('should throw error when both input and env are empty', () => {
+      expect(() => getGithubToken('')).toThrow('GITHUB_TOKEN is required');
     });
   });
 });
