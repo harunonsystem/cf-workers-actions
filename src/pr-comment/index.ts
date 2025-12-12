@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { handleActionError } from '../shared/lib/error-handler';
-import { getGithubToken } from '../shared/lib/github-utils';
+import { getGithubToken, getPrNumber } from '../shared/lib/github-utils';
 import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
 import { mapInputs, parseInputs } from '../shared/validation';
 import { PrCommentInputSchema } from './schemas.js';
@@ -26,7 +26,7 @@ async function run(): Promise<void> {
     }
 
     // Get PR number from context
-    const prNumber = github.context.payload.pull_request?.number;
+    const prNumber = getPrNumber();
     if (!prNumber) {
       throw new Error(
         'Could not get PR number from context. This action must run on pull_request events.'

@@ -1,7 +1,6 @@
 import * as core from '@actions/core';
-import * as github from '@actions/github';
 import { handleActionError } from '../shared/lib/error-handler';
-import { getSanitizedBranchName } from '../shared/lib/github-utils';
+import { getPrNumber, getSanitizedBranchName } from '../shared/lib/github-utils';
 import { processTemplate } from '../shared/lib/template-utils';
 import { updateWranglerToml } from '../shared/lib/wrangler-utils';
 import { mapInputs, parseInputs } from '../shared/validation';
@@ -30,7 +29,7 @@ async function run(): Promise<void> {
     const branchName = getSanitizedBranchName();
 
     // Auto-detect PR number
-    const prNumber = github.context.payload.pull_request?.number?.toString();
+    const prNumber = getPrNumber()?.toString();
 
     core.info(`Branch name (sanitized): ${branchName}`);
     if (prNumber) {

@@ -46,3 +46,11 @@ export function getSanitizedBranchName(): string {
 export function getCommitSha(): string {
   return github.context.sha.substring(0, 7);
 }
+
+/**
+ * Get PR number from GitHub context
+ * @returns PR number or undefined if not in PR context
+ */
+export function getPrNumber(): number | undefined {
+  return github.context.payload.pull_request?.number;
+}

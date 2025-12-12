@@ -9,6 +9,7 @@ import {
   getBranchName,
   getCommitSha,
   getGithubToken,
+  getPrNumber,
   getSanitizedBranchName
 } from '../../src/shared/lib/github-utils';
 
@@ -284,6 +285,79 @@ describe('github-utils', () => {
 
     test('should throw error when both input and env are empty', () => {
       expect(() => getGithubToken('')).toThrow('GITHUB_TOKEN is required');
+    });
+  });
+
+  describe('getPrNumber', () => {
+    test('should return PR number from context', () => {
+      Object.defineProperty(github, 'context', {
+        value: {
+          repo: { owner: 'test-owner', repo: 'test-repo' },
+          sha: 'abc123',
+          ref: 'refs/pull/42/merge',
+          payload: {
+            pull_request: {
+              number: 42
+            }
+          }
+        },
+        writable: true
+      });
+
+      const prNumber = getPrNumber();
+      expect(prNumber).toBe(42);
+    });
+
+    test('should return undefined when not in PR context', () => {
+      Object.defineProperty(github, 'context', {
+        value: {
+          repo: { owner: 'test-owner', repo: 'test-repo' },
+          sha: 'abc123',
+          ref: 'refs/heads/main',
+          payload: {}
+        },
+        writable: true
+      });
+
+      const prNumber = getPrNumber();
+      expect(prNumber).toBeUndefined();
+    });
+
+    test('should return undefined when payload is empty', () => {
+      Object.defineProperty(github, 'context', {
+        value: {
+          repo: { owner: 'test-owner', repo: 'test-repo' },
+          sha: 'abc123',
+          ref: 'refs/heads/main',
+          payload: {
+            pull_request: undefined
+          }
+        },
+        writable: true
+      });
+
+      const prNumber = getPrNumber();
+      expect(prNumber).toBeUndefined();
+    });
+
+    test('should work with toString() for string conversion', () => {
+      Object.defineProperty(github, 'context', {
+        value: {
+          repo: { owner: 'test-owner', repo: 'test-repo' },
+          sha: 'abc123',
+          ref: 'refs/pull/123/merge',
+          payload: {
+            pull_request: {
+              number: 123
+            }
+          }
+        },
+        writable: true
+      });
+
+      const prNumber = getPrNumber()?.toString();
+      expect(prNumber).toBe('123');
+      expect(typeof prNumber).toBe('string');
     });
   });
 });

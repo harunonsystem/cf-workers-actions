@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
 import { handleActionError } from '../shared/lib/error-handler';
-import { getGithubToken, getSanitizedBranchName } from '../shared/lib/github-utils';
+import { getGithubToken, getPrNumber, getSanitizedBranchName } from '../shared/lib/github-utils';
 import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
 import { processTemplate } from '../shared/lib/template-utils';
 import { updateWranglerToml } from '../shared/lib/wrangler-utils';
@@ -63,7 +63,7 @@ async function run(): Promise<void> {
 
     // Step 1: Prepare preview deployment
     const branchName = getSanitizedBranchName();
-    const prNumber = github.context.payload.pull_request?.number?.toString();
+    const prNumber = getPrNumber();
 
     core.info(`Branch name (sanitized): ${branchName}`);
     if (prNumber) {
@@ -71,7 +71,7 @@ async function run(): Promise<void> {
     }
 
     workerName = processTemplate(inputs.workerName, {
-      prNumber,
+      prNumber: prNumber?.toString(),
       branchName
     });
 
@@ -100,14 +100,13 @@ async function run(): Promise<void> {
     }
 
     // Step 4: Comment on PR (if pr-number provided or detected)
-    const prNumberInt = prNumber ? parseInt(prNumber, 10) : undefined;
-    if (prNumberInt && !Number.isNaN(prNumberInt)) {
+    if (prNumber) {
       try {
         const token = getGithubToken(rawInputs.githubToken as string);
         const octokit = github.getOctokit(token);
         await createOrUpdatePreviewComment(
           octokit,
-          prNumberInt,
+          prNumber,
           deploymentUrl,
           workerName,
           deploymentSuccess
