@@ -1,6 +1,18 @@
 import { z } from 'zod';
 
 // ================================
+// Cloudflare Worker Types
+// ================================
+
+export interface CloudflareWorker {
+  id: string;
+  created_on: string;
+  modified_on: string;
+  usage_model: string;
+  environment: string;
+}
+
+// ================================
 // Shared Field Schemas
 // ================================
 
@@ -25,10 +37,22 @@ export const CommonFields = {
 } as const;
 
 // ================================
-// Cloudflare API Schemas
+// Cloudflare API Types
 // ================================
 
-// Cloudflare API Response Schema - shared across actions
+/**
+ * Generic Cloudflare API response type for API client usage
+ */
+export interface CloudflareApiResponse<T = unknown> {
+  success: boolean;
+  result?: T;
+  errors?: Array<{
+    code: number;
+    message: string;
+  }>;
+}
+
+// Cloudflare API Response Schema - for runtime validation
 export const CloudflareApiResponseSchema = z.object({
   success: z.boolean(),
   result: z.any().optional(),
@@ -41,5 +65,3 @@ export const CloudflareApiResponseSchema = z.object({
     )
     .optional()
 });
-
-export type CloudflareApiResponse = z.infer<typeof CloudflareApiResponseSchema>;

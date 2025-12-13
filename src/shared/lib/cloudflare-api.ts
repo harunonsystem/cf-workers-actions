@@ -1,4 +1,4 @@
-import type { CloudflareApiResponse, CloudflareWorker } from '../types';
+import type { CloudflareApiResponse, CloudflareWorker } from '../schemas';
 import { getErrorMessage } from './error-handler';
 import { debug, error, info, warning } from './logger';
 
