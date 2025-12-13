@@ -4,23 +4,16 @@ import { handleActionError } from '../shared/lib/error-handler';
 import { getGithubToken, getPrNumber } from '../shared/lib/github-utils';
 import { info } from '../shared/lib/logger';
 import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
-import { mapInputs, parseInputs } from '../shared/validation';
-import { PrCommentInputSchema } from './schemas.js';
+import { getActionInputs } from '../shared/validation';
+import { PrCommentInputConfig, PrCommentInputSchema } from './schemas.js';
 
 async function run(): Promise<void> {
   try {
-    // Map and validate inputs
-    const rawInputs = mapInputs({
-      'deployment-url': { required: true },
-      'deployment-success': { required: true },
-      'deployment-name': { required: true },
-      'github-token': { required: false }
-    });
-
-    const inputs = parseInputs(PrCommentInputSchema, {
-      ...rawInputs,
-      deploymentSuccess: rawInputs.deploymentSuccess === 'true'
-    });
+    // Validate inputs
+    const inputs = getActionInputs(PrCommentInputSchema, PrCommentInputConfig, (raw) => ({
+      ...raw,
+      deploymentSuccess: raw.deploymentSuccess === 'true'
+    }));
 
     if (!inputs) {
       throw new Error('Input validation failed');
@@ -41,7 +34,7 @@ async function run(): Promise<void> {
     info(`Deployment success: ${inputs.deploymentSuccess}`);
 
     // Get GitHub token (input takes precedence over environment variable)
-    const token = getGithubToken(rawInputs.githubToken as string);
+    const token = getGithubToken(inputs.githubToken);
     const octokit = github.getOctokit(token);
 
     // Create or update comment

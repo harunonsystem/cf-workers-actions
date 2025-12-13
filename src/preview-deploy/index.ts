@@ -6,8 +6,8 @@ import { handleActionError } from '../shared/lib/error-handler';
 import { getGithubToken } from '../shared/lib/github-utils';
 import { error, info, warning } from '../shared/lib/logger';
 import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
-import { mapInputs, parseInputs } from '../shared/validation';
-import { DeployPreviewInputSchema } from './schemas.js';
+import { getActionInputs } from '../shared/validation';
+import { DeployPreviewInputConfig, DeployPreviewInputSchema } from './schemas.js';
 
 /**
  * Deploy worker using wrangler
@@ -41,18 +41,8 @@ async function run(): Promise<void> {
   let deploymentSuccess = false;
 
   try {
-    // Map and validate inputs
-    const rawInputs = mapInputs({
-      'cloudflare-api-token': { required: true },
-      'cloudflare-account-id': { required: true },
-      'worker-name': { required: true },
-      environment: { required: false, default: 'preview' },
-      domain: { required: false, default: 'workers.dev' },
-      'wrangler-toml-path': { required: false, default: './wrangler.toml' },
-      'github-token': { required: false }
-    });
-
-    const inputs = parseInputs(DeployPreviewInputSchema, rawInputs);
+    // Get and validate inputs
+    const inputs = getActionInputs(DeployPreviewInputSchema, DeployPreviewInputConfig);
     if (!inputs) {
       throw new Error('Input validation failed');
     }
@@ -87,7 +77,7 @@ async function run(): Promise<void> {
     // Step 3: Comment on PR (if pr-number provided or detected)
     if (config.prNumber) {
       try {
-        const token = getGithubToken(rawInputs.githubToken as string);
+        const token = getGithubToken(core.getInput('github-token'));
         const octokit = github.getOctokit(token);
         await createOrUpdatePreviewComment(
           octokit,

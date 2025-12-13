@@ -2,6 +2,25 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { describe, expect, test } from 'vitest';
 import * as yaml from 'yaml';
+import type { z } from 'zod';
+
+import {
+  CleanupInputConfig,
+  CleanupInputSchema,
+  CleanupOutputSchema
+} from '../../src/cleanup/schemas';
+import { PrCommentInputConfig, PrCommentInputSchema } from '../../src/pr-comment/schemas';
+import {
+  PreparePreviewDeployInputConfig,
+  PreparePreviewDeployInputSchema,
+  PreparePreviewDeployOutputSchema
+} from '../../src/prepare-preview-deploy/schemas';
+import {
+  DeployPreviewInputConfig,
+  DeployPreviewInputSchema,
+  DeployPreviewOutputSchema
+} from '../../src/preview-deploy/schemas';
+import type { InputConfig } from '../../src/shared/validation';
 
 /**
  * Integration tests for action I/O consistency
@@ -41,27 +60,55 @@ function loadActionDefinition(actionPath: string): ActionDefinition {
   };
 }
 
+/**
+ * Convert camelCase to dash-case
+ */
+function camelToDash(str: string): string {
+  return str.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
+/**
+ * Get schema keys and convert to dash-case for comparison with action.yml
+ */
+function getSchemaInputKeys(schema: z.ZodObject<z.ZodRawShape>): string[] {
+  return Object.keys(schema.shape).map(camelToDash);
+}
+
+function getSchemaOutputKeys(schema: z.ZodObject<z.ZodRawShape>): string[] {
+  return Object.keys(schema.shape).map(camelToDash);
+}
+
+/**
+ * Get InputConfig keys (already dash-case)
+ */
+function getConfigKeys(config: InputConfig): string[] {
+  return Object.keys(config);
+}
+
 describe('Action I/O Consistency Tests', () => {
   describe('prepare-preview-deploy', () => {
     const actionDef = loadActionDefinition('prepare-preview-deploy');
+    const schemaInputKeys = getSchemaInputKeys(PreparePreviewDeployInputSchema);
+    const schemaOutputKeys = getSchemaOutputKeys(PreparePreviewDeployOutputSchema);
+    const configKeys = getConfigKeys(PreparePreviewDeployInputConfig);
 
-    test('action.yml inputs should match expected schema', () => {
-      // Expected inputs based on current implementation
-      const expectedInputs = ['worker-name', 'environment', 'domain', 'wrangler-toml-path'];
-      const actualInputs = Object.keys(actionDef.inputs);
+    test('action.yml inputs should match InputConfig keys', () => {
+      const actionInputs = Object.keys(actionDef.inputs).sort();
+      expect(actionInputs).toEqual(configKeys.sort());
+    });
 
-      expect(actualInputs.sort()).toEqual(expectedInputs.sort());
+    test('action.yml inputs should match Schema keys (dash-case)', () => {
+      const actionInputs = Object.keys(actionDef.inputs).sort();
+      expect(actionInputs).toEqual(schemaInputKeys.sort());
+    });
+
+    test('action.yml outputs should match OutputSchema keys (dash-case)', () => {
+      const actionOutputs = Object.keys(actionDef.outputs).sort();
+      expect(actionOutputs).toEqual(schemaOutputKeys.sort());
     });
 
     test('should not have deprecated pr-number input', () => {
       expect(actionDef.inputs['pr-number']).toBeUndefined();
-    });
-
-    test('action.yml outputs should be defined', () => {
-      const expectedOutputs = ['deployment-name', 'deployment-url'];
-      const actualOutputs = Object.keys(actionDef.outputs);
-
-      expect(actualOutputs.sort()).toEqual(expectedOutputs.sort());
     });
 
     test('should not have deprecated environment output', () => {
@@ -82,33 +129,29 @@ describe('Action I/O Consistency Tests', () => {
 
   describe('preview-deploy', () => {
     const actionDef = loadActionDefinition('preview-deploy');
+    const schemaInputKeys = getSchemaInputKeys(DeployPreviewInputSchema);
+    const schemaOutputKeys = getSchemaOutputKeys(DeployPreviewOutputSchema);
+    const configKeys = getConfigKeys(DeployPreviewInputConfig);
 
-    test('action.yml inputs should match expected schema', () => {
-      const expectedInputs = [
-        'cloudflare-api-token',
-        'cloudflare-account-id',
-        'worker-name',
-        'environment',
-        'domain',
-        'wrangler-toml-path',
-        'github-token'
-      ];
-      const actualInputs = Object.keys(actionDef.inputs);
+    test('action.yml inputs should match InputConfig keys', () => {
+      const actionInputs = Object.keys(actionDef.inputs).sort();
+      expect(actionInputs).toEqual(configKeys.sort());
+    });
 
-      expect(actualInputs.sort()).toEqual(expectedInputs.sort());
+    test('action.yml inputs should match Schema keys (dash-case)', () => {
+      const actionInputs = Object.keys(actionDef.inputs).sort();
+      expect(actionInputs).toEqual(schemaInputKeys.sort());
+    });
+
+    test('action.yml outputs should match OutputSchema keys (dash-case)', () => {
+      const actionOutputs = Object.keys(actionDef.outputs).sort();
+      expect(actionOutputs).toEqual(schemaOutputKeys.sort());
     });
 
     test('should use environment instead of deprecated default-env', () => {
       expect(actionDef.inputs['default-env']).toBeUndefined();
       expect(actionDef.inputs.environment).toBeDefined();
       expect(actionDef.inputs.environment.default).toBe('preview');
-    });
-
-    test('action.yml outputs should be defined', () => {
-      const expectedOutputs = ['deployment-url', 'deployment-name', 'deployment-success'];
-      const actualOutputs = Object.keys(actionDef.outputs);
-
-      expect(actualOutputs.sort()).toEqual(expectedOutputs.sort());
     });
 
     test('required inputs should be marked as required', () => {
@@ -121,13 +164,17 @@ describe('Action I/O Consistency Tests', () => {
 
   describe('pr-comment', () => {
     const actionDef = loadActionDefinition('pr-comment');
+    const schemaInputKeys = getSchemaInputKeys(PrCommentInputSchema);
+    const configKeys = getConfigKeys(PrCommentInputConfig);
 
-    test('action.yml inputs should be defined', () => {
-      const requiredInputs = ['deployment-url', 'deployment-success'];
+    test('action.yml inputs should match InputConfig keys', () => {
+      const actionInputs = Object.keys(actionDef.inputs).sort();
+      expect(actionInputs).toEqual(configKeys.sort());
+    });
 
-      for (const input of requiredInputs) {
-        expect(actionDef.inputs[input]).toBeDefined();
-      }
+    test('action.yml inputs should match Schema keys (dash-case)', () => {
+      const actionInputs = Object.keys(actionDef.inputs).sort();
+      expect(actionInputs).toEqual(schemaInputKeys.sort());
     });
 
     test('action.yml outputs should be defined', () => {
@@ -138,18 +185,28 @@ describe('Action I/O Consistency Tests', () => {
 
   describe('cleanup', () => {
     const actionDef = loadActionDefinition('cleanup');
+    const schemaInputKeys = getSchemaInputKeys(CleanupInputSchema);
+    const schemaOutputKeys = getSchemaOutputKeys(CleanupOutputSchema);
+    const configKeys = getConfigKeys(CleanupInputConfig);
 
-    test('action.yml inputs should be defined', () => {
-      const requiredInputs = ['cloudflare-api-token', 'cloudflare-account-id'];
-
-      for (const input of requiredInputs) {
-        expect(actionDef.inputs[input]).toBeDefined();
-        expect(actionDef.inputs[input].required).toBe(true);
-      }
+    test('action.yml inputs should match InputConfig keys', () => {
+      const actionInputs = Object.keys(actionDef.inputs).sort();
+      expect(actionInputs).toEqual(configKeys.sort());
     });
 
-    test('action.yml outputs should be defined', () => {
-      expect(actionDef.outputs).toBeDefined();
+    test('action.yml inputs should match Schema keys (dash-case)', () => {
+      const actionInputs = Object.keys(actionDef.inputs).sort();
+      expect(actionInputs).toEqual(schemaInputKeys.sort());
+    });
+
+    test('action.yml outputs should match OutputSchema keys (dash-case)', () => {
+      const actionOutputs = Object.keys(actionDef.outputs).sort();
+      expect(actionOutputs).toEqual(schemaOutputKeys.sort());
+    });
+
+    test('required inputs should be marked as required', () => {
+      expect(actionDef.inputs['cloudflare-api-token'].required).toBe(true);
+      expect(actionDef.inputs['cloudflare-account-id'].required).toBe(true);
     });
   });
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { TypedInputConfig } from '../shared/validation';
 
 export const CleanupInputSchema = z.object({
   workerNames: z
@@ -14,6 +15,20 @@ export const CleanupInputSchema = z.object({
   dryRun: z.boolean().default(true),
   exclude: z.string().optional()
 });
+
+/**
+ * Input field configuration for GitHub Actions
+ * Type-checked against CleanupInputSchema
+ */
+export const CleanupInputConfig: TypedInputConfig<typeof CleanupInputSchema> = {
+  'worker-names': { required: false },
+  'worker-numbers': { required: false },
+  'worker-prefix': { required: false },
+  'cloudflare-api-token': { required: true },
+  'cloudflare-account-id': { required: true },
+  'dry-run': { required: false, default: 'true' },
+  exclude: { required: false }
+};
 
 export const CleanupOutputSchema = z.object({
   deletedWorkers: z.array(z.string()).optional(),

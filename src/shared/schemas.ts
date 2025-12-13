@@ -33,7 +33,10 @@ export const CommonFields = {
 
   // Cloudflare credentials
   cloudflareApiToken: z.string().min(1, 'cloudflare-api-token is required'),
-  cloudflareAccountId: z.string().min(1, 'cloudflare-account-id is required')
+  cloudflareAccountId: z.string().min(1, 'cloudflare-account-id is required'),
+
+  // GitHub
+  githubToken: z.string().optional()
 } as const;
 
 // ================================

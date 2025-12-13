@@ -7,8 +7,8 @@ import {
 } from '../shared/lib/error-handler';
 import { debug, error, info, warning } from '../shared/lib/logger';
 import { sleep } from '../shared/lib/string-utils';
-import { mapInputs, parseInputs } from '../shared/validation';
-import { CleanupInputSchema } from './schemas';
+import { getActionInputs } from '../shared/validation';
+import { CleanupInputConfig, CleanupInputSchema } from './schemas';
 import {
   createCleanupSummary,
   createDryRunSummary,
@@ -20,8 +20,8 @@ import {
 } from './utils';
 
 // Rate limiting configuration
-const RATE_LIMIT_DELAY = 500;
-const MAX_RETRIES = 3;
+const RATE_LIMIT_DELAY: number = 500;
+const MAX_RETRIES: number = 3;
 
 /**
  * Delete worker with retry logic for rate limiting
@@ -41,7 +41,7 @@ async function deleteWithRetry(
       (errorMessage.includes('rate limit') || errorMessage.includes('429')) &&
       retryCount < MAX_RETRIES
     ) {
-      const backoffDelay = 2 ** retryCount * 30000; // 30s, 60s, 120s
+      const backoffDelay: number = 2 ** retryCount * 30000; // 30s, 60s, 120s
       warning(
         `⏰ Rate limit hit for ${workerName}, waiting ${backoffDelay / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})...`
       );
@@ -103,29 +103,19 @@ async function executeCleanup(cf: CloudflareApi, workersToProcess: string[]): Pr
 
 async function run(): Promise<void> {
   try {
-    // Map and validate inputs
-    const rawInputs = mapInputs({
-      'worker-names': { required: false },
-      'worker-numbers': { required: false },
-      'worker-prefix': { required: false },
-      'cloudflare-api-token': { required: true },
-      'cloudflare-account-id': { required: true },
-      'dry-run': { required: false, default: 'true' },
-      exclude: { required: false }
-    });
-
-    // Parse worker names from various input formats
-    const workerNames = parseWorkerNamesInput(
-      core.getInput('worker-names'),
-      core.getInput('worker-numbers'),
-      core.getInput('worker-prefix')
-    );
-
-    // Validate inputs with Zod
-    const inputs = parseInputs(CleanupInputSchema, {
-      ...rawInputs,
-      workerNames,
-      dryRun: rawInputs.dryRun === 'true'
+    // Get and validate inputs
+    const inputs = getActionInputs(CleanupInputSchema, CleanupInputConfig, (raw) => {
+      // Parse worker names from various input formats
+      const workerNames = parseWorkerNamesInput(
+        core.getInput('worker-names'),
+        core.getInput('worker-numbers'),
+        core.getInput('worker-prefix')
+      );
+      return {
+        ...raw,
+        workerNames,
+        dryRun: raw.dryRun === 'true'
+      };
     });
     if (!inputs) {
       throw new Error('Input validation failed');

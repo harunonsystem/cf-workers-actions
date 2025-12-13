@@ -2,20 +2,16 @@ import * as core from '@actions/core';
 import { prepareDeployment } from '../shared/lib/deployment-utils';
 import { handleActionError } from '../shared/lib/error-handler';
 import { info } from '../shared/lib/logger';
-import { mapInputs, parseInputs } from '../shared/validation';
-import { PreparePreviewDeployInputSchema } from './schemas.js';
+import { getActionInputs } from '../shared/validation';
+import { PreparePreviewDeployInputConfig, PreparePreviewDeployInputSchema } from './schemas.js';
 
 async function run(): Promise<void> {
   try {
-    // Map and validate inputs
-    const rawInputs = mapInputs({
-      'worker-name': { required: true },
-      environment: { required: true },
-      domain: { required: false, default: 'workers.dev' },
-      'wrangler-toml-path': { required: false, default: './wrangler.toml' }
-    });
-
-    const inputs = parseInputs(PreparePreviewDeployInputSchema, rawInputs);
+    // Validate inputs
+    const inputs = getActionInputs(
+      PreparePreviewDeployInputSchema,
+      PreparePreviewDeployInputConfig
+    );
     if (!inputs) {
       throw new Error('Input validation failed');
     }
