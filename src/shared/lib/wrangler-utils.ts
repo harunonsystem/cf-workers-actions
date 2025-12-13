@@ -1,6 +1,5 @@
 import * as fs from 'node:fs';
-import * as core from '@actions/core';
-import { debug } from './logger';
+import { debug, error, info } from './logger';
 
 /**
  * Update wrangler.toml with worker name for a specific environment
@@ -17,7 +16,7 @@ export async function updateWranglerToml(
   // Create backup
   const backupPath = `${tomlPath}.bak`;
   fs.copyFileSync(tomlPath, backupPath);
-  core.info(`✅ Created backup: ${backupPath}`);
+  info(`✅ Created backup: ${backupPath}`);
 
   try {
     const content = fs.readFileSync(tomlPath, 'utf8');
@@ -54,11 +53,11 @@ export async function updateWranglerToml(
     if (nameLineIndex >= 0) {
       // Replace existing name
       lines[nameLineIndex] = `name = "${workerName}"`;
-      core.info('✅ Updated existing name in wrangler.toml');
+      info('✅ Updated existing name in wrangler.toml');
     } else {
       // Add name after section header
       lines.splice(envIndex + 1, 0, `name = "${workerName}"`);
-      core.info('✅ Added name to wrangler.toml');
+      info('✅ Added name to wrangler.toml');
     }
 
     // Write back
@@ -68,12 +67,12 @@ export async function updateWranglerToml(
     const updatedContent = fs.readFileSync(tomlPath, 'utf8');
     debug(`Updated wrangler.toml:\n${updatedContent}`);
     if (!process.env.ACTIONS_STEP_DEBUG) {
-      core.info('✅ Updated wrangler.toml for preview environment');
+      info('✅ Updated wrangler.toml for preview environment');
     }
-  } catch (error) {
+  } catch (err) {
     // Restore backup on failure
     fs.copyFileSync(backupPath, tomlPath);
-    core.error('❌ Failed to update wrangler.toml, restored from backup');
-    throw error;
+    error('❌ Failed to update wrangler.toml, restored from backup');
+    throw err;
   }
 }

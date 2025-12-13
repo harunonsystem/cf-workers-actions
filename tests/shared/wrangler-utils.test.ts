@@ -1,12 +1,16 @@
 import * as fs from 'node:fs';
-import * as core from '@actions/core';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 // Mock dependencies
 vi.mock('node:fs');
-vi.mock('@actions/core');
-vi.mock('../../src/shared/lib/logger');
+vi.mock('../../src/shared/lib/logger', () => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+  error: vi.fn()
+}));
 
+import * as logger from '../../src/shared/lib/logger';
 import { updateWranglerToml } from '../../src/shared/lib/wrangler-utils';
 
 describe('wrangler-utils', () => {
@@ -39,7 +43,7 @@ vars = { ENV = "preview" }`;
         mockTomlPath,
         expect.stringContaining('name = "new-worker-name"')
       );
-      expect(core.info).toHaveBeenCalledWith(expect.stringContaining('✅ Updated existing name'));
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('✅ Updated existing name'));
     });
 
     test('should add name if not present in environment section', async () => {
@@ -60,7 +64,7 @@ vars = { ENV = "preview" }`;
         mockTomlPath,
         expect.stringContaining('name = "new-worker-name"')
       );
-      expect(core.info).toHaveBeenCalledWith(
+      expect(logger.info).toHaveBeenCalledWith(
         expect.stringContaining('✅ Added name to wrangler.toml')
       );
     });
@@ -105,7 +109,7 @@ name = "old-name"`;
 
       // Should restore backup
       expect(fs.copyFileSync).toHaveBeenCalledWith(mockBackupPath, mockTomlPath);
-      expect(core.error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         expect.stringContaining('❌ Failed to update wrangler.toml')
       );
     });
@@ -124,7 +128,7 @@ name = "old-name"`;
       await updateWranglerToml(mockTomlPath, 'preview', 'new-name');
 
       expect(fs.copyFileSync).toHaveBeenCalledWith(mockTomlPath, mockBackupPath);
-      expect(core.info).toHaveBeenCalledWith(expect.stringContaining('✅ Created backup'));
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('✅ Created backup'));
     });
 
     test('should handle multiple environment sections', async () => {

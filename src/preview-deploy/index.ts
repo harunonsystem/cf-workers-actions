@@ -1,11 +1,11 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
+import { prepareDeployment } from '../shared/lib/deployment-utils';
 import { handleActionError } from '../shared/lib/error-handler';
-import { getGithubToken, getPrNumber, getSanitizedBranchName } from '../shared/lib/github-utils';
+import { getGithubToken } from '../shared/lib/github-utils';
+import { error, info, warning } from '../shared/lib/logger';
 import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
-import { processTemplate } from '../shared/lib/template-utils';
-import { updateWranglerToml } from '../shared/lib/wrangler-utils';
 import { mapInputs, parseInputs } from '../shared/validation';
 import { DeployPreviewInputSchema } from './schemas.js';
 
@@ -28,8 +28,8 @@ async function deployWorker(
       env: envVars
     });
     return true;
-  } catch (error) {
-    core.error(`Deployment failed: ${error}`);
+  } catch (err) {
+    error(`Deployment failed: ${err}`);
     return false;
   }
 }
@@ -57,38 +57,23 @@ async function run(): Promise<void> {
       throw new Error('Input validation failed');
     }
 
-    core.info('🚀 Starting deploy preview...');
-    core.info(`Worker name template: ${inputs.workerName}`);
-    core.info(`Environment: ${inputs.environment}`);
+    info('🚀 Starting deploy preview...');
+    info(`Worker name template: ${inputs.workerName}`);
+    info(`Environment: ${inputs.environment}`);
 
-    // Step 1: Prepare preview deployment
-    const branchName = getSanitizedBranchName();
-    const prNumber = getPrNumber();
-
-    core.info(`Branch name (sanitized): ${branchName}`);
-    if (prNumber) {
-      core.info(`PR number: ${prNumber}`);
-    }
-
-    workerName = processTemplate(inputs.workerName, {
-      prNumber: prNumber?.toString(),
-      branchName
+    // Step 1: Prepare preview deployment (shared logic)
+    const config = await prepareDeployment({
+      workerNameTemplate: inputs.workerName,
+      environment: inputs.environment,
+      domain: inputs.domain,
+      wranglerTomlPath: inputs.wranglerTomlPath
     });
 
-    if (!workerName) {
-      throw new Error('Worker name is empty after template processing');
-    }
+    workerName = config.workerName;
+    deploymentUrl = config.deploymentUrl;
+    info('✅ Updated wrangler.toml');
 
-    core.info(`✅ Generated worker name: ${workerName}`);
-
-    deploymentUrl = `https://${workerName}.${inputs.domain}`;
-    core.info(`✅ Generated URL: ${deploymentUrl}`);
-
-    // Step 2: Update wrangler.toml
-    await updateWranglerToml(inputs.wranglerTomlPath, inputs.environment, workerName);
-    core.info('✅ Updated wrangler.toml');
-
-    // Step 3: Deploy
+    // Step 2: Deploy
     deploymentSuccess = await deployWorker(
       inputs.environment,
       inputs.cloudflareApiToken,
@@ -99,21 +84,21 @@ async function run(): Promise<void> {
       throw new Error('Deployment failed');
     }
 
-    // Step 4: Comment on PR (if pr-number provided or detected)
-    if (prNumber) {
+    // Step 3: Comment on PR (if pr-number provided or detected)
+    if (config.prNumber) {
       try {
         const token = getGithubToken(rawInputs.githubToken as string);
         const octokit = github.getOctokit(token);
         await createOrUpdatePreviewComment(
           octokit,
-          prNumber,
+          config.prNumber,
           deploymentUrl,
           workerName,
           deploymentSuccess
         );
-        core.info('✅ PR comment posted');
+        info('✅ PR comment posted');
       } catch {
-        core.warning('GITHUB_TOKEN not found, skipping PR comment');
+        warning('GITHUB_TOKEN not found, skipping PR comment');
       }
     }
 
@@ -122,9 +107,9 @@ async function run(): Promise<void> {
     core.setOutput('deployment-name', workerName);
     core.setOutput('deployment-success', 'true');
 
-    core.info('✅ Deploy preview completed');
-  } catch (error) {
-    await handleActionError(error, {
+    info('✅ Deploy preview completed');
+  } catch (err) {
+    await handleActionError(err, {
       summaryTitle: 'Deploy Preview Failed',
       outputs: {
         'deployment-url': deploymentUrl,

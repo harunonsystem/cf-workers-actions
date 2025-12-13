@@ -1,8 +1,7 @@
 import * as core from '@actions/core';
+import { prepareDeployment } from '../shared/lib/deployment-utils';
 import { handleActionError } from '../shared/lib/error-handler';
-import { getPrNumber, getSanitizedBranchName } from '../shared/lib/github-utils';
-import { processTemplate } from '../shared/lib/template-utils';
-import { updateWranglerToml } from '../shared/lib/wrangler-utils';
+import { info } from '../shared/lib/logger';
 import { mapInputs, parseInputs } from '../shared/validation';
 import { PreparePreviewDeployInputSchema } from './schemas.js';
 
@@ -21,47 +20,25 @@ async function run(): Promise<void> {
       throw new Error('Input validation failed');
     }
 
-    core.info('🚀 Preparing preview deployment...');
-    core.info(`Worker name template: ${inputs.workerName}`);
-    core.info(`Environment: ${inputs.environment}`);
+    info('🚀 Preparing preview deployment...');
+    info(`Worker name template: ${inputs.workerName}`);
+    info(`Environment: ${inputs.environment}`);
 
-    // Get variables for template processing
-    const branchName = getSanitizedBranchName();
-
-    // Auto-detect PR number
-    const prNumber = getPrNumber()?.toString();
-
-    core.info(`Branch name (sanitized): ${branchName}`);
-    if (prNumber) {
-      core.info(`PR number: ${prNumber}`);
-    }
-
-    // Process template
-    const workerName = processTemplate(inputs.workerName, {
-      prNumber,
-      branchName
+    // Prepare deployment (shared logic)
+    const config = await prepareDeployment({
+      workerNameTemplate: inputs.workerName,
+      environment: inputs.environment,
+      domain: inputs.domain,
+      wranglerTomlPath: inputs.wranglerTomlPath
     });
 
-    if (!workerName) {
-      throw new Error('Worker name is empty after template processing');
-    }
-
-    core.info(`✅ Generated worker name: ${workerName}`);
-
-    // Generate URL
-    const deploymentUrl = `https://${workerName}.${inputs.domain}`;
-    core.info(`✅ Generated URL: ${deploymentUrl}`);
-
-    // Update wrangler.toml
-    await updateWranglerToml(inputs.wranglerTomlPath, inputs.environment, workerName);
-
     // Set outputs
-    core.setOutput('deployment-name', workerName);
-    core.setOutput('deployment-url', deploymentUrl);
+    core.setOutput('deployment-name', config.workerName);
+    core.setOutput('deployment-url', config.deploymentUrl);
 
-    core.info('✅ Prepare preview deployment completed');
-  } catch (error) {
-    await handleActionError(error, {
+    info('✅ Prepare preview deployment completed');
+  } catch (err) {
+    await handleActionError(err, {
       summaryTitle: 'Prepare Preview Deploy Failed',
       outputs: {
         'deployment-name': '',

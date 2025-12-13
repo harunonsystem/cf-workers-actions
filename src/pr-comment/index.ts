@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { handleActionError } from '../shared/lib/error-handler';
 import { getGithubToken, getPrNumber } from '../shared/lib/github-utils';
+import { info } from '../shared/lib/logger';
 import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
 import { mapInputs, parseInputs } from '../shared/validation';
 import { PrCommentInputSchema } from './schemas.js';
@@ -33,11 +34,11 @@ async function run(): Promise<void> {
       );
     }
 
-    core.info('💬 Commenting on PR...');
-    core.info(`PR number: ${prNumber}`);
-    core.info(`Deployment URL: ${inputs.deploymentUrl}`);
-    core.info(`Deployment name: ${inputs.deploymentName}`);
-    core.info(`Deployment success: ${inputs.deploymentSuccess}`);
+    info('💬 Commenting on PR...');
+    info(`PR number: ${prNumber}`);
+    info(`Deployment URL: ${inputs.deploymentUrl}`);
+    info(`Deployment name: ${inputs.deploymentName}`);
+    info(`Deployment success: ${inputs.deploymentSuccess}`);
 
     // Get GitHub token (input takes precedence over environment variable)
     const token = getGithubToken(rawInputs.githubToken as string);
@@ -52,7 +53,7 @@ async function run(): Promise<void> {
       inputs.deploymentSuccess
     );
 
-    core.info('✅ PR comment completed');
+    info('✅ PR comment completed');
 
     // Set summary
     await core.summary
@@ -65,8 +66,8 @@ async function run(): Promise<void> {
         ['Status', inputs.deploymentSuccess ? 'Success ✅' : 'Failed ❌']
       ])
       .write();
-  } catch (error) {
-    await handleActionError(error, {
+  } catch (err) {
+    await handleActionError(err, {
       summaryTitle: 'PR Comment Failed',
       outputs: {}
     });

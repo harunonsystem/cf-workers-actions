@@ -1,6 +1,6 @@
-import * as core from '@actions/core';
 import type { CloudflareApiResponse, CloudflareWorker } from '../types';
 import { getErrorMessage } from './error-handler';
+import { debug, error, info, warning } from './logger';
 
 /**
  * Cloudflare API client wrapper
@@ -41,7 +41,7 @@ export class CloudflareApi {
     }
 
     try {
-      core.debug(`Making ${method} request to ${url}`);
+      debug(`Making ${method} request to ${url}`);
       const response = await fetch(url, options);
       const result: CloudflareApiResponse<T> = await response.json();
 
@@ -56,9 +56,9 @@ export class CloudflareApi {
       }
 
       return result;
-    } catch (error) {
-      core.error(`Cloudflare API request failed: ${getErrorMessage(error)}`);
-      throw error;
+    } catch (err) {
+      error(`Cloudflare API request failed: ${getErrorMessage(err)}`);
+      throw err;
     }
   }
 
@@ -98,15 +98,15 @@ export class CloudflareApi {
   async deleteWorker(workerName: string): Promise<boolean> {
     try {
       await this.makeRequest('DELETE', `/accounts/${this.accountId}/workers/scripts/${workerName}`);
-      core.info(`Successfully deleted worker: ${workerName}`);
+      info(`Successfully deleted worker: ${workerName}`);
       return true;
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
+    } catch (err) {
+      const errorMessage = getErrorMessage(err);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
-        core.warning(`Worker not found: ${workerName}`);
+        warning(`Worker not found: ${workerName}`);
         return false;
       }
-      throw error;
+      throw err;
     }
   }
 }

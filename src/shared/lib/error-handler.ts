@@ -10,9 +10,9 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
- * Context for action error handling
+ * Context for action error handling (internal use only)
  */
-export interface ActionErrorContext {
+interface ActionErrorContext {
   /**
    * Title for the error summary (e.g., "Deployment Failed", "Cleanup Failed")
    */
