@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@actions/core');
 
@@ -14,34 +14,20 @@ describe('error-handler', () => {
   });
 
   describe('getErrorMessage', () => {
-    test('should extract message from Error object', () => {
-      const error = new Error('Something went wrong');
-      expect(getErrorMessage(error)).toBe('Something went wrong');
-    });
-
-    test('should convert string to string', () => {
-      expect(getErrorMessage('string error')).toBe('string error');
-    });
-
-    test('should convert number to string', () => {
-      expect(getErrorMessage(404)).toBe('404');
-    });
-
-    test('should convert null to string', () => {
-      expect(getErrorMessage(null)).toBe('null');
-    });
-
-    test('should convert undefined to string', () => {
-      expect(getErrorMessage(undefined)).toBe('undefined');
-    });
-
-    test('should convert object to string', () => {
-      expect(getErrorMessage({ code: 500 })).toBe('[object Object]');
+    it.each<[unknown, string, string]>([
+      [new Error('Something went wrong'), 'Something went wrong', 'Error object'],
+      ['string error', 'string error', 'string'],
+      [404, '404', 'number'],
+      [null, 'null', 'null'],
+      [undefined, 'undefined', 'undefined'],
+      [{ code: 500 }, '[object Object]', 'object']
+    ])('should return "%s" for %s', (input, expected) => {
+      expect(getErrorMessage(input)).toBe(expected);
     });
   });
 
   describe('handleActionError', () => {
-    test('should call core.error with message', async () => {
+    it('should call core.error with message', async () => {
       await handleActionError(new Error('Test error'), {
         summaryTitle: 'Test Failed'
       });
@@ -49,7 +35,7 @@ describe('error-handler', () => {
       expect(core.error).toHaveBeenCalledWith('Test Failed: Test error');
     });
 
-    test('should set outputs when provided', async () => {
+    it('should set outputs when provided', async () => {
       await handleActionError(new Error('Test error'), {
         summaryTitle: 'Test Failed',
         outputs: {
@@ -62,7 +48,7 @@ describe('error-handler', () => {
       expect(core.setOutput).toHaveBeenCalledWith('output-2', 'value-2');
     });
 
-    test('should call core.setFailed', async () => {
+    it('should call core.setFailed', async () => {
       await handleActionError(new Error('Test error'), {
         summaryTitle: 'Test Failed'
       });
@@ -70,7 +56,7 @@ describe('error-handler', () => {
       expect(core.setFailed).toHaveBeenCalledWith('Test error');
     });
 
-    test('should include context in error message when provided', async () => {
+    it('should include context in error message when provided', async () => {
       await handleActionError(new Error('Test error'), {
         summaryTitle: 'Test Failed',
         context: 'additional info'

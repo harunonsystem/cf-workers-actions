@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, it, test, vi } from 'vitest';
 
 // @actions/core is mocked in vitest.setup.ts
 vi.mock('../../shared/lib/logger', () => ({
@@ -21,34 +21,20 @@ describe('cleanup/utils', () => {
   });
 
   describe('parseWorkerNamesInput', () => {
-    test('should parse worker names from workerNamesInput', () => {
-      const result = parseWorkerNamesInput('worker-1, worker-2, worker-3', '', '');
-      expect(result).toEqual(['worker-1', 'worker-2', 'worker-3']);
+    it.each([
+      ['worker-1, worker-2, worker-3', '', '', ['worker-1', 'worker-2', 'worker-3']],
+      ['', '1, 2, 3', 'app-preview-', ['app-preview-1', 'app-preview-2', 'app-preview-3']],
+      ['explicit-worker', '1, 2', 'prefix-', ['explicit-worker']]
+    ])('should parse "%s" with numbers "%s" and prefix "%s"', (workerNames, numbers, prefix, expected) => {
+      expect(parseWorkerNamesInput(workerNames, numbers, prefix)).toEqual(expected);
     });
 
-    test('should generate names from prefix and numbers', () => {
-      const result = parseWorkerNamesInput('', '1, 2, 3', 'app-preview-');
-      expect(result).toEqual(['app-preview-1', 'app-preview-2', 'app-preview-3']);
-    });
-
-    test('should prioritize workerNamesInput over prefix+numbers', () => {
-      const result = parseWorkerNamesInput('explicit-worker', '1, 2', 'prefix-');
-      expect(result).toEqual(['explicit-worker']);
-    });
-
-    test('should return undefined when no valid input', () => {
-      const result = parseWorkerNamesInput('', '', '');
-      expect(result).toBeUndefined();
-    });
-
-    test('should return undefined when only prefix without numbers', () => {
-      const result = parseWorkerNamesInput('', '', 'prefix-');
-      expect(result).toBeUndefined();
-    });
-
-    test('should return undefined when only numbers without prefix', () => {
-      const result = parseWorkerNamesInput('', '1, 2, 3', '');
-      expect(result).toBeUndefined();
+    it.each([
+      ['', '', '', 'no valid input'],
+      ['', '', 'prefix-', 'only prefix without numbers'],
+      ['', '1, 2, 3', '', 'only numbers without prefix']
+    ])('should return undefined when %s', (workerNames, numbers, prefix, _description) => {
+      expect(parseWorkerNamesInput(workerNames, numbers, prefix)).toBeUndefined();
     });
   });
 

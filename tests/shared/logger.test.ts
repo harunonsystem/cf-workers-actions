@@ -19,24 +19,18 @@ describe('logger', () => {
   });
 
   describe('isDebugEnabled', () => {
-    it('should return true when ACTIONS_STEP_DEBUG is "true"', () => {
-      process.env.ACTIONS_STEP_DEBUG = 'true';
-      expect(isDebugEnabled()).toBe(true);
-    });
-
-    it('should return false when ACTIONS_STEP_DEBUG is "false"', () => {
-      process.env.ACTIONS_STEP_DEBUG = 'false';
-      expect(isDebugEnabled()).toBe(false);
-    });
-
-    it('should return false when ACTIONS_STEP_DEBUG is undefined', () => {
-      delete process.env.ACTIONS_STEP_DEBUG;
-      expect(isDebugEnabled()).toBe(false);
-    });
-
-    it('should return false when ACTIONS_STEP_DEBUG is any other value', () => {
-      process.env.ACTIONS_STEP_DEBUG = '1';
-      expect(isDebugEnabled()).toBe(false);
+    it.each([
+      ['true', true],
+      ['false', false],
+      [undefined, false],
+      ['1', false]
+    ])('should return %s when ACTIONS_STEP_DEBUG is %s', (envValue, expected) => {
+      if (envValue === undefined) {
+        delete process.env.ACTIONS_STEP_DEBUG;
+      } else {
+        process.env.ACTIONS_STEP_DEBUG = envValue;
+      }
+      expect(isDebugEnabled()).toBe(expected);
     });
   });
 

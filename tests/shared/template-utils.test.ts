@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import { processTemplate } from '../../src/shared/lib/template-utils';
 
 describe('template-utils', () => {
@@ -100,74 +100,15 @@ describe('template-utils', () => {
     });
 
     describe('Sanitization', () => {
-      test('should remove invalid characters', () => {
-        const template = 'app_{pr-number}_test';
-        const variables = {
-          prNumber: '123',
-          branchName: 'main'
-        };
-
-        const result = processTemplate(template, variables);
-
-        expect(result).toBe('app123test');
-      });
-
-      test('should preserve hyphens', () => {
-        const template = 'my-app-pr-{pr-number}';
-        const variables = {
-          prNumber: '789',
-          branchName: 'main'
-        };
-
-        const result = processTemplate(template, variables);
-
-        expect(result).toBe('my-app-pr-789');
-      });
-
-      test('should remove dots', () => {
-        const template = 'app.v{pr-number}';
-        const variables = {
-          prNumber: '1',
-          branchName: 'main'
-        };
-
-        const result = processTemplate(template, variables);
-
-        expect(result).toBe('appv1');
-      });
-
-      test('should remove slashes from branch names', () => {
-        const template = 'deploy-{branch-name}';
-        const variables = {
-          branchName: 'feature/auth'
-        };
-
-        const result = processTemplate(template, variables);
-
-        expect(result).toBe('deploy-featureauth');
-      });
-
-      test('should remove underscores', () => {
-        const template = 'app_{branch-name}';
-        const variables = {
-          branchName: 'feature_test'
-        };
-
-        const result = processTemplate(template, variables);
-
-        expect(result).toBe('appfeaturetest');
-      });
-
-      test('should remove special characters (@, #, $, etc)', () => {
-        const template = 'app@{pr-number}#test';
-        const variables = {
-          prNumber: '123',
-          branchName: 'main'
-        };
-
-        const result = processTemplate(template, variables);
-
-        expect(result).toBe('app123test');
+      it.each([
+        ['app_{pr-number}_test', { prNumber: '123', branchName: 'main' }, 'app123test'],
+        ['my-app-pr-{pr-number}', { prNumber: '789', branchName: 'main' }, 'my-app-pr-789'],
+        ['app.v{pr-number}', { prNumber: '1', branchName: 'main' }, 'appv1'],
+        ['deploy-{branch-name}', { branchName: 'feature/auth' }, 'deploy-featureauth'],
+        ['app_{branch-name}', { branchName: 'feature_test' }, 'appfeaturetest'],
+        ['app@{pr-number}#test', { prNumber: '123', branchName: 'main' }, 'app123test']
+      ])('should sanitize "%s" to "%s"', (template, variables, expected) => {
+        expect(processTemplate(template, variables)).toBe(expected);
       });
     });
 

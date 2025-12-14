@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
 import { prepareDeployment } from '../shared/lib/deployment-utils';
+import { env } from '../shared/lib/env';
 import { handleActionError } from '../shared/lib/error-handler';
 import { getGithubToken } from '../shared/lib/github-utils';
 import { error, info, warning } from '../shared/lib/logger';
@@ -115,8 +116,6 @@ async function run(): Promise<void> {
     });
   }
 }
-
-import { env } from '../shared/lib/env';
 
 export { run };
 

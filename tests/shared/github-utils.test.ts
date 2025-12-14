@@ -1,5 +1,5 @@
 import * as github from '@actions/github';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest';
 
 // Mock @actions/github
 vi.mock('@actions/github');
@@ -254,37 +254,21 @@ describe('github-utils', () => {
   });
 
   describe('getGithubToken', () => {
-    test('should return input token when provided', () => {
-      const token = getGithubToken('my-input-token');
-      expect(token).toBe('my-input-token');
+    it.each([
+      ['my-input-token', undefined, 'my-input-token', 'input token when provided'],
+      [undefined, 'env-token', 'env-token', 'environment token when input is undefined'],
+      ['', 'env-token', 'env-token', 'environment token when input is empty string'],
+      ['input-token', 'env-token', 'input-token', 'input token over environment token']
+    ])('should return %s', (inputToken, envToken, expected, _description) => {
+      if (envToken) process.env.GITHUB_TOKEN = envToken;
+      expect(getGithubToken(inputToken)).toBe(expected);
     });
 
-    test('should return environment token when input is undefined', () => {
-      process.env.GITHUB_TOKEN = 'env-token';
-      const token = getGithubToken(undefined);
-      expect(token).toBe('env-token');
-    });
-
-    test('should return environment token when input is empty string', () => {
-      process.env.GITHUB_TOKEN = 'env-token';
-      const token = getGithubToken('');
-      expect(token).toBe('env-token');
-    });
-
-    test('should prefer input token over environment token', () => {
-      process.env.GITHUB_TOKEN = 'env-token';
-      const token = getGithubToken('input-token');
-      expect(token).toBe('input-token');
-    });
-
-    test('should throw error when no token available', () => {
-      expect(() => getGithubToken(undefined)).toThrow(
-        'GITHUB_TOKEN is required. Please provide it via github-token input or ensure it is available in the environment.'
-      );
-    });
-
-    test('should throw error when both input and env are empty', () => {
-      expect(() => getGithubToken('')).toThrow('GITHUB_TOKEN is required');
+    it.each([
+      [undefined, 'no token available'],
+      ['', 'both input and env are empty']
+    ])('should throw error when %s', (inputToken, _description) => {
+      expect(() => getGithubToken(inputToken)).toThrow('GITHUB_TOKEN is required');
     });
   });
 
