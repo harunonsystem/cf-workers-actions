@@ -147,6 +147,17 @@ export function getActionInputs<T>(
   return result.data;
 }
 
+/**
+ * Convert camelCase to dash-case
+ */
+function camelToDash(str: string): string {
+  return str.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
+/**
+ * Validate and set action outputs
+ * Converts camelCase schema keys to dash-case for action.yml compatibility
+ */
 export function setOutputsValidated<T>(schema: z.ZodType<T>, outputs: T) {
   const result = schema.safeParse(outputs);
 
@@ -156,15 +167,16 @@ export function setOutputsValidated<T>(schema: z.ZodType<T>, outputs: T) {
     return;
   }
 
-  // Type-safe output setting
+  // Type-safe output setting with camelCase to dash-case conversion
   const validated = result.data as Record<string, unknown>;
   for (const [k, v] of Object.entries(validated)) {
+    const dashKey = camelToDash(k);
     if (v === undefined || v === null) {
-      core.setOutput(k, '');
+      core.setOutput(dashKey, '');
     } else if (typeof v === 'object') {
-      core.setOutput(k, JSON.stringify(v));
+      core.setOutput(dashKey, JSON.stringify(v));
     } else {
-      core.setOutput(k, String(v));
+      core.setOutput(dashKey, String(v));
     }
   }
 }

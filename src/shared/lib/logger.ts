@@ -1,11 +1,11 @@
 import * as core from '@actions/core';
+import { env } from './env';
 
 /**
- * Check if debug mode is enabled via ACTIONS_STEP_DEBUG environment variable
- * @returns true if debug mode is enabled, false otherwise
+ * Check if debug mode is enabled (ACTIONS_STEP_DEBUG === 'true')
  */
 export function isDebugEnabled(): boolean {
-  return process.env.ACTIONS_STEP_DEBUG === 'true';
+  return env.isDebug();
 }
 
 /**

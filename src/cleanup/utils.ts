@@ -1,6 +1,8 @@
 import * as core from '@actions/core';
 import { debug, info } from '../shared/lib/logger';
 import { parseCommaSeparatedList } from '../shared/lib/string-utils';
+import { setOutputsValidated } from '../shared/validation';
+import { CleanupOutputSchema } from './schemas';
 
 /**
  * Parse worker names from various input formats
@@ -106,31 +108,23 @@ export function filterWorkersByExclusion(workers: string[], filter: ExclusionFil
 }
 
 /**
- * Cleanup output keys (internal use only)
+ * Cleanup result (internal use only)
  */
-const CLEANUP_OUTPUT_KEYS = {
-  DELETED_WORKERS: 'deleted-workers',
-  DELETED_COUNT: 'deleted-count',
-  SKIPPED_WORKERS: 'skipped-workers',
-  DRY_RUN_RESULTS: 'dry-run-results'
-} as const;
+export interface CleanupResult {
+  deletedWorkers: string[];
+  skippedWorkers: string[];
+}
 
 /**
  * Set empty cleanup outputs
  */
 export function setEmptyCleanupOutputs(): void {
-  core.setOutput(CLEANUP_OUTPUT_KEYS.DELETED_WORKERS, '[]');
-  core.setOutput(CLEANUP_OUTPUT_KEYS.DELETED_COUNT, '0');
-  core.setOutput(CLEANUP_OUTPUT_KEYS.SKIPPED_WORKERS, '[]');
-  core.setOutput(CLEANUP_OUTPUT_KEYS.DRY_RUN_RESULTS, '[]');
-}
-
-/**
- * Cleanup result (internal use only)
- */
-interface CleanupResult {
-  deletedWorkers: string[];
-  skippedWorkers: string[];
+  setOutputsValidated(CleanupOutputSchema, {
+    deletedWorkers: [],
+    deletedCount: 0,
+    skippedWorkers: [],
+    dryRunResults: []
+  });
 }
 
 /**
@@ -138,16 +132,19 @@ interface CleanupResult {
  */
 export function setCleanupOutputs(result: CleanupResult, isDryRun: boolean): void {
   if (isDryRun) {
-    core.setOutput(CLEANUP_OUTPUT_KEYS.DELETED_WORKERS, '[]');
-    core.setOutput(CLEANUP_OUTPUT_KEYS.DELETED_COUNT, '0');
-    core.setOutput(CLEANUP_OUTPUT_KEYS.SKIPPED_WORKERS, '[]');
-    // For dry run, deletedWorkers contains workers that would be deleted
-    core.setOutput(CLEANUP_OUTPUT_KEYS.DRY_RUN_RESULTS, JSON.stringify(result.deletedWorkers));
+    setOutputsValidated(CleanupOutputSchema, {
+      deletedWorkers: [],
+      deletedCount: 0,
+      skippedWorkers: [],
+      dryRunResults: result.deletedWorkers
+    });
   } else {
-    core.setOutput(CLEANUP_OUTPUT_KEYS.DELETED_WORKERS, JSON.stringify(result.deletedWorkers));
-    core.setOutput(CLEANUP_OUTPUT_KEYS.DELETED_COUNT, result.deletedWorkers.length.toString());
-    core.setOutput(CLEANUP_OUTPUT_KEYS.SKIPPED_WORKERS, JSON.stringify(result.skippedWorkers));
-    core.setOutput(CLEANUP_OUTPUT_KEYS.DRY_RUN_RESULTS, '[]');
+    setOutputsValidated(CleanupOutputSchema, {
+      deletedWorkers: result.deletedWorkers,
+      deletedCount: result.deletedWorkers.length,
+      skippedWorkers: result.skippedWorkers,
+      dryRunResults: []
+    });
   }
 }
 

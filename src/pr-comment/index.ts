@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { env } from '../shared/lib/env';
 import { handleActionError } from '../shared/lib/error-handler';
 import { getGithubToken, getPrNumber } from '../shared/lib/github-utils';
 import { info } from '../shared/lib/logger';
@@ -67,5 +68,9 @@ async function run(): Promise<void> {
   }
 }
 
-// Self-invoking async function to handle top-level await
-void run();
+export { run };
+
+// Execute if not in test environment
+if (!env.isTest()) {
+  void run();
+}

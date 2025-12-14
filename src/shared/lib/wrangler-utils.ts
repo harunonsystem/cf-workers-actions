@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import { env } from './env';
 import { debug, error, info } from './logger';
 
 /**
@@ -66,7 +67,7 @@ export async function updateWranglerToml(
     // Only show full contents in debug mode
     const updatedContent = fs.readFileSync(tomlPath, 'utf8');
     debug(`Updated wrangler.toml:\n${updatedContent}`);
-    if (!process.env.ACTIONS_STEP_DEBUG) {
+    if (!env.isDebug()) {
       info('✅ Updated wrangler.toml for preview environment');
     }
   } catch (err) {

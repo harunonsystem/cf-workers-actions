@@ -6,8 +6,12 @@ import { handleActionError } from '../shared/lib/error-handler';
 import { getGithubToken } from '../shared/lib/github-utils';
 import { error, info, warning } from '../shared/lib/logger';
 import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
-import { getActionInputs } from '../shared/validation';
-import { DeployPreviewInputConfig, DeployPreviewInputSchema } from './schemas.js';
+import { getActionInputs, setOutputsValidated } from '../shared/validation';
+import {
+  DeployPreviewInputConfig,
+  DeployPreviewInputSchema,
+  DeployPreviewOutputSchema
+} from './schemas.js';
 
 /**
  * Deploy worker using wrangler
@@ -93,9 +97,11 @@ async function run(): Promise<void> {
     }
 
     // Set outputs
-    core.setOutput('deployment-url', deploymentUrl);
-    core.setOutput('deployment-name', workerName);
-    core.setOutput('deployment-success', 'true');
+    setOutputsValidated(DeployPreviewOutputSchema, {
+      deploymentUrl,
+      deploymentName: workerName,
+      deploymentSuccess: 'true'
+    });
 
     info('✅ Deploy preview completed');
   } catch (err) {
@@ -110,9 +116,11 @@ async function run(): Promise<void> {
   }
 }
 
+import { env } from '../shared/lib/env';
+
 export { run };
 
 // Execute if not in test environment
-if (process.env.NODE_ENV !== 'test') {
+if (!env.isTest()) {
   void run();
 }

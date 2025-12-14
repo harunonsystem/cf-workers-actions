@@ -1,4 +1,5 @@
 import * as github from '@actions/github';
+import { env } from './env';
 
 /**
  * Get GitHub token from input or environment variable
@@ -7,7 +8,7 @@ import * as github from '@actions/github';
  * @throws Error if token is not available
  */
 export function getGithubToken(inputToken?: string): string {
-  const token = inputToken || process.env.GITHUB_TOKEN;
+  const token = inputToken || env.githubToken();
   if (!token) {
     throw new Error(
       'GITHUB_TOKEN is required. Please provide it via github-token input or ensure it is available in the environment.'
@@ -24,7 +25,7 @@ export function getGithubToken(inputToken?: string): string {
 export function getBranchName(): string {
   const branchName =
     github.context.payload.pull_request?.head?.ref ||
-    process.env.GITHUB_HEAD_REF ||
+    env.githubHeadRef() ||
     github.context.ref.replace(/^refs\/heads\//, '');
 
   return branchName;

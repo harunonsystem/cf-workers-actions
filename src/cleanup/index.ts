@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import { CloudflareApi } from '../shared/lib/cloudflare-api';
+import { env } from '../shared/lib/env';
 import {
   CLEANUP_ERROR_OUTPUTS,
   getErrorMessage,
@@ -159,6 +160,6 @@ async function run(): Promise<void> {
 export { run };
 
 // Execute if not in test environment
-if (process.env.NODE_ENV !== 'test') {
+if (!env.isTest()) {
   void run();
 }

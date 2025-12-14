@@ -1,9 +1,13 @@
-import * as core from '@actions/core';
 import { prepareDeployment } from '../shared/lib/deployment-utils';
+import { env } from '../shared/lib/env';
 import { handleActionError } from '../shared/lib/error-handler';
 import { info } from '../shared/lib/logger';
-import { getActionInputs } from '../shared/validation';
-import { PreparePreviewDeployInputConfig, PreparePreviewDeployInputSchema } from './schemas.js';
+import { getActionInputs, setOutputsValidated } from '../shared/validation';
+import {
+  PreparePreviewDeployInputConfig,
+  PreparePreviewDeployInputSchema,
+  PreparePreviewDeployOutputSchema
+} from './schemas.js';
 
 async function run(): Promise<void> {
   try {
@@ -29,8 +33,10 @@ async function run(): Promise<void> {
     });
 
     // Set outputs
-    core.setOutput('deployment-name', config.workerName);
-    core.setOutput('deployment-url', config.deploymentUrl);
+    setOutputsValidated(PreparePreviewDeployOutputSchema, {
+      deploymentName: config.workerName,
+      deploymentUrl: config.deploymentUrl
+    });
 
     info('✅ Prepare preview deployment completed');
   } catch (err) {
@@ -44,5 +50,9 @@ async function run(): Promise<void> {
   }
 }
 
-// Self-invoking async function to handle top-level await
-void run();
+export { run };
+
+// Execute if not in test environment
+if (!env.isTest()) {
+  void run();
+}
