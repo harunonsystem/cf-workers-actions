@@ -74,16 +74,6 @@ export async function handleActionError(
 }
 
 /**
- * Standard error outputs for deployment actions
- */
-export const DEPLOY_ERROR_OUTPUTS = {
-  'worker-url': '',
-  'worker-name': 'unknown',
-  success: 'false',
-  'error-message': ''
-};
-
-/**
  * Standard error outputs for cleanup actions
  */
 export const CLEANUP_ERROR_OUTPUTS = {
@@ -91,12 +81,4 @@ export const CLEANUP_ERROR_OUTPUTS = {
   'deleted-count': '0',
   'skipped-workers': '[]',
   'dry-run-results': '[]'
-};
-
-/**
- * Standard error outputs for comment actions
- */
-export const COMMENT_ERROR_OUTPUTS = {
-  'comment-id': '',
-  'comment-url': ''
 };
