@@ -1,0 +1,29 @@
+---
+name: 'Load Secrets'
+description: 'Load Cloudflare secrets from 1Password'
+
+inputs:
+  op-service-account-token:
+    description: '1Password Service Account Token'
+    required: true
+
+outputs:
+  cloudflare-api-token:
+    description: 'Cloudflare API Token'
+    value: ${{ steps.secrets.outputs.CLOUDFLARE_API_TOKEN }}
+  cloudflare-account-id:
+    description: 'Cloudflare Account ID'
+    value: ${{ steps.secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Load secrets from 1Password
+      id: secrets
+      uses: 1password/load-secrets-action@e4feb4d8a7cd938b64370099b1893e05c58c3a84 # v3.0.0
+      with:
+        export-env: false
+      env:
+        OP_SERVICE_ACCOUNT_TOKEN: ${{ inputs.op-service-account-token }}
+        CLOUDFLARE_ACCOUNT_ID: op://harunonpj/CLOUDFLARE_ACCOUNT_ID/harunonpj
+        CLOUDFLARE_API_TOKEN: op://harunonpj/CLOUDFLARE_API_TOKEN/harunonpj
