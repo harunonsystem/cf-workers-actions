@@ -20,7 +20,8 @@ import {
 async function deployWorker(
   environment: string,
   apiToken: string,
-  accountId: string
+  accountId: string,
+  wranglerTomlPath: string
 ): Promise<boolean> {
   try {
     const envVars = {
@@ -29,9 +30,13 @@ async function deployWorker(
       CLOUDFLARE_ACCOUNT_ID: accountId
     };
 
-    await exec.exec('npx', ['wrangler', 'deploy', '-e', environment], {
-      env: envVars
-    });
+    await exec.exec(
+      'npx',
+      ['wrangler', 'deploy', '-e', environment, '--config', wranglerTomlPath],
+      {
+        env: envVars
+      }
+    );
     return true;
   } catch (err) {
     error(`Deployment failed: ${err}`);
@@ -72,7 +77,8 @@ async function run(): Promise<void> {
     deploymentSuccess = await deployWorker(
       inputs.environment,
       inputs.cloudflareApiToken,
-      inputs.cloudflareAccountId
+      inputs.cloudflareAccountId,
+      inputs.wranglerTomlPath
     );
 
     if (!deploymentSuccess) {
