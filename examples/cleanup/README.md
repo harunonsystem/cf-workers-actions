@@ -1,6 +1,6 @@
 # Cleanup Action Examples
 
-Clean up and delete Cloudflare Workers based on specific names.
+Clean up and delete Cloudflare Workers based on specific names or prefix+numbers.
 
 ## Quick Start
 
@@ -18,12 +18,15 @@ worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
 **Production-ready** - Multiple triggers with protection
 
 - ✅ Manual execution via workflow_dispatch
+- ✅ Prefix + Numbers mode for batch deletion
 - ✅ Environment protection with `exclude`
 - ✅ Dry-run preview
 
 ---
 
-### Deletion Mode: Exact Match (`worker-names`)
+## Deletion Modes
+
+### Mode 1: Exact Match (`worker-names`)
 Delete specific workers by name
 
 ```yaml
@@ -32,7 +35,15 @@ worker-names: 'myapp-pr-1,myapp-pr-2'
 
 **Result**: Only `myapp-pr-1` and `myapp-pr-2` are deleted
 
+### Mode 2: Prefix + Numbers (`worker-prefix` + `worker-numbers`)
+Delete workers by combining prefix with numbers
 
+```yaml
+worker-prefix: 'myapp-pr-'
+worker-numbers: '1,2,3'
+```
+
+**Result**: Deletes `myapp-pr-1`, `myapp-pr-2`, `myapp-pr-3`
 
 ---
 
@@ -55,8 +66,10 @@ exclude: 'myapp,myapp-dev,myapp-stg'
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `worker-names` | Specific worker names (comma-separated) | No | - |
-| `exclude` | Workers/patterns to exclude from deletion | No | - |
+| `worker-prefix` | Worker name prefix (e.g., `myapp-pr-`) | No | - |
+| `worker-numbers` | Numbers to delete (e.g., `1,2,3`) | No | - |
+| `worker-names` | Full names (overrides prefix+numbers) | No | - |
+| `exclude` | Workers/patterns to exclude | No | - |
 | `dry-run` | Preview mode (`true` = no deletion) | No | `true` |
 | `cloudflare-api-token` | Cloudflare API Token | Yes | - |
 | `cloudflare-account-id` | Cloudflare Account ID | Yes | - |
