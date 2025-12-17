@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0
+
+### Minor Changes
+
+- 157b1cf: Fix `preview-deploy` to correctly use custom `wrangler.toml` path via `--config` option
+
+  Fix `pr-comment` action to properly return `comment-id` output
+
+  Optimize E2E workflow by sharing build artifacts across jobs
+
+  Refactor shared utilities and improve test coverage
+
 ## 1.0.5
 
 ### Patch Changes
