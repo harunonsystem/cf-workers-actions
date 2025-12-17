@@ -1,9 +1,18 @@
 import * as core from '@actions/core';
 
 /**
- * Context for action error handling
+ * Extract error message from unknown error type
+ * @param error - The error (Error object or unknown)
+ * @returns Error message string
  */
-export interface ActionErrorContext {
+export function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Context for action error handling (internal use only)
+ */
+interface ActionErrorContext {
   /**
    * Title for the error summary (e.g., "Deployment Failed", "Cleanup Failed")
    */
@@ -38,7 +47,7 @@ export async function handleActionError(
   context: ActionErrorContext
 ): Promise<void> {
   // Extract error message
-  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorMessage = getErrorMessage(error);
 
   // Log the error
   const fullMessage = context.context
@@ -65,16 +74,6 @@ export async function handleActionError(
 }
 
 /**
- * Standard error outputs for deployment actions
- */
-export const DEPLOY_ERROR_OUTPUTS = {
-  'worker-url': '',
-  'worker-name': 'unknown',
-  success: 'false',
-  'error-message': ''
-};
-
-/**
  * Standard error outputs for cleanup actions
  */
 export const CLEANUP_ERROR_OUTPUTS = {
@@ -82,12 +81,4 @@ export const CLEANUP_ERROR_OUTPUTS = {
   'deleted-count': '0',
   'skipped-workers': '[]',
   'dry-run-results': '[]'
-};
-
-/**
- * Standard error outputs for comment actions
- */
-export const COMMENT_ERROR_OUTPUTS = {
-  'comment-id': '',
-  'comment-url': ''
 };

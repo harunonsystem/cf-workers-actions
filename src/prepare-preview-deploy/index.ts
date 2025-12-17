@@ -1,182 +1,46 @@
-import * as fs from 'node:fs';
-import * as core from '@actions/core';
-import * as github from '@actions/github';
+import { prepareDeployment } from '../shared/lib/deployment-utils';
+import { env } from '../shared/lib/env';
 import { handleActionError } from '../shared/lib/error-handler';
-import { debug } from '../shared/lib/logger';
-import { mapInputs, parseInputs } from '../shared/validation';
-import { PreparePreviewDeployInputSchema } from './schemas.js';
-
-/**
- * Process template variables in worker name
- */
-function processTemplate(
-  template: string,
-  variables: {
-    prNumber?: string;
-    branchName: string;
-  }
-): string {
-  let result = template;
-
-  // Replace {pr-number} with PR number if available, otherwise fall back to branch-name
-  const prIdentifier = variables.prNumber || variables.branchName;
-  result = result.replace(/\{pr-number\}/g, prIdentifier);
-
-  // Replace {branch-name} with branch name
-  result = result.replace(/\{branch-name\}/g, variables.branchName);
-
-  // Sanitize: remove invalid characters (only alphanumeric and dashes allowed)
-  result = result.replace(/[^a-zA-Z0-9-]/g, '');
-
-  return result;
-}
-
-/**
- * Get sanitized branch name from GitHub ref
- */
-function getSanitizedBranchName(): string {
-  // For pull requests, use GITHUB_HEAD_REF which contains the source branch name
-  // For pushes, use GITHUB_REF and strip the refs/heads/ prefix
-  const headRef = process.env.GITHUB_HEAD_REF;
-  const ref = process.env.GITHUB_REF || '';
-
-  const branchName = headRef || ref.replace(/^refs\/heads\//, '');
-  // Replace / with - and remove invalid characters
-  return branchName.replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
-}
-
-/**
- * Update wrangler.toml with worker name
- */
-async function updateWranglerToml(
-  tomlPath: string,
-  environment: string,
-  workerName: string
-): Promise<void> {
-  if (!fs.existsSync(tomlPath)) {
-    throw new Error(`wrangler.toml not found at ${tomlPath}`);
-  }
-
-  // Create backup
-  const backupPath = `${tomlPath}.bak`;
-  fs.copyFileSync(tomlPath, backupPath);
-  core.info(`✅ Created backup: ${backupPath}`);
-
-  try {
-    const content = fs.readFileSync(tomlPath, 'utf8');
-    const lines = content.split('\n');
-
-    // Find [env.{environment}] section
-    const envSection = `[env.${environment}]`;
-    const envIndex = lines.findIndex((line) => line.trim() === envSection);
-
-    if (envIndex === -1) {
-      throw new Error(
-        `[env.${environment}] section not found in wrangler.toml. Please add it to your wrangler.toml file.`
-      );
-    }
-
-    // Find the next section or end of file
-    let nextSectionIndex = lines.length;
-    for (let i = envIndex + 1; i < lines.length; i++) {
-      if (lines[i].trim().startsWith('[')) {
-        nextSectionIndex = i;
-        break;
-      }
-    }
-
-    // Check if name exists in this section
-    let nameLineIndex = -1;
-    for (let i = envIndex + 1; i < nextSectionIndex; i++) {
-      if (lines[i].trim().startsWith('name =')) {
-        nameLineIndex = i;
-        break;
-      }
-    }
-
-    if (nameLineIndex >= 0) {
-      // Replace existing name
-      lines[nameLineIndex] = `name = "${workerName}"`;
-      core.info('✅ Updated existing name in wrangler.toml');
-    } else {
-      // Add name after section header
-      lines.splice(envIndex + 1, 0, `name = "${workerName}"`);
-      core.info('✅ Added name to wrangler.toml');
-    }
-
-    // Write back
-    fs.writeFileSync(tomlPath, lines.join('\n'));
-
-    // Only show full contents in debug mode
-    const updatedContent = fs.readFileSync(tomlPath, 'utf8');
-    debug(`Updated wrangler.toml:\n${updatedContent}`);
-    if (!process.env.ACTIONS_STEP_DEBUG) {
-      core.info('✅ Updated wrangler.toml for preview environment');
-    }
-  } catch (error) {
-    // Restore backup on failure
-    fs.copyFileSync(backupPath, tomlPath);
-    core.error('❌ Failed to update wrangler.toml, restored from backup');
-    throw error;
-  }
-}
+import { info } from '../shared/lib/logger';
+import { getActionInputs, setOutputsValidated } from '../shared/validation';
+import {
+  PreparePreviewDeployInputConfig,
+  PreparePreviewDeployInputSchema,
+  PreparePreviewDeployOutputSchema
+} from './schemas.js';
 
 async function run(): Promise<void> {
   try {
-    // Map and validate inputs
-    const rawInputs = mapInputs({
-      'worker-name': { required: true },
-      environment: { required: true },
-      domain: { required: false, default: 'workers.dev' },
-      'wrangler-toml-path': { required: false, default: './wrangler.toml' }
-    });
-
-    const inputs = parseInputs(PreparePreviewDeployInputSchema, rawInputs);
+    // Validate inputs
+    const inputs = getActionInputs(
+      PreparePreviewDeployInputSchema,
+      PreparePreviewDeployInputConfig
+    );
     if (!inputs) {
       throw new Error('Input validation failed');
     }
 
-    core.info('🚀 Preparing preview deployment...');
-    core.info(`Worker name template: ${inputs.workerName}`);
-    core.info(`Environment: ${inputs.environment}`);
+    info('🚀 Preparing preview deployment...');
+    info(`Worker name template: ${inputs.workerName}`);
+    info(`Environment: ${inputs.environment}`);
 
-    // Get variables for template processing
-    const branchName = getSanitizedBranchName();
-
-    // Auto-detect PR number
-    const prNumber = github.context.payload.pull_request?.number?.toString();
-
-    core.info(`Branch name (sanitized): ${branchName}`);
-    if (prNumber) {
-      core.info(`PR number: ${prNumber}`);
-    }
-
-    // Process template
-    const workerName = processTemplate(inputs.workerName, {
-      prNumber,
-      branchName
+    // Prepare deployment (shared logic)
+    const config = await prepareDeployment({
+      workerNameTemplate: inputs.workerName,
+      environment: inputs.environment,
+      domain: inputs.domain,
+      wranglerTomlPath: inputs.wranglerTomlPath
     });
 
-    if (!workerName) {
-      throw new Error('Worker name is empty after template processing');
-    }
-
-    core.info(`✅ Generated worker name: ${workerName}`);
-
-    // Generate URL
-    const deploymentUrl = `https://${workerName}.${inputs.domain}`;
-    core.info(`✅ Generated URL: ${deploymentUrl}`);
-
-    // Update wrangler.toml
-    await updateWranglerToml(inputs.wranglerTomlPath, inputs.environment, workerName);
-
     // Set outputs
-    core.setOutput('deployment-name', workerName);
-    core.setOutput('deployment-url', deploymentUrl);
+    setOutputsValidated(PreparePreviewDeployOutputSchema, {
+      deploymentName: config.workerName,
+      deploymentUrl: config.deploymentUrl
+    });
 
-    core.info('✅ Prepare preview deployment completed');
-  } catch (error) {
-    await handleActionError(error, {
+    info('✅ Prepare preview deployment completed');
+  } catch (err) {
+    await handleActionError(err, {
       summaryTitle: 'Prepare Preview Deploy Failed',
       outputs: {
         'deployment-name': '',
@@ -186,5 +50,9 @@ async function run(): Promise<void> {
   }
 }
 
-// Self-invoking async function to handle top-level await
-void run();
+export { run };
+
+// Execute if not in test environment
+if (!env.isTest()) {
+  void run();
+}

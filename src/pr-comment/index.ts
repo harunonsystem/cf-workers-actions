@@ -1,121 +1,45 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { env } from '../shared/lib/env';
 import { handleActionError } from '../shared/lib/error-handler';
-import { mapInputs, parseInputs } from '../shared/validation';
-import { PrCommentInputSchema } from './schemas.js';
-
-/**
- * Create or update PR comment with deployment status
- */
-async function createOrUpdateComment(
-  octokit: ReturnType<typeof github.getOctokit>,
-  prNumber: number,
-  deploymentUrl: string,
-  deploymentName: string,
-  deploymentSuccess: boolean
-): Promise<void> {
-  const { owner, repo } = github.context.repo;
-  const commitSha = github.context.sha.substring(0, 7);
-  // For pull requests, get branch name from pull_request.head.ref
-  // For pushes, use GITHUB_REF or context.ref
-  const branchName =
-    github.context.payload.pull_request?.head?.ref ||
-    process.env.GITHUB_HEAD_REF ||
-    github.context.ref.replace(/^refs\/heads\//, '');
-
-  const statusIcon = deploymentSuccess ? '✅' : '❌';
-  const statusText = deploymentSuccess ? 'Success' : 'Failed';
-
-  const body = `## 🚀 Preview Deployment
-
-**Preview URL:** ${deploymentSuccess ? `[${deploymentUrl}](${deploymentUrl})` : `[Deploy failed - check logs](https://github.com/${owner}/${repo}/actions)`}
-
-**Build Status:** ${statusIcon} ${statusText}
-**Worker Name:** \`${deploymentName}\`
-**Commit:** ${commitSha}
-**Branch:** \`${branchName}\`
-
-${deploymentSuccess ? 'This preview will be automatically updated when you push new commits to this PR.' : 'Please check the workflow logs for details.'}`;
-
-  // Find existing comment
-  const { data: comments } = await octokit.rest.issues.listComments({
-    owner,
-    repo,
-    issue_number: prNumber
-  });
-
-  const existingComment = comments.find(
-    (comment) =>
-      comment.user?.login === 'github-actions[bot]' &&
-      comment.body?.includes('🚀 Preview Deployment')
-  );
-
-  if (existingComment) {
-    // Update existing comment
-    await octokit.rest.issues.updateComment({
-      owner,
-      repo,
-      comment_id: existingComment.id,
-      body
-    });
-    core.info(`✅ Updated existing PR comment #${existingComment.id}`);
-  } else {
-    // Create new comment
-    const { data: newComment } = await octokit.rest.issues.createComment({
-      owner,
-      repo,
-      issue_number: prNumber,
-      body
-    });
-    core.info(`✅ Created new PR comment #${newComment.id}`);
-  }
-}
+import { getGithubToken, getPrNumber } from '../shared/lib/github-utils';
+import { info } from '../shared/lib/logger';
+import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
+import { getActionInputs } from '../shared/validation';
+import { PrCommentInputConfig, PrCommentInputSchema } from './schemas.js';
 
 async function run(): Promise<void> {
   try {
-    // Map and validate inputs
-    const rawInputs = mapInputs({
-      'deployment-url': { required: true },
-      'deployment-success': { required: true },
-      'deployment-name': { required: true },
-      'github-token': { required: false }
-    });
-
-    const inputs = parseInputs(PrCommentInputSchema, {
-      ...rawInputs,
-      deploymentSuccess: rawInputs.deploymentSuccess === 'true'
-    });
+    // Validate inputs
+    const inputs = getActionInputs(PrCommentInputSchema, PrCommentInputConfig, (raw) => ({
+      ...raw,
+      deploymentSuccess: raw.deploymentSuccess === 'true'
+    }));
 
     if (!inputs) {
       throw new Error('Input validation failed');
     }
 
     // Get PR number from context
-    const prNumber = github.context.payload.pull_request?.number;
+    const prNumber = getPrNumber();
     if (!prNumber) {
       throw new Error(
         'Could not get PR number from context. This action must run on pull_request events.'
       );
     }
 
-    core.info('💬 Commenting on PR...');
-    core.info(`PR number: ${prNumber}`);
-    core.info(`Deployment URL: ${inputs.deploymentUrl}`);
-    core.info(`Deployment name: ${inputs.deploymentName}`);
-    core.info(`Deployment success: ${inputs.deploymentSuccess}`);
+    info('💬 Commenting on PR...');
+    info(`PR number: ${prNumber}`);
+    info(`Deployment URL: ${inputs.deploymentUrl}`);
+    info(`Deployment name: ${inputs.deploymentName}`);
+    info(`Deployment success: ${inputs.deploymentSuccess}`);
 
     // Get GitHub token (input takes precedence over environment variable)
-    const token = (rawInputs.githubToken as string) || process.env.GITHUB_TOKEN;
-    if (!token) {
-      throw new Error(
-        'GITHUB_TOKEN is required. Please provide it via github-token input or ensure it is available in the environment.'
-      );
-    }
-
+    const token = getGithubToken(inputs.githubToken);
     const octokit = github.getOctokit(token);
 
     // Create or update comment
-    await createOrUpdateComment(
+    const commentId = await createOrUpdatePreviewComment(
       octokit,
       prNumber,
       inputs.deploymentUrl,
@@ -123,7 +47,10 @@ async function run(): Promise<void> {
       inputs.deploymentSuccess
     );
 
-    core.info('✅ PR comment completed');
+    // Set output
+    core.setOutput('comment-id', commentId.toString());
+
+    info('✅ PR comment completed');
 
     // Set summary
     await core.summary
@@ -136,13 +63,17 @@ async function run(): Promise<void> {
         ['Status', inputs.deploymentSuccess ? 'Success ✅' : 'Failed ❌']
       ])
       .write();
-  } catch (error) {
-    await handleActionError(error, {
+  } catch (err) {
+    await handleActionError(err, {
       summaryTitle: 'PR Comment Failed',
       outputs: {}
     });
   }
 }
 
-// Self-invoking async function to handle top-level await
-void run();
+export { run };
+
+// Execute if not in test environment
+if (!env.isTest()) {
+  void run();
+}

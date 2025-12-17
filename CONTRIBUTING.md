@@ -101,6 +101,21 @@ pnpm run test:watch
 pnpm run test:ui
 ```
 
+### E2E Tests
+
+E2E tests run in GitHub Actions and test the actual deployment workflow against Cloudflare.
+
+**Note:** E2E tests use the maintainer's 1Password vault. If you want to run E2E tests on your fork, update `.github/actions/load-secrets/action.yml` with your own 1Password references:
+
+```yaml
+CLOUDFLARE_ACCOUNT_ID: op://your-vault/your-item/account-id
+CLOUDFLARE_API_TOKEN: op://your-vault/your-item/api-token
+```
+
+And set `OP_SERVICE_ACCOUNT_TOKEN` in your repository secrets.
+
+E2E tests are automatically skipped for PRs from forks (no access to secrets).
+
 ### Writing Tests
 
 - All new functionality should have corresponding tests

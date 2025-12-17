@@ -1,0 +1,8 @@
+# Base name (overwritten by preview-deploy action with worker-name template)
+name = "cf-actions-e2e-base"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[env.preview]
+# This name is also overwritten by preview-deploy action
+name = "cf-actions-e2e-preview"

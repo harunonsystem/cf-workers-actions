@@ -1,16 +1,32 @@
 import { z } from 'zod';
+import { CommonFields } from '../shared/schemas';
+import type { TypedInputConfig } from '../shared/validation';
 
 export const DeployPreviewInputSchema = z.object({
-  cloudflareApiToken: z.string().min(1, 'cloudflare-api-token is required'),
-  cloudflareAccountId: z.string().min(1, 'cloudflare-account-id is required'),
-  workerName: z.string().min(1, 'worker-name is required'),
+  cloudflareApiToken: CommonFields.cloudflareApiToken,
+  cloudflareAccountId: CommonFields.cloudflareAccountId,
+  workerName: CommonFields.workerName,
   environment: z.string().default('preview'),
-  prNumber: z.string().optional(),
-  domain: z.string().min(1, 'domain is required'),
-  wranglerTomlPath: z.string().default('./wrangler.toml')
+  domain: CommonFields.domain,
+  wranglerTomlPath: CommonFields.wranglerTomlPath,
+  githubToken: CommonFields.githubToken
 });
 
 export type DeployPreviewInput = z.infer<typeof DeployPreviewInputSchema>;
+
+/**
+ * Input field configuration for GitHub Actions
+ * Type-checked against DeployPreviewInputSchema
+ */
+export const DeployPreviewInputConfig: TypedInputConfig<typeof DeployPreviewInputSchema> = {
+  'cloudflare-api-token': { required: true },
+  'cloudflare-account-id': { required: true },
+  'worker-name': { required: true },
+  environment: { required: false, default: 'preview' },
+  domain: { required: false, default: 'workers.dev' },
+  'wrangler-toml-path': { required: false, default: './wrangler.toml' },
+  'github-token': { required: false }
+};
 
 export const DeployPreviewOutputSchema = z.object({
   deploymentUrl: z.string(),
