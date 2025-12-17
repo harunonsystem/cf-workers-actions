@@ -3,6 +3,7 @@ import { getBranchName, getCommitSha } from './github-utils';
 
 /**
  * Create or update PR comment with deployment status
+ * @returns The comment ID of the created or updated comment
  */
 export async function createOrUpdatePreviewComment(
   octokit: ReturnType<typeof github.getOctokit>,
@@ -10,7 +11,7 @@ export async function createOrUpdatePreviewComment(
   deploymentUrl: string,
   deploymentName: string,
   deploymentSuccess: boolean
-): Promise<void> {
+): Promise<number> {
   const { owner, repo } = github.context.repo;
   const commitSha = getCommitSha();
   const branchName = getBranchName();
@@ -50,13 +51,15 @@ ${deploymentSuccess ? 'This preview will be automatically updated when you push 
       comment_id: existingComment.id,
       body
     });
+    return existingComment.id;
   } else {
     // Create new comment
-    await octokit.rest.issues.createComment({
+    const { data: newComment } = await octokit.rest.issues.createComment({
       owner,
       repo,
       issue_number: prNumber,
       body
     });
+    return newComment.id;
   }
 }
