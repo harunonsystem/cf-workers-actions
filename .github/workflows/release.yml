@@ -47,5 +47,6 @@ jobs:
           gh release create "$TAG" \
             --draft \
             --title "$TAG" \
-            --generate-notes
+            --generate-notes \
+            --target ${{ github.sha }}
 
