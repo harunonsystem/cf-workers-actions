@@ -11,6 +11,7 @@
 - **Test watch**: `pnpm test:watch`
 - **Format**: `pnpm format` (Biome)
 - **Full check**: `pnpm check` (typecheck + lint + test)
+- **E2E tests**: Run via GitHub Actions (`.github/workflows/e2e.yml`)
 
 ## Code Style
 
