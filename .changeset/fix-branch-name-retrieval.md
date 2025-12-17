@@ -1,7 +1,11 @@
 ---
-'cf-workers-actions': patch
+'cf-workers-actions': minor
 ---
 
-fix: use GITHUB_HEAD_REF for PR branch name retrieval
+Fix `preview-deploy` to correctly use custom `wrangler.toml` path via `--config` option
 
-Fixed an issue where pull request branch names were incorrectly displayed as GitHub's internal reference (refs/pull/*/merge) instead of the actual source branch name. Now correctly uses GITHUB_HEAD_REF environment variable for PRs and github.context.payload.pull_request.head.ref in PR comments.
+Fix `pr-comment` action to properly return `comment-id` output
+
+Optimize E2E workflow by sharing build artifacts across jobs
+
+Refactor shared utilities and improve test coverage
