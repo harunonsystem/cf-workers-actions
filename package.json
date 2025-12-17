@@ -4,7 +4,7 @@
   "private": true,
   "description": "GitHub Actions for Cloudflare Workers deployment, PR commenting, and cleanup",
   "main": "index.js",
-  "packageManager": "pnpm@10.17.1",
+  "packageManager": "pnpm@10.26.0",
   "scripts": {
     "build": "pnpm run clean && node scripts/build.mjs",
     "build:watch": "tsc --watch",
