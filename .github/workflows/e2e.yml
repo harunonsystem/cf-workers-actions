@@ -18,21 +18,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  e2e-preview-deploy:
-    name: E2E - Preview Deploy
+  # Shared build job - builds once and shares via artifacts
+  build-actions:
+    name: Build Actions
     runs-on: ubuntu-latest
-    # Only run if secrets are available (not from forks)
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
 
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-
-      - name: Load secrets
-        id: load-secrets
-        uses: ./.github/actions/load-secrets
-        with:
-          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
 
       - name: Setup
         uses: ./.github/actions/setup
@@ -41,6 +35,34 @@ jobs:
 
       - name: Build actions
         run: pnpm build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  e2e-preview-deploy:
+    name: E2E - Preview Deploy
+    runs-on: ubuntu-latest
+    needs: build-actions
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: dist
+          path: dist/
+
+      - name: Load secrets
+        id: load-secrets
+        uses: ./.github/actions/load-secrets
+        with:
+          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
 
       # Test prepare-preview-deploy action
       - name: Prepare Preview Deploy
@@ -100,26 +122,24 @@ jobs:
   e2e-cleanup:
     name: E2E - Cleanup
     runs-on: ubuntu-latest
-    needs: e2e-preview-deploy
-    if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+    needs: [build-actions, e2e-preview-deploy]
+    if: always()
 
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: dist
+          path: dist/
 
       - name: Load secrets
         id: load-secrets
         uses: ./.github/actions/load-secrets
         with:
           op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          node-version: '20'
-
-      - name: Build actions
-        run: pnpm build
 
       # Test cleanup action (dry-run first)
       - name: Cleanup (dry-run)
@@ -172,19 +192,18 @@ jobs:
   e2e-pr-comment:
     name: E2E - PR Comment
     runs-on: ubuntu-latest
+    needs: build-actions
     if: github.event_name == 'pull_request'
 
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
-      - name: Setup
-        uses: ./.github/actions/setup
+      - name: Download dist artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          node-version: '20'
-
-      - name: Build actions
-        run: pnpm build
+          name: dist
+          path: dist/
 
       # Test pr-comment action
       - name: PR Comment
