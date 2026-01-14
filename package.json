@@ -4,6 +4,10 @@
   "private": true,
   "description": "GitHub Actions for Cloudflare Workers deployment, PR commenting, and cleanup",
   "main": "index.js",
+  "engines": {
+    "node": ">=24.13.0",
+    "pnpm": ">=10.26.0"
+  },
   "packageManager": "pnpm@10.26.0",
   "scripts": {
     "build": "pnpm run clean && node scripts/build.mjs",
