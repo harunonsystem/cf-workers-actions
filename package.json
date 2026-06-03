@@ -45,10 +45,10 @@
     "@changesets/cli": "^2.29.8",
     "@types/node": "^25.0.1",
     "@vercel/ncc": "^0.38.4",
-    "@vitest/coverage-v8": "^4.0.15",
-    "@vitest/ui": "^4.0.15",
+    "@vitest/coverage-v8": "^4.1.0",
+    "@vitest/ui": "^4.1.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.15",
-    "yaml": "^2.8.2"
+    "vitest": "^4.1.0",
+    "yaml": "^2.8.3"
   }
 }
