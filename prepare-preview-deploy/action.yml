@@ -9,7 +9,7 @@ branding:
 
 inputs:
   worker-name:
-    description: 'Worker name template. Supports: {pr-number}, {branch-name}. Example: myapp-pr-{pr-number}'
+    description: 'Worker name template. Supports: {branch-name}, {commit-hash}. Example: myapp-{branch-name}'
     required: true
 
   environment:

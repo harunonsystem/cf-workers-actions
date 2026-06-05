@@ -1,4 +1,4 @@
-import { getPrNumber, getSanitizedBranchName } from './github-utils';
+import { getCommitSha, getPrNumber, getSanitizedBranchName } from './github-utils';
 import { info } from './logger';
 import { processTemplate } from './template-utils';
 import { updateWranglerToml } from './wrangler-utils';
@@ -11,6 +11,7 @@ interface DeploymentConfig {
   deploymentUrl: string;
   prNumber: number | undefined;
   branchName: string;
+  commitHash: string;
 }
 
 /**
@@ -35,16 +36,18 @@ export async function prepareDeployment(
   // Get variables for template processing
   const branchName = getSanitizedBranchName();
   const prNumber = getPrNumber();
+  const commitHash = getCommitSha();
 
   info(`Branch name (sanitized): ${branchName}`);
+  info(`Commit hash: ${commitHash}`);
   if (prNumber) {
     info(`PR number: ${prNumber}`);
   }
 
   // Process template
   const workerName = processTemplate(workerNameTemplate, {
-    prNumber: prNumber?.toString(),
-    branchName
+    branchName,
+    commitHash
   });
 
   if (!workerName) {
@@ -64,6 +67,7 @@ export async function prepareDeployment(
     workerName,
     deploymentUrl,
     prNumber,
-    branchName
+    branchName,
+    commitHash
   };
 }

@@ -67,7 +67,7 @@ jobs:
         id: prepare
         uses: ./prepare-preview-deploy
         with:
-          worker-name: 'cf-actions-e2e-pr-{pr-number}'
+          worker-name: 'cf-actions-e2e-{branch-name}'
           environment: preview
           domain: harunonsystem.workers.dev
           wrangler-toml-path: ./e2e/wrangler.toml
@@ -88,7 +88,7 @@ jobs:
         with:
           cloudflare-api-token: ${{ steps.load-secrets.outputs.cloudflare-api-token }}
           cloudflare-account-id: ${{ steps.load-secrets.outputs.cloudflare-account-id }}
-          worker-name: 'cf-actions-e2e-pr-{pr-number}'
+          worker-name: 'cf-actions-e2e-{branch-name}'
           environment: preview
           domain: harunonsystem.workers.dev
           wrangler-toml-path: ./e2e/wrangler.toml

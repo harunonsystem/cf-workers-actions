@@ -5,24 +5,20 @@ import { describe, expect, test } from 'vitest';
  */
 
 interface TemplateVariables {
-  prNumber?: string;
   branchName: string;
+  commitHash: string;
 }
 
 /**
  * Template processing function
- * - {pr-number}: PR number, fallback to branch name if not available
  * - {branch-name}: Branch name
+ * - {commit-hash}: Commit hash
  */
 function processTemplate(template: string, variables: TemplateVariables): string {
   let result = template;
 
-  // Replace {pr-number} with PR number if available, otherwise fall back to branch-name
-  const prIdentifier = variables.prNumber || variables.branchName;
-  result = result.replace(/\{pr-number\}/g, prIdentifier);
-
-  // Replace {branch-name} with branch name
   result = result.replace(/\{branch-name\}/g, variables.branchName);
+  result = result.replace(/\{commit-hash\}/g, variables.commitHash);
 
   // Sanitize: remove invalid characters (only alphanumeric and dashes allowed)
   result = result.replace(/[^a-zA-Z0-9-]/g, '');
@@ -48,47 +44,12 @@ function generateDeploymentUrl(workerName: string, domain: string): string {
 
 describe('prepare-preview-deploy', () => {
   describe('processTemplate', () => {
-    describe('PR number pattern', () => {
-      test('should use PR number when available', () => {
-        const template = 'myapp-pr-{pr-number}';
-        const variables = {
-          prNumber: '123',
-          branchName: 'feature-login'
-        };
-
-        const result = processTemplate(template, variables);
-
-        expect(result).toBe('myapp-pr-123');
-      });
-
-      test('should fall back to branch name when PR number is not available', () => {
-        const template = 'myapp-pr-{pr-number}';
-        const variables = {
-          branchName: 'feature-login'
-        };
-
-        const result = processTemplate(template, variables);
-
-        expect(result).toBe('myapp-pr-feature-login');
-      });
-
-      test('should sanitize branch name when used as fallback', () => {
-        const template = 'myapp-pr-{pr-number}';
-        const variables = {
-          branchName: 'feature/awesome-feature'
-        };
-
-        const result = processTemplate(template, variables);
-
-        expect(result).toBe('myapp-pr-featureawesome-feature');
-      });
-    });
-
     describe('Branch name pattern', () => {
       test('should use branch name when available', () => {
         const template = 'myapp-{branch-name}';
         const variables = {
-          branchName: 'develop'
+          branchName: 'develop',
+          commitHash: 'abc1234'
         };
 
         const result = processTemplate(template, variables);
@@ -99,8 +60,8 @@ describe('prepare-preview-deploy', () => {
       test('should use branch name value for {branch-name}', () => {
         const template = 'myapp-{branch-name}';
         const variables = {
-          prNumber: '456',
-          branchName: 'refs-pull-456-merge'
+          branchName: 'refs-pull-456-merge',
+          commitHash: 'abc1234'
         };
 
         const result = processTemplate(template, variables);
@@ -109,11 +70,38 @@ describe('prepare-preview-deploy', () => {
       });
     });
 
+    describe('Commit hash pattern', () => {
+      test('should use commit hash when available', () => {
+        const template = 'myapp-{commit-hash}';
+        const variables = {
+          branchName: 'feature-login',
+          commitHash: 'deadbeef'
+        };
+
+        const result = processTemplate(template, variables);
+
+        expect(result).toBe('myapp-deadbeef');
+      });
+
+      test('should handle multiple commit hash occurrences', () => {
+        const template = '{commit-hash}-{commit-hash}';
+        const variables = {
+          branchName: 'main',
+          commitHash: 'abc1234'
+        };
+
+        const result = processTemplate(template, variables);
+
+        expect(result).toBe('abc1234-abc1234');
+      });
+    });
+
     describe('Static worker names', () => {
       test('should handle static names without variables', () => {
         const template = 'myapp-release-v1-2-3';
         const variables = {
-          branchName: 'release/v1.2.3'
+          branchName: 'release/v1.2.3',
+          commitHash: 'abc1234'
         };
 
         const result = processTemplate(template, variables);
@@ -124,7 +112,8 @@ describe('prepare-preview-deploy', () => {
       test('should still sanitize static names', () => {
         const template = 'my_app@prod';
         const variables = {
-          branchName: 'main'
+          branchName: 'main',
+          commitHash: 'abc1234'
         };
 
         const result = processTemplate(template, variables);
@@ -135,34 +124,34 @@ describe('prepare-preview-deploy', () => {
 
     describe('Sanitization', () => {
       test('should remove invalid characters', () => {
-        const template = 'app_{pr-number}_test';
+        const template = 'app_{commit-hash}_test';
         const variables = {
-          prNumber: '123',
-          branchName: 'main'
+          branchName: 'main',
+          commitHash: '1234567'
         };
 
         const result = processTemplate(template, variables);
 
-        expect(result).toBe('app123test');
+        expect(result).toBe('app1234567test');
       });
 
       test('should preserve hyphens', () => {
-        const template = 'my-app-pr-{pr-number}';
+        const template = 'my-app-{commit-hash}';
         const variables = {
-          prNumber: '789',
-          branchName: 'main'
+          branchName: 'main',
+          commitHash: '789abcd'
         };
 
         const result = processTemplate(template, variables);
 
-        expect(result).toBe('my-app-pr-789');
+        expect(result).toBe('my-app-789abcd');
       });
 
       test('should remove dots', () => {
-        const template = 'app.v{pr-number}';
+        const template = 'app.v{commit-hash}';
         const variables = {
-          prNumber: '1',
-          branchName: 'main'
+          branchName: 'main',
+          commitHash: '1'
         };
 
         const result = processTemplate(template, variables);
@@ -173,7 +162,8 @@ describe('prepare-preview-deploy', () => {
       test('should remove slashes from branch names', () => {
         const template = 'deploy-{branch-name}';
         const variables = {
-          branchName: 'feature/auth'
+          branchName: 'feature/auth',
+          commitHash: 'abc1234'
         };
 
         const result = processTemplate(template, variables);
@@ -186,7 +176,8 @@ describe('prepare-preview-deploy', () => {
       test('should handle empty template', () => {
         const template = '';
         const variables = {
-          branchName: 'main'
+          branchName: 'main',
+          commitHash: 'abc1234'
         };
 
         const result = processTemplate(template, variables);
@@ -194,28 +185,16 @@ describe('prepare-preview-deploy', () => {
         expect(result).toBe('');
       });
 
-      test('should handle multiple variable occurrences', () => {
-        const template = '{pr-number}-{pr-number}';
-        const variables = {
-          prNumber: '42',
-          branchName: 'main'
-        };
-
-        const result = processTemplate(template, variables);
-
-        expect(result).toBe('42-42');
-      });
-
       test('should handle mixed variables', () => {
-        const template = 'app-{pr-number}-{branch-name}';
+        const template = 'app-{branch-name}-{commit-hash}';
         const variables = {
-          prNumber: '100',
-          branchName: 'hotfix-auth'
+          branchName: 'hotfix-auth',
+          commitHash: 'cafe123'
         };
 
         const result = processTemplate(template, variables);
 
-        expect(result).toBe('app-100-hotfix-auth');
+        expect(result).toBe('app-hotfix-auth-cafe123');
       });
     });
   });
@@ -246,13 +225,13 @@ describe('prepare-preview-deploy', () => {
 
   describe('generateDeploymentUrl', () => {
     test('should generate URL with workers.dev domain', () => {
-      const url = generateDeploymentUrl('myapp-pr-123', 'workers.dev');
-      expect(url).toBe('https://myapp-pr-123.workers.dev');
+      const url = generateDeploymentUrl('myapp-renovate-patch', 'workers.dev');
+      expect(url).toBe('https://myapp-renovate-patch.workers.dev');
     });
 
     test('should generate URL with custom domain', () => {
-      const url = generateDeploymentUrl('myapp-pr-456', 'preview.example.com');
-      expect(url).toBe('https://myapp-pr-456.preview.example.com');
+      const url = generateDeploymentUrl('myapp-abc1234', 'preview.example.com');
+      expect(url).toBe('https://myapp-abc1234.preview.example.com');
     });
 
     test('should generate URL with subdomain', () => {
@@ -266,31 +245,32 @@ describe('prepare-preview-deploy', () => {
     });
 
     test('should handle complex worker names', () => {
-      const url = generateDeploymentUrl('my-awesome-app-pr-9999', 'custom.dev');
-      expect(url).toBe('https://my-awesome-app-pr-9999.custom.dev');
+      const url = generateDeploymentUrl('my-awesome-app-feature-login', 'custom.dev');
+      expect(url).toBe('https://my-awesome-app-feature-login.custom.dev');
     });
   });
 
   describe('Integration scenarios', () => {
-    test('PR-based preview with custom domain', () => {
-      const template = 'myapp-pr-{pr-number}';
+    test('Branch-based preview with custom domain', () => {
+      const template = 'myapp-{branch-name}';
       const variables = {
-        prNumber: '123',
-        branchName: 'feature-test'
+        branchName: 'feature-test',
+        commitHash: 'abc1234'
       };
       const domain = 'preview.example.com';
 
       const workerName = processTemplate(template, variables);
       const url = generateDeploymentUrl(workerName, domain);
 
-      expect(workerName).toBe('myapp-pr-123');
-      expect(url).toBe('https://myapp-pr-123.preview.example.com');
+      expect(workerName).toBe('myapp-feature-test');
+      expect(url).toBe('https://myapp-feature-test.preview.example.com');
     });
 
     test('Branch-based deployment with workers.dev', () => {
       const template = 'myapp-{branch-name}';
       const variables = {
-        branchName: sanitizeBranchName('feature/awesome-ui')
+        branchName: sanitizeBranchName('feature/awesome-ui'),
+        commitHash: 'abc1234'
       };
       const domain = 'workers.dev';
 
@@ -301,10 +281,26 @@ describe('prepare-preview-deploy', () => {
       expect(url).toBe('https://myapp-feature-awesome-ui.workers.dev');
     });
 
+    test('Commit hash deployment with workers.dev', () => {
+      const template = 'myapp-{commit-hash}';
+      const variables = {
+        branchName: 'hotfix/critical-bug',
+        commitHash: 'deadbeef'
+      };
+      const domain = 'workers.dev';
+
+      const workerName = processTemplate(template, variables);
+      const url = generateDeploymentUrl(workerName, domain);
+
+      expect(workerName).toBe('myapp-deadbeef');
+      expect(url).toBe('https://myapp-deadbeef.workers.dev');
+    });
+
     test('Release deployment with version', () => {
       const template = 'myapp-release-v1-2-3';
       const variables = {
-        branchName: 'release/v1.2.3'
+        branchName: 'release/v1.2.3',
+        commitHash: 'abc1234'
       };
       const domain = 'workers.dev';
 
@@ -313,20 +309,6 @@ describe('prepare-preview-deploy', () => {
 
       expect(workerName).toBe('myapp-release-v1-2-3');
       expect(url).toBe('https://myapp-release-v1-2-3.workers.dev');
-    });
-
-    test('Fallback from PR to branch when PR number missing', () => {
-      const template = 'myapp-pr-{pr-number}';
-      const ref = 'refs/heads/hotfix/critical-bug';
-      const branchName = sanitizeBranchName(ref.replace(/^refs\/heads\//, ''));
-      const variables = { branchName };
-      const domain = 'workers.dev';
-
-      const workerName = processTemplate(template, variables);
-      const url = generateDeploymentUrl(workerName, domain);
-
-      expect(workerName).toBe('myapp-pr-hotfix-critical-bug');
-      expect(url).toBe('https://myapp-pr-hotfix-critical-bug.workers.dev');
     });
   });
 });
