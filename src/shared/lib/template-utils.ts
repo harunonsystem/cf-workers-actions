@@ -2,6 +2,9 @@
  * Template processing utilities for worker names
  */
 
+/** Cloudflare preview worker script name limit */
+export const MAX_WORKER_NAME_LENGTH = 54;
+
 interface TemplateVariables {
   branchName: string;
   commitHash: string;
@@ -22,6 +25,11 @@ export function processTemplate(template: string, variables: TemplateVariables):
 
   // Sanitize: remove invalid characters (only alphanumeric and dashes allowed)
   result = result.replace(/[^a-zA-Z0-9-]/g, '');
+
+  // Truncate to Cloudflare preview worker name limit
+  if (result.length > MAX_WORKER_NAME_LENGTH) {
+    result = result.slice(0, MAX_WORKER_NAME_LENGTH);
+  }
 
   return result;
 }

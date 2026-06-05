@@ -98,8 +98,16 @@ describe('template-utils', () => {
         ['app_{commit-hash}_test', { branchName: 'main', commitHash: '1234567' }, 'app1234567test'],
         ['my-app-{commit-hash}', { branchName: 'main', commitHash: '789abcd' }, 'my-app-789abcd'],
         ['app.v{commit-hash}', { branchName: 'main', commitHash: '1' }, 'appv1'],
-        ['deploy-{branch-name}', { branchName: 'feature/auth', commitHash: 'abc1234' }, 'deploy-featureauth'],
-        ['app_{branch-name}', { branchName: 'feature_test', commitHash: 'abc1234' }, 'appfeaturetest'],
+        [
+          'deploy-{branch-name}',
+          { branchName: 'feature/auth', commitHash: 'abc1234' },
+          'deploy-featureauth'
+        ],
+        [
+          'app_{branch-name}',
+          { branchName: 'feature_test', commitHash: 'abc1234' },
+          'appfeaturetest'
+        ],
         ['app@{commit-hash}#test', { branchName: 'main', commitHash: '1234567' }, 'app1234567test']
       ])('should sanitize "%s" to "%s"', (template, variables, expected) => {
         expect(processTemplate(template, variables)).toBe(expected);
@@ -153,6 +161,34 @@ describe('template-utils', () => {
         const result = processTemplate(template, variables);
 
         expect(result).toBe('preview-featureUI-123fix-bugv2');
+      });
+    });
+
+    describe('Length limit', () => {
+      test('should truncate worker names longer than 54 characters', () => {
+        const template = 'cf-actions-e2e-{branch-name}';
+        const variables = {
+          branchName: 'feature-using-branchname-instead-of-prnumber',
+          commitHash: 'abc1234'
+        };
+
+        const result = processTemplate(template, variables);
+
+        expect(result).toBe('cf-actions-e2e-feature-using-branchname-instead-of-prn');
+        expect(result.length).toBe(54);
+      });
+
+      test('should not truncate worker names within 54 characters', () => {
+        const template = 'myapp-{branch-name}';
+        const variables = {
+          branchName: 'short-branch',
+          commitHash: 'abc1234'
+        };
+
+        const result = processTemplate(template, variables);
+
+        expect(result).toBe('myapp-short-branch');
+        expect(result.length).toBeLessThanOrEqual(54);
       });
     });
 
