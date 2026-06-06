@@ -160,7 +160,7 @@ describe('template-utils', () => {
 
         const result = processTemplate(template, variables);
 
-        expect(result).toBe('preview-featureUI-123fix-bugv2');
+        expect(result).toBe('preview-featureui-123fix-bugv2');
       });
     });
 
@@ -227,6 +227,19 @@ describe('template-utils', () => {
         const result = processTemplate(template, variables);
 
         expect(result).toBe('afkkeyboard-deadbeef');
+      });
+
+      test('should lowercase worker name to satisfy Cloudflare naming rules', () => {
+        const template = 'mini-games-app-{branch-name}';
+        const variables = {
+          branchName: 'claude-markdown-preview-tool-0CKAi',
+          commitHash: 'abc1234'
+        };
+
+        const result = processTemplate(template, variables);
+
+        expect(result).toBe('mini-games-app-claude-markdown-preview-tool-0ckai');
+        expect(result).toBe(result.toLowerCase());
       });
     });
   });

@@ -26,6 +26,9 @@ export function processTemplate(template: string, variables: TemplateVariables):
   // Sanitize: remove invalid characters (only alphanumeric and dashes allowed)
   result = result.replace(/[^a-zA-Z0-9-]/g, '');
 
+  // Lowercase: Cloudflare worker names must be lowercase
+  result = result.toLowerCase();
+
   // Truncate to Cloudflare preview worker name limit
   if (result.length > MAX_WORKER_NAME_LENGTH) {
     result = result.slice(0, MAX_WORKER_NAME_LENGTH);
