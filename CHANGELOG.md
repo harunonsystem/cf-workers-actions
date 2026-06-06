@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2
+
+### Patch Changes
+
+- 4164fe9: chore: rebuild dist for v1.2.1 release to ensure lowercase worker name logic is included in the published action bundle
+
 ## 1.2.1
 
 ### Patch Changes
