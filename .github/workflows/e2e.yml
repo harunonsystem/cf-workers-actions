@@ -2,8 +2,6 @@
 name: E2E Tests
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -69,7 +67,7 @@ jobs:
         id: prepare
         uses: ./prepare-preview-deploy
         with:
-          worker-name: 'cf-actions-e2e-pr-{pr-number}'
+          worker-name: 'cf-actions-e2e-{branch-name}'
           environment: preview
           domain: harunonsystem.workers.dev
           wrangler-toml-path: ./e2e/wrangler.toml
@@ -90,7 +88,7 @@ jobs:
         with:
           cloudflare-api-token: ${{ steps.load-secrets.outputs.cloudflare-api-token }}
           cloudflare-account-id: ${{ steps.load-secrets.outputs.cloudflare-account-id }}
-          worker-name: 'cf-actions-e2e-pr-{pr-number}'
+          worker-name: 'cf-actions-e2e-{branch-name}'
           environment: preview
           domain: harunonsystem.workers.dev
           wrangler-toml-path: ./e2e/wrangler.toml
@@ -141,6 +139,16 @@ jobs:
         with:
           op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
 
+      # Resolve worker name for cleanup (matches preview deploy naming)
+      - name: Prepare worker name for cleanup
+        id: prepare-cleanup
+        uses: ./prepare-preview-deploy
+        with:
+          worker-name: 'cf-actions-e2e-{branch-name}'
+          environment: preview
+          domain: harunonsystem.workers.dev
+          wrangler-toml-path: ./e2e/wrangler.toml
+
       # Test cleanup action (dry-run first)
       - name: Cleanup (dry-run)
         id: cleanup-dry
@@ -148,7 +156,7 @@ jobs:
         with:
           cloudflare-api-token: ${{ steps.load-secrets.outputs.cloudflare-api-token }}
           cloudflare-account-id: ${{ steps.load-secrets.outputs.cloudflare-account-id }}
-          worker-names: 'cf-actions-e2e-pr-${{ github.event.pull_request.number || 0 }}'
+          worker-names: ${{ steps.prepare-cleanup.outputs.deployment-name }}
           dry-run: 'true'
 
       - name: Verify dry-run outputs
@@ -168,7 +176,7 @@ jobs:
         with:
           cloudflare-api-token: ${{ steps.load-secrets.outputs.cloudflare-api-token }}
           cloudflare-account-id: ${{ steps.load-secrets.outputs.cloudflare-account-id }}
-          worker-names: 'cf-actions-e2e-pr-${{ github.event.pull_request.number || 0 }}'
+          worker-names: ${{ steps.prepare-cleanup.outputs.deployment-name }}
           dry-run: 'false'
 
       - name: Verify cleanup outputs
@@ -179,7 +187,7 @@ jobs:
       - name: Verify worker is deleted
         run: |
           sleep 5
-          WORKER_NAME="cf-actions-e2e-pr-${{ github.event.pull_request.number || 0 }}"
+          WORKER_NAME="${{ steps.prepare-cleanup.outputs.deployment-name }}"
           URL="https://${WORKER_NAME}.harunonsystem.workers.dev"
           HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" "$URL" || echo "000")
           echo "HTTP Code: $HTTP_CODE"

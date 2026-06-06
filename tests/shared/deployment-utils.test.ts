@@ -11,7 +11,8 @@ vi.mock('@actions/core', () => ({
 
 vi.mock('../../src/shared/lib/github-utils', () => ({
   getSanitizedBranchName: vi.fn(),
-  getPrNumber: vi.fn()
+  getPrNumber: vi.fn(),
+  getCommitSha: vi.fn()
 }));
 
 vi.mock('../../src/shared/lib/template-utils', () => ({
@@ -23,7 +24,11 @@ vi.mock('../../src/shared/lib/wrangler-utils', () => ({
 }));
 
 import * as core from '@actions/core';
-import { getPrNumber, getSanitizedBranchName } from '../../src/shared/lib/github-utils';
+import {
+  getCommitSha,
+  getPrNumber,
+  getSanitizedBranchName
+} from '../../src/shared/lib/github-utils';
 import { processTemplate } from '../../src/shared/lib/template-utils';
 import { updateWranglerToml } from '../../src/shared/lib/wrangler-utils';
 
@@ -43,6 +48,7 @@ describe('deployment-utils', () => {
     test('should prepare deployment with branch name template', async () => {
       vi.mocked(getSanitizedBranchName).mockReturnValue('feature-branch');
       vi.mocked(getPrNumber).mockReturnValue(undefined);
+      vi.mocked(getCommitSha).mockReturnValue('abc1234');
       vi.mocked(processTemplate).mockReturnValue('preview-feature-branch');
       vi.mocked(updateWranglerToml).mockResolvedValue();
 
@@ -52,12 +58,13 @@ describe('deployment-utils', () => {
         workerName: 'preview-feature-branch',
         deploymentUrl: 'https://preview-feature-branch.workers.dev',
         prNumber: undefined,
-        branchName: 'feature-branch'
+        branchName: 'feature-branch',
+        commitHash: 'abc1234'
       });
 
       expect(processTemplate).toHaveBeenCalledWith('preview-{branch-name}', {
-        prNumber: undefined,
-        branchName: 'feature-branch'
+        branchName: 'feature-branch',
+        commitHash: 'abc1234'
       });
 
       expect(updateWranglerToml).toHaveBeenCalledWith(
@@ -67,57 +74,62 @@ describe('deployment-utils', () => {
       );
     });
 
-    test('should prepare deployment with PR number template', async () => {
+    test('should prepare deployment with commit hash template', async () => {
       vi.mocked(getSanitizedBranchName).mockReturnValue('feature-branch');
       vi.mocked(getPrNumber).mockReturnValue(123);
-      vi.mocked(processTemplate).mockReturnValue('preview-pr-123');
+      vi.mocked(getCommitSha).mockReturnValue('deadbeef');
+      vi.mocked(processTemplate).mockReturnValue('preview-deadbeef');
       vi.mocked(updateWranglerToml).mockResolvedValue();
 
       const options: PrepareDeploymentOptions = {
         ...defaultOptions,
-        workerNameTemplate: 'preview-pr-{pr-number}'
+        workerNameTemplate: 'preview-{commit-hash}'
       };
 
       const result = await prepareDeployment(options);
 
       expect(result).toEqual({
-        workerName: 'preview-pr-123',
-        deploymentUrl: 'https://preview-pr-123.workers.dev',
+        workerName: 'preview-deadbeef',
+        deploymentUrl: 'https://preview-deadbeef.workers.dev',
         prNumber: 123,
-        branchName: 'feature-branch'
+        branchName: 'feature-branch',
+        commitHash: 'deadbeef'
       });
 
-      expect(processTemplate).toHaveBeenCalledWith('preview-pr-{pr-number}', {
-        prNumber: '123',
-        branchName: 'feature-branch'
+      expect(processTemplate).toHaveBeenCalledWith('preview-{commit-hash}', {
+        branchName: 'feature-branch',
+        commitHash: 'deadbeef'
       });
     });
 
     test('should prepare deployment with combined template', async () => {
       vi.mocked(getSanitizedBranchName).mockReturnValue('my-feature');
       vi.mocked(getPrNumber).mockReturnValue(456);
-      vi.mocked(processTemplate).mockReturnValue('app-456-my-feature');
+      vi.mocked(getCommitSha).mockReturnValue('cafe123');
+      vi.mocked(processTemplate).mockReturnValue('app-my-feature-cafe123');
       vi.mocked(updateWranglerToml).mockResolvedValue();
 
       const options: PrepareDeploymentOptions = {
         ...defaultOptions,
-        workerNameTemplate: 'app-{pr-number}-{branch-name}',
+        workerNameTemplate: 'app-{branch-name}-{commit-hash}',
         domain: 'example.com'
       };
 
       const result = await prepareDeployment(options);
 
       expect(result).toEqual({
-        workerName: 'app-456-my-feature',
-        deploymentUrl: 'https://app-456-my-feature.example.com',
+        workerName: 'app-my-feature-cafe123',
+        deploymentUrl: 'https://app-my-feature-cafe123.example.com',
         prNumber: 456,
-        branchName: 'my-feature'
+        branchName: 'my-feature',
+        commitHash: 'cafe123'
       });
     });
 
     test('should throw error when worker name is empty', async () => {
       vi.mocked(getSanitizedBranchName).mockReturnValue('');
       vi.mocked(getPrNumber).mockReturnValue(undefined);
+      vi.mocked(getCommitSha).mockReturnValue('abc1234');
       vi.mocked(processTemplate).mockReturnValue('');
 
       await expect(prepareDeployment(defaultOptions)).rejects.toThrow(
@@ -125,33 +137,38 @@ describe('deployment-utils', () => {
       );
     });
 
-    test('should log branch name and PR number', async () => {
+    test('should log branch name, commit hash and PR number', async () => {
       vi.mocked(getSanitizedBranchName).mockReturnValue('test-branch');
       vi.mocked(getPrNumber).mockReturnValue(789);
+      vi.mocked(getCommitSha).mockReturnValue('1234567');
       vi.mocked(processTemplate).mockReturnValue('preview-test-branch');
       vi.mocked(updateWranglerToml).mockResolvedValue();
 
       await prepareDeployment(defaultOptions);
 
       expect(core.info).toHaveBeenCalledWith('Branch name (sanitized): test-branch');
+      expect(core.info).toHaveBeenCalledWith('Commit hash: 1234567');
       expect(core.info).toHaveBeenCalledWith('PR number: 789');
     });
 
     test('should not log PR number when undefined', async () => {
       vi.mocked(getSanitizedBranchName).mockReturnValue('test-branch');
       vi.mocked(getPrNumber).mockReturnValue(undefined);
+      vi.mocked(getCommitSha).mockReturnValue('1234567');
       vi.mocked(processTemplate).mockReturnValue('preview-test-branch');
       vi.mocked(updateWranglerToml).mockResolvedValue();
 
       await prepareDeployment(defaultOptions);
 
       expect(core.info).toHaveBeenCalledWith('Branch name (sanitized): test-branch');
+      expect(core.info).toHaveBeenCalledWith('Commit hash: 1234567');
       expect(core.info).not.toHaveBeenCalledWith(expect.stringContaining('PR number:'));
     });
 
     test('should log generated worker name and URL', async () => {
       vi.mocked(getSanitizedBranchName).mockReturnValue('main');
       vi.mocked(getPrNumber).mockReturnValue(undefined);
+      vi.mocked(getCommitSha).mockReturnValue('abcdef0');
       vi.mocked(processTemplate).mockReturnValue('preview-main');
       vi.mocked(updateWranglerToml).mockResolvedValue();
 
@@ -164,6 +181,7 @@ describe('deployment-utils', () => {
     test('should call updateWranglerToml with correct parameters', async () => {
       vi.mocked(getSanitizedBranchName).mockReturnValue('develop');
       vi.mocked(getPrNumber).mockReturnValue(undefined);
+      vi.mocked(getCommitSha).mockReturnValue('fedcba9');
       vi.mocked(processTemplate).mockReturnValue('worker-develop');
       vi.mocked(updateWranglerToml).mockResolvedValue();
 
@@ -186,6 +204,7 @@ describe('deployment-utils', () => {
     test('should propagate updateWranglerToml errors', async () => {
       vi.mocked(getSanitizedBranchName).mockReturnValue('test');
       vi.mocked(getPrNumber).mockReturnValue(undefined);
+      vi.mocked(getCommitSha).mockReturnValue('abc1234');
       vi.mocked(processTemplate).mockReturnValue('preview-test');
       vi.mocked(updateWranglerToml).mockRejectedValue(new Error('File not found'));
 
@@ -195,6 +214,7 @@ describe('deployment-utils', () => {
     test('should handle template without placeholders', async () => {
       vi.mocked(getSanitizedBranchName).mockReturnValue('ignored');
       vi.mocked(getPrNumber).mockReturnValue(999);
+      vi.mocked(getCommitSha).mockReturnValue('abc1234');
       vi.mocked(processTemplate).mockReturnValue('static-worker-name');
       vi.mocked(updateWranglerToml).mockResolvedValue();
 

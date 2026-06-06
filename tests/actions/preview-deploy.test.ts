@@ -123,12 +123,11 @@ name = "my-app-preview"
     await run();
   };
 
-  test('should generate correct deployment URL with subdomain and post comment', async () => {
+  test('should generate correct deployment URL with commit hash and post comment', async () => {
     inputs = {
-      'worker-name': 'myapp-pr-{pr-number}',
+      'worker-name': 'myapp-{commit-hash}',
       environment: 'preview',
       domain: 'username.workers.dev',
-      'pr-number': '123',
       'cloudflare-api-token': 'fake-token',
       'cloudflare-account-id': 'fake-account-id'
     };
@@ -136,12 +135,13 @@ name = "my-app-preview"
     // Mock PR environment variables
     process.env.GITHUB_HEAD_REF = 'feature/awesome-feature';
     process.env.GITHUB_REF = 'refs/pull/123/merge';
+    process.env.GITHUB_SHA = 'deadbeef1234567890abcdef1234567890abcdef';
 
     // Mock github context with payload
     Object.defineProperty(github, 'context', {
       value: {
         repo: { owner: 'test-owner', repo: 'test-repo' },
-        sha: 'test-sha',
+        sha: 'deadbeef1234567890abcdef1234567890abcdef',
         ref: 'refs/pull/123/merge',
         payload: {
           pull_request: {
@@ -159,8 +159,8 @@ name = "my-app-preview"
     await runAction();
 
     // Verify outputs
-    expect(outputs['deployment-url']).toBe('https://myapp-pr-123.username.workers.dev');
-    expect(outputs['deployment-name']).toBe('myapp-pr-123');
+    expect(outputs['deployment-url']).toBe('https://myapp-deadbee.username.workers.dev');
+    expect(outputs['deployment-name']).toBe('myapp-deadbee');
     expect(outputs['deployment-success']).toBe('true');
     expect(failed).toBe(false);
 
@@ -175,12 +175,12 @@ name = "my-app-preview"
         owner: 'test-owner',
         repo: 'test-repo',
         issue_number: 123,
-        body: expect.stringContaining('https://myapp-pr-123.username.workers.dev')
+        body: expect.stringContaining('https://myapp-deadbee.username.workers.dev')
       })
     );
   });
 
-  test('should fallback to branch name if pr-number is missing (no comment posted)', async () => {
+  test('should deploy with branch name on direct push (no comment posted)', async () => {
     inputs = {
       'worker-name': 'myapp-{branch-name}',
       environment: 'preview',
