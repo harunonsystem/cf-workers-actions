@@ -24,7 +24,11 @@ vi.mock('../../src/shared/lib/wrangler-utils', () => ({
 }));
 
 import * as core from '@actions/core';
-import { getCommitSha, getPrNumber, getSanitizedBranchName } from '../../src/shared/lib/github-utils';
+import {
+  getCommitSha,
+  getPrNumber,
+  getSanitizedBranchName
+} from '../../src/shared/lib/github-utils';
 import { processTemplate } from '../../src/shared/lib/template-utils';
 import { updateWranglerToml } from '../../src/shared/lib/wrangler-utils';
 
