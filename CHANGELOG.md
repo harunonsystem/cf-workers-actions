@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+### Patch Changes
+
+- 18a42eb: Worker names are now lowercased in addition to sanitization to satisfy Cloudflare's `name` validation rule (alphanumeric lowercase with dashes only).
+
 ## 1.2.0
 
 ### Minor Changes
