@@ -179,9 +179,10 @@ describe('CloudflareApi', () => {
     test('should return false for non-existent worker', async () => {
       (fetch as any).mockResolvedValueOnce({
         ok: false,
+        status: 404,
         statusText: 'Not Found',
         json: vi.fn().mockResolvedValueOnce({
-          errors: [{ message: 'not found' }]
+          errors: [{ message: 'This Worker does not exist on your account.' }]
         })
       });
 
@@ -210,9 +211,10 @@ describe('CloudflareApi', () => {
     test('should return null for 404 error', async () => {
       (fetch as any).mockResolvedValueOnce({
         ok: false,
+        status: 404,
         statusText: 'Not Found',
         json: vi.fn().mockResolvedValueOnce({
-          errors: [{ message: 'not found' }]
+          errors: [{ message: 'This Worker does not exist on your account.' }]
         })
       });
 

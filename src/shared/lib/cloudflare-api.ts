@@ -3,6 +3,20 @@ import { getErrorMessage } from './error-handler';
 import { debug, error, info, warning } from './logger';
 
 /**
+ * Error thrown by CloudflareApi.makeRequest, carrying the HTTP status code
+ * so callers can branch on status (e.g. 404 = not found) instead of message text.
+ */
+export class CloudflareApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'CloudflareApiError';
+    this.status = status;
+  }
+}
+
+/**
  * Cloudflare API client wrapper
  */
 export class CloudflareApi {
@@ -47,12 +61,12 @@ export class CloudflareApi {
 
       if (!response.ok) {
         const errorMessage = result.errors?.[0]?.message || response.statusText;
-        throw new Error(`Cloudflare API error: ${errorMessage}`);
+        throw new CloudflareApiError(`Cloudflare API error: ${errorMessage}`, response.status);
       }
 
       if (!result.success) {
         const errorMessage = result.errors?.[0]?.message || 'Unknown error';
-        throw new Error(`Cloudflare API error: ${errorMessage}`);
+        throw new CloudflareApiError(`Cloudflare API error: ${errorMessage}`, response.status);
       }
 
       return result;
@@ -83,12 +97,11 @@ export class CloudflareApi {
         `/accounts/${this.accountId}/workers/scripts/${workerName}`
       );
       return response.result || null;
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
+    } catch (err) {
+      if (err instanceof CloudflareApiError && err.status === 404) {
         return null;
       }
-      throw error;
+      throw err;
     }
   }
 
@@ -101,8 +114,7 @@ export class CloudflareApi {
       info(`Successfully deleted worker: ${workerName}`);
       return true;
     } catch (err) {
-      const errorMessage = getErrorMessage(err);
-      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
+      if (err instanceof CloudflareApiError && err.status === 404) {
         warning(`Worker not found: ${workerName}`);
         return false;
       }

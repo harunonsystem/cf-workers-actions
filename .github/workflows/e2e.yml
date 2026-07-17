@@ -29,7 +29,7 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Build actions
         run: pnpm build

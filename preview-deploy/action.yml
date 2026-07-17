@@ -50,5 +50,5 @@ outputs:
     description: 'Whether the deployment was successful'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: '../dist/preview-deploy/index.js'

@@ -52,5 +52,5 @@ outputs:
     description: 'Workers that would be deleted in dry run mode (JSON array)'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: '../dist/cleanup/index.js'

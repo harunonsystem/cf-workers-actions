@@ -30,5 +30,5 @@ outputs:
     description: 'ID of the created or updated comment'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: '../dist/pr-comment/index.js'

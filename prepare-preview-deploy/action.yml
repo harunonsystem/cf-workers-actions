@@ -33,5 +33,5 @@ outputs:
     description: 'Generated worker name'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: '../dist/prepare-preview-deploy/index.js'
