@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { CloudflareApi } from '../shared/lib/cloudflare-api';
+import { CloudflareApi, CloudflareApiError } from '../shared/lib/cloudflare-api';
 import { env } from '../shared/lib/env';
 import {
   CLEANUP_ERROR_OUTPUTS,
@@ -38,10 +38,10 @@ async function deleteWithRetry(
     const errorMessage = getErrorMessage(err);
 
     // Handle rate limiting with exponential backoff
-    if (
-      (errorMessage.includes('rate limit') || errorMessage.includes('429')) &&
-      retryCount < MAX_RETRIES
-    ) {
+    const isRateLimited =
+      (err instanceof CloudflareApiError && err.status === 429) ||
+      errorMessage.includes('rate limit');
+    if (isRateLimited && retryCount < MAX_RETRIES) {
       const backoffDelay: number = 2 ** retryCount * 30000; // 30s, 60s, 120s
       warning(
         `⏰ Rate limit hit for ${workerName}, waiting ${backoffDelay / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})...`

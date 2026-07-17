@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execSync } from 'node:child_process';
-import { rmSync } from 'node:fs';
+import { readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
 const actions = ['cleanup', 'pr-comment', 'prepare-preview-deploy', 'preview-deploy'];
@@ -18,21 +18,11 @@ for (const action of actions) {
       cwd: process.cwd()
     });
 
-    // Clean up unnecessary .d.ts files and directories
+    // GitHub Actions run only the bundled index.js — drop every other ncc byproduct (.d.ts, chunk files, subdirectories)
     const distPath = join(process.cwd(), outDir);
-
-    // Remove all subdirectories (they only contain .d.ts files)
-    for (const item of [
-      'cleanup',
-      'pr-comment',
-      'prepare-preview-deploy',
-      'preview-deploy',
-      'shared'
-    ]) {
-      try {
+    for (const item of readdirSync(distPath)) {
+      if (item !== 'index.js') {
         rmSync(join(distPath, item), { recursive: true, force: true });
-      } catch {
-        // Directory might not exist, ignore
       }
     }
   } catch (_error) {
@@ -40,5 +30,8 @@ for (const action of actions) {
     process.exit(1);
   }
 }
+
+// ncc also emits declaration trees outside the per-action output dirs
+rmSync(join(process.cwd(), 'dist/shared'), { recursive: true, force: true });
 
 console.log('\n✅ All actions built successfully!');

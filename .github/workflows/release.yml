@@ -23,7 +23,7 @@ jobs:
       - name: Run CI checks
         uses: ./.github/actions/ci-checks
         with:
-          node-version: 20.x
+          node-version: 24.x
 
       - name: Create Release Pull Request or Publish
         id: changesets
