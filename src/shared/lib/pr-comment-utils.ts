@@ -38,7 +38,7 @@ ${deploymentSuccess ? 'This preview will be automatically updated when you push 
   });
 
   const existingComment = comments.find(
-    (comment) =>
+    (comment: (typeof comments)[number]) =>
       comment.user?.login === 'github-actions[bot]' &&
       comment.body?.includes('🚀 Preview Deployment')
   );
