@@ -104,18 +104,22 @@ jobs:
             exit 1
           fi
 
-      # Verify the worker is actually running
+      # Verify the worker is actually running.
+      # Workers.dev routing is eventually consistent (minutes when the same
+      # name was recently deleted), so poll instead of a fixed sleep.
       - name: Verify worker is accessible
         run: |
-          sleep 5
-          RESPONSE=$(curl -sf "${{ steps.deploy.outputs.deployment-url }}" || echo "FAILED")
-          echo "Response: $RESPONSE"
-          if [ "$RESPONSE" = "FAILED" ]; then
-            echo "ERROR: Worker is not accessible"
-            exit 1
-          fi
-          # Verify it's our worker
-          echo "$RESPONSE" | jq -e '.status == "ok"'
+          for i in $(seq 1 18); do
+            RESPONSE=$(curl -sf "${{ steps.deploy.outputs.deployment-url }}" || echo "FAILED")
+            if [ "$RESPONSE" != "FAILED" ] && echo "$RESPONSE" | jq -e '.status == "ok"' > /dev/null; then
+              echo "Worker accessible after $(( (i - 1) * 10 ))s: $RESPONSE"
+              exit 0
+            fi
+            echo "Attempt $i/18: not accessible yet, retrying in 10s..."
+            sleep 10
+          done
+          echo "ERROR: Worker is not accessible after 180s"
+          exit 1
 
   e2e-cleanup:
     name: E2E - Cleanup
@@ -184,18 +188,23 @@ jobs:
           echo "Deleted workers: ${{ steps.cleanup.outputs.deleted-workers }}"
           echo "Deleted count: ${{ steps.cleanup.outputs.deleted-count }}"
 
+      # Deletion also propagates with a delay, so poll until the worker
+      # stops serving 200 instead of checking once after a fixed sleep.
       - name: Verify worker is deleted
         run: |
-          sleep 5
           WORKER_NAME="${{ steps.prepare-cleanup.outputs.deployment-name }}"
           URL="https://${WORKER_NAME}.harunonsystem.workers.dev"
-          HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" "$URL" || echo "000")
-          echo "HTTP Code: $HTTP_CODE"
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "ERROR: Worker still accessible after cleanup"
-            exit 1
-          fi
-          echo "Worker successfully deleted (HTTP $HTTP_CODE)"
+          for i in $(seq 1 18); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "000")
+            if [ "$HTTP_CODE" != "200" ]; then
+              echo "Worker successfully deleted after $(( (i - 1) * 10 ))s (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+            echo "Attempt $i/18: still serving 200, retrying in 10s..."
+            sleep 10
+          done
+          echo "ERROR: Worker still accessible after 180s"
+          exit 1
 
   e2e-pr-comment:
     name: E2E - PR Comment
