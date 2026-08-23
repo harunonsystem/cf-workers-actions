@@ -78,3 +78,5 @@ actionlint
 
 # Note: dist/ contains compiled JS for GitHub Actions - keep it committed
 
+plans/
+CONTEXT.md
