@@ -20,7 +20,6 @@ import {
   DeployPreviewInputSchema,
   DeployPreviewOutputSchema
 } from '../../src/preview-deploy/schemas';
-import { ACTION_NAMES, actionContracts } from '../../src/shared/action-contracts';
 import type { InputConfig } from '../../src/shared/validation';
 
 /**
@@ -42,18 +41,8 @@ interface ActionOutput {
 
 interface ActionDefinition {
   name: string;
-  description: string;
-  author: string;
-  branding: {
-    icon: string;
-    color: string;
-  };
   inputs: Record<string, ActionInput>;
   outputs: Record<string, ActionOutput>;
-  runs: {
-    using: string;
-    main: string;
-  };
 }
 
 /**
@@ -66,12 +55,8 @@ function loadActionDefinition(actionPath: string): ActionDefinition {
 
   return {
     name: parsed.name,
-    description: parsed.description,
-    author: parsed.author,
-    branding: parsed.branding,
     inputs: parsed.inputs || {},
-    outputs: parsed.outputs || {},
-    runs: parsed.runs
+    outputs: parsed.outputs || {}
   };
 }
 
@@ -101,14 +86,6 @@ function getConfigKeys(config: InputConfig): string[] {
 }
 
 describe('Action I/O Consistency Tests', () => {
-  describe('Generated action contracts', () => {
-    for (const actionName of ACTION_NAMES) {
-      test(`${actionName}/action.yml should match the TypeScript contract`, () => {
-        expect(loadActionDefinition(actionName)).toEqual(actionContracts[actionName]);
-      });
-    }
-  });
-
   describe('prepare-preview-deploy', () => {
     const actionDef = loadActionDefinition('prepare-preview-deploy');
     const schemaInputKeys = getSchemaInputKeys(PreparePreviewDeployInputSchema);

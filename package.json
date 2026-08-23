@@ -10,7 +10,7 @@
   },
   "packageManager": "pnpm@11.22.0",
   "scripts": {
-    "build": "pnpm run generate:actions && pnpm run clean:dist && node scripts/build.mjs",
+    "build": "pnpm run clean:dist && node scripts/build.mjs",
     "build:watch": "tsc --watch",
     "clean:dist": "rm -rf dist",
     "test": "vitest run",
@@ -22,7 +22,6 @@
     "check": "pnpm run typecheck && pnpm run lint && pnpm test",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "generate:actions": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/generate-action-manifests.mjs",
     "prepare": "pnpm run build",
     "version": "pnpm run build && git add dist/"
   },
