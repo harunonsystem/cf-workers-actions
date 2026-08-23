@@ -26,6 +26,7 @@ jobs:
         uses: ./.github/actions/ci-checks
         with:
           node-version: ${{ matrix.node-version }}
+          run-quality: ${{ matrix.node-version == '24.x' }}
 
   validate-actions:
     runs-on: ubuntu-latest
