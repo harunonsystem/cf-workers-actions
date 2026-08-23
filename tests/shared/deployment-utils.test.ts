@@ -211,22 +211,23 @@ describe('deployment-utils', () => {
       await expect(prepareDeployment(defaultOptions)).rejects.toThrow('File not found');
     });
 
-    test('should handle template without placeholders', async () => {
+    test('should preserve a worker name resolved from the pull request number', async () => {
       vi.mocked(getSanitizedBranchName).mockReturnValue('ignored');
       vi.mocked(getPrNumber).mockReturnValue(999);
       vi.mocked(getCommitSha).mockReturnValue('abc1234');
-      vi.mocked(processTemplate).mockReturnValue('static-worker-name');
+      vi.mocked(processTemplate).mockReturnValue('myapp-pr-999');
       vi.mocked(updateWranglerToml).mockResolvedValue();
 
       const options: PrepareDeploymentOptions = {
         ...defaultOptions,
-        workerNameTemplate: 'static-worker-name'
+        workerNameTemplate: 'myapp-pr-999'
       };
 
       const result = await prepareDeployment(options);
 
-      expect(result.workerName).toBe('static-worker-name');
-      expect(result.deploymentUrl).toBe('https://static-worker-name.workers.dev');
+      expect(result.workerName).toBe('myapp-pr-999');
+      expect(result.deploymentUrl).toBe('https://myapp-pr-999.workers.dev');
+      expect(result.prNumber).toBe(999);
     });
   });
 });

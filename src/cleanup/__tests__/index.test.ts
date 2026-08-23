@@ -56,7 +56,7 @@ describe('cleanup action integration', () => {
     );
   });
 
-  test('should process specific worker names', async () => {
+  test('should process full worker names resolved from pull request numbers', async () => {
     const mockCf = {
       deleteWorker: vi.fn()
     };
@@ -66,7 +66,7 @@ describe('cleanup action integration', () => {
     });
 
     coreMocks.getInput.mockImplementation((name: string) => {
-      if (name === 'worker-names') return 'worker1,worker2';
+      if (name === 'worker-names') return 'myapp-pr-123,myapp-pr-456';
       if (name === 'cloudflare-api-token') return 'token';
       if (name === 'cloudflare-account-id') return 'account';
       if (name === 'dry-run') return 'true';
@@ -75,14 +75,16 @@ describe('cleanup action integration', () => {
 
     await run();
 
-    expect(coreMocks.info).toHaveBeenCalledWith('Processing specific workers: worker1, worker2');
+    expect(coreMocks.info).toHaveBeenCalledWith(
+      'Processing specific workers: myapp-pr-123, myapp-pr-456'
+    );
     expect(coreMocks.setOutput).toHaveBeenCalledWith(
       'dry-run-results',
-      JSON.stringify(['worker1', 'worker2'])
+      JSON.stringify(['myapp-pr-123', 'myapp-pr-456'])
     );
   });
 
-  test('should expand worker numbers with prefix', async () => {
+  test('should expand pull request numbers with a worker prefix', async () => {
     const mockCf = {
       deleteWorker: vi.fn()
     };
@@ -92,7 +94,7 @@ describe('cleanup action integration', () => {
     });
 
     coreMocks.getInput.mockImplementation((name: string) => {
-      if (name === 'worker-numbers') return '1,2,3';
+      if (name === 'worker-numbers') return '123,456';
       if (name === 'worker-prefix') return 'myapp-pr-';
       if (name === 'cloudflare-api-token') return 'token';
       if (name === 'cloudflare-account-id') return 'account';
@@ -103,11 +105,11 @@ describe('cleanup action integration', () => {
     await run();
 
     expect(coreMocks.info).toHaveBeenCalledWith(
-      'Processing specific workers: myapp-pr-1, myapp-pr-2, myapp-pr-3'
+      'Processing specific workers: myapp-pr-123, myapp-pr-456'
     );
     expect(coreMocks.setOutput).toHaveBeenCalledWith(
       'dry-run-results',
-      JSON.stringify(['myapp-pr-1', 'myapp-pr-2', 'myapp-pr-3'])
+      JSON.stringify(['myapp-pr-123', 'myapp-pr-456'])
     );
   });
 
