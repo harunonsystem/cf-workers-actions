@@ -67,7 +67,7 @@ jobs:
         id: prepare
         uses: ./prepare-preview-deploy
         with:
-          worker-name: 'cf-actions-e2e-{branch-name}'
+          worker-name: 'cf-actions-e2e-pr-${{ github.event.pull_request.number || github.run_id }}'
           environment: preview
           domain: harunonsystem.workers.dev
           wrangler-toml-path: ./e2e/wrangler.toml
@@ -88,7 +88,7 @@ jobs:
         with:
           cloudflare-api-token: ${{ steps.load-secrets.outputs.cloudflare-api-token }}
           cloudflare-account-id: ${{ steps.load-secrets.outputs.cloudflare-account-id }}
-          worker-name: 'cf-actions-e2e-{branch-name}'
+          worker-name: 'cf-actions-e2e-pr-${{ github.event.pull_request.number || github.run_id }}'
           environment: preview
           domain: harunonsystem.workers.dev
           wrangler-toml-path: ./e2e/wrangler.toml
@@ -148,7 +148,7 @@ jobs:
         id: prepare-cleanup
         uses: ./prepare-preview-deploy
         with:
-          worker-name: 'cf-actions-e2e-{branch-name}'
+          worker-name: 'cf-actions-e2e-pr-${{ github.event.pull_request.number || github.run_id }}'
           environment: preview
           domain: harunonsystem.workers.dev
           wrangler-toml-path: ./e2e/wrangler.toml
