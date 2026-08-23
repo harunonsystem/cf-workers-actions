@@ -8,7 +8,7 @@ Thank you for your interest in contributing to cf-workers-actions! This document
 
 - mise
 - Node.js 22.12.0 or higher (managed by mise)
-- pnpm 10.26.0 or higher (managed by mise)
+- pnpm 11.22.0 or higher (managed by mise)
 - Git
 
 ### Setup
