@@ -34,7 +34,7 @@ describe('cleanup action integration', () => {
     vi.clearAllMocks();
   });
 
-  test('should require either worker-pattern or worker-names', async () => {
+  test('should require worker names or a worker prefix with numbers', async () => {
     const mockCf = {
       deleteWorker: vi.fn()
     };

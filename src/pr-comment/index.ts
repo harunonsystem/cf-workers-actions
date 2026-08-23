@@ -39,13 +39,12 @@ async function run(): Promise<void> {
     const octokit = github.getOctokit(token);
 
     // Create or update comment
-    const commentId = await createOrUpdatePreviewComment(
-      octokit,
+    const commentId = await createOrUpdatePreviewComment(octokit, {
       prNumber,
-      inputs.deploymentUrl,
-      inputs.deploymentName,
-      inputs.deploymentSuccess
-    );
+      deploymentUrl: inputs.deploymentUrl,
+      deploymentName: inputs.deploymentName,
+      deploymentSuccess: inputs.deploymentSuccess
+    });
 
     // Set output
     core.setOutput('comment-id', commentId.toString());

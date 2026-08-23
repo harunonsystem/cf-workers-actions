@@ -1,34 +1,27 @@
 ---
-name: 'PR Comment'
-description: 'Create or update PR comment with Cloudflare Workers deployment status'
-author: 'harunonsystem'
-
+name: PR Comment
+description: Create or update PR comment with Cloudflare Workers deployment status
+author: harunonsystem
 branding:
-  icon: 'message-square'
-  color: 'green'
-
+  icon: message-square
+  color: green
 inputs:
   deployment-url:
-    description: 'Deployment URL to display in the comment'
+    description: Deployment URL to display in the comment
     required: true
-
   deployment-success:
-    description: 'Whether the deployment was successful (true/false)'
+    description: Whether the deployment was successful (true/false)
     required: true
-
   deployment-name:
-    description: 'Name of the deployed worker'
+    description: Name of the deployed worker
     required: true
-
   github-token:
-    description: 'GitHub token for commenting on PRs'
+    description: GitHub token for commenting on PRs
     required: false
     default: ${{ github.token }}
-
 outputs:
   comment-id:
-    description: 'ID of the created or updated comment'
-
+    description: ID of the created or updated comment
 runs:
-  using: 'node24'
-  main: '../dist/pr-comment/index.js'
+  using: node24
+  main: ../dist/pr-comment/index.js

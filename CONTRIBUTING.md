@@ -6,8 +6,9 @@ Thank you for your interest in contributing to cf-workers-actions! This document
 
 ### Prerequisites
 
-- Node.js 20 or higher
-- pnpm
+- mise
+- Node.js 22.12.0 or higher (managed by mise)
+- pnpm 11.22.0 or higher (managed by mise)
 - Git
 
 ### Setup
@@ -20,9 +21,10 @@ Thank you for your interest in contributing to cf-workers-actions! This document
    cd cf-workers-actions
    ```
 
-3. Install dependencies:
+3. Install the pinned toolchain and dependencies:
 
    ```bash
+   mise install
    pnpm install
    ```
 
@@ -162,7 +164,7 @@ The build process:
 
 1. Compiles TypeScript files from `src/` to JavaScript in `dist/`
 2. Generates type declaration files (`.d.ts`)
-3. Optimizes for Node.js 20 runtime
+3. Supports Node.js 22.12+ during development and CI; published Actions run on the `node24` runtime
 4. Maintains source maps for debugging
 
 ### TypeScript Best Practices

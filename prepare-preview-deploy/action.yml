@@ -1,37 +1,32 @@
 ---
-name: 'Prepare Preview Deploy'
-description: 'Prepare Cloudflare Workers deployment by generating worker names from templates and updating wrangler.toml configuration'
-author: 'harunonsystem'
-
+name: Prepare Preview Deploy
+description: Prepare Cloudflare Workers deployment by generating worker names
+  from templates and updating wrangler.toml configuration
+author: harunonsystem
 branding:
-  icon: 'git-pull-request'
-  color: 'blue'
-
+  icon: git-pull-request
+  color: blue
 inputs:
   worker-name:
-    description: 'Worker name template. Supports: {branch-name}, {commit-hash}. Example: myapp-{branch-name}'
+    description: "Worker name template. Supports: {branch-name}, {commit-hash}.
+      Example: myapp-{branch-name}"
     required: true
-
   environment:
-    description: 'Deployment environment for wrangler.toml [env.xxx] section'
+    description: Deployment environment for wrangler.toml [env.xxx] section
     required: true
-
   domain:
-    description: 'Custom domain for deployment URL (e.g., "username.workers.dev" or "example.com")'
+    description: Custom domain for deployment URL (e.g., "username.workers.dev" or
+      "example.com")
     required: true
-
   wrangler-toml-path:
-    description: 'Path to wrangler.toml file'
+    description: Path to wrangler.toml file
     required: false
-    default: './wrangler.toml'
-
+    default: ./wrangler.toml
 outputs:
   deployment-url:
-    description: 'Generated deployment URL'
-
+    description: Generated deployment URL
   deployment-name:
-    description: 'Generated worker name'
-
+    description: Generated worker name
 runs:
-  using: 'node24'
-  main: '../dist/prepare-preview-deploy/index.js'
+  using: node24
+  main: ../dist/prepare-preview-deploy/index.js

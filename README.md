@@ -18,7 +18,7 @@ These four actions are provided by this repository:
 - **prepare-preview-deploy** — Generate worker name/URL and update `wrangler.toml` for a preview env. Docs: [prepare-preview-deploy/](prepare-preview-deploy/)
 - **preview-deploy** — All-in-one prepare + deploy + PR comment. Docs: [preview-deploy/](preview-deploy/)
 - **pr-comment** — Post or update a PR comment with deployment info. Docs: [pr-comment/](pr-comment/)
-- **cleanup** — Delete preview workers by pattern or explicit names. Docs: [cleanup/](cleanup/)
+- **cleanup** — Delete preview workers by explicit names or prefix plus numbers. Docs: [cleanup/](cleanup/)
 
 External action used in examples:
 - **cloudflare/wrangler-action** — Official Cloudflare action for deploying with Wrangler.
@@ -86,7 +86,7 @@ flowchart TD
 ```yaml
 - uses: harunonsystem/cf-workers-actions/cleanup@v1
   with:
-    worker-pattern: 'myapp-pr-${{ github.event.pull_request.number }}'
+    worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     dry-run: 'true'

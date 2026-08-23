@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { CloudflareApi } from '../cloudflare-api';
+import { CloudflareApi, CloudflareApiError, isCloudflareRateLimitError } from '../cloudflare-api';
 
 function mockFetchResponse(status: number, body: Record<string, unknown>) {
   (global.fetch as any).mockResolvedValueOnce({
@@ -16,6 +16,17 @@ describe('CloudflareApi', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     cf = new CloudflareApi('token', 'account');
+  });
+
+  describe('isCloudflareRateLimitError', () => {
+    test('should identify a 429 Cloudflare error', () => {
+      expect(isCloudflareRateLimitError(new CloudflareApiError('rate limited', 429))).toBe(true);
+    });
+
+    test('should reject other errors', () => {
+      expect(isCloudflareRateLimitError(new CloudflareApiError('server error', 500))).toBe(false);
+      expect(isCloudflareRateLimitError(new Error('rate limited'))).toBe(false);
+    });
   });
 
   describe('deleteWorker', () => {
