@@ -6,6 +6,10 @@ inputs:
   node-version:
     description: 'Node.js version to use'
     required: true
+  run-quality:
+    description: 'Run build, type checking, and linting in addition to tests'
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -16,14 +20,17 @@ runs:
         node-version: ${{ inputs.node-version }}
 
     - name: Build TypeScript
+      if: inputs.run-quality == 'true'
       run: pnpm run build
       shell: bash
 
     - name: Run type checking
+      if: inputs.run-quality == 'true'
       run: pnpm run typecheck
       shell: bash
 
     - name: Run linter (Biome)
+      if: inputs.run-quality == 'true'
       run: pnpm run lint
       shell: bash
 
