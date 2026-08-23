@@ -11,7 +11,9 @@ runs:
   using: 'composite'
   steps:
     - name: Install pnpm
-      uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+      uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1
+      with:
+        install: false
 
     - name: Use Node.js ${{ inputs.node-version }}
       uses: actions/setup-node@0a44ba7841725637a19e28fa30b79a866c81b0a6 # v4.0.4
@@ -22,4 +24,3 @@ runs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
       shell: bash
-

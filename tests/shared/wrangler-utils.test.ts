@@ -11,11 +11,77 @@ vi.mock('../../src/shared/lib/logger', () => ({
 }));
 
 import * as logger from '../../src/shared/lib/logger';
-import { updateWranglerToml } from '../../src/shared/lib/wrangler-utils';
+import { updateWranglerToml, updateWranglerTomlContent } from '../../src/shared/lib/wrangler-utils';
 
 describe('wrangler-utils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('updateWranglerTomlContent', () => {
+    test('should update only the requested environment section', () => {
+      const content = `name = "my-app"
+
+[env.preview]
+name = "old-preview"
+
+[env.production]
+name = "production"`;
+
+      expect(updateWranglerTomlContent(content, 'preview', 'new-preview')).toBe(`name = "my-app"
+
+[env.preview]
+name = "new-preview"
+
+[env.production]
+name = "production"`);
+    });
+
+    test('should add a name immediately after an environment section header', () => {
+      const content = `[env.preview]
+vars = { ENV = "preview" }`;
+
+      expect(updateWranglerTomlContent(content, 'preview', 'new-preview')).toBe(
+        `[env.preview]
+name = "new-preview"
+vars = { ENV = "preview" }`
+      );
+    });
+
+    test('should reject a missing environment section', () => {
+      expect(() => updateWranglerTomlContent('name = "my-app"', 'preview', 'worker')).toThrow(
+        '[env.preview] section not found'
+      );
+    });
+
+    test('should use an injected file system at the save boundary', async () => {
+      const files = new Map([
+        [
+          './wrangler.toml',
+          `[env.preview]
+name = "old-preview"`
+        ]
+      ]);
+      const fileSystem = {
+        existsSync: vi.fn((path: string) => files.has(path)),
+        copyFileSync: vi.fn((source: string, destination: string) => {
+          files.set(destination, files.get(source) ?? '');
+        }),
+        readFileSync: vi.fn((path: string) => files.get(path) ?? ''),
+        writeFileSync: vi.fn((path: string, content: string) => {
+          files.set(path, content);
+        })
+      };
+
+      await updateWranglerToml('./wrangler.toml', 'preview', 'new-preview', fileSystem);
+
+      expect(files.get('./wrangler.toml')).toContain('name = "new-preview"');
+      expect(files.get('./wrangler.toml.bak')).toContain('name = "old-preview"');
+      expect(fileSystem.copyFileSync).toHaveBeenCalledWith(
+        './wrangler.toml',
+        './wrangler.toml.bak'
+      );
+    });
   });
 
   describe('updateWranglerToml', () => {

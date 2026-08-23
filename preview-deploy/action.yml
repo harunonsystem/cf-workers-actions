@@ -1,54 +1,44 @@
 ---
-name: 'Deploy Preview'
-description: 'Deploy Cloudflare Workers with automatic PR commenting'
-author: 'harunonsystem'
-
+name: Deploy Preview
+description: Deploy Cloudflare Workers with automatic PR commenting
+author: harunonsystem
 branding:
-  icon: 'upload-cloud'
-  color: 'purple'
-
+  icon: upload-cloud
+  color: purple
 inputs:
   cloudflare-api-token:
-    description: 'Cloudflare API Token'
+    description: Cloudflare API Token
     required: true
-
   cloudflare-account-id:
-    description: 'Cloudflare Account ID'
+    description: Cloudflare Account ID
     required: true
-
   worker-name:
-    description: 'Worker name template. Supports: {branch-name}, {commit-hash}. Example: myapp-{branch-name}'
+    description: "Worker name template. Supports: {branch-name}, {commit-hash}.
+      Example: myapp-{branch-name}"
     required: true
-
   environment:
-    description: 'Environment to use in wrangler.toml (e.g., "preview")'
+    description: Environment to use in wrangler.toml (e.g., "preview")
     required: false
-    default: 'preview'
-
+    default: preview
   domain:
-    description: 'Custom domain for deployment URL (e.g., "username.workers.dev" or "example.com")'
+    description: Custom domain for deployment URL (e.g., "username.workers.dev" or
+      "example.com")
     required: true
-
   wrangler-toml-path:
-    description: 'Path to wrangler.toml file'
+    description: Path to wrangler.toml file
     required: false
-    default: './wrangler.toml'
-
+    default: ./wrangler.toml
   github-token:
-    description: 'GitHub token for commenting on PRs'
+    description: GitHub token for commenting on PRs
     required: false
     default: ${{ github.token }}
-
 outputs:
   deployment-url:
-    description: 'Generated deployment URL'
-
+    description: Generated deployment URL
   deployment-name:
-    description: 'Generated worker name'
-
+    description: Generated worker name
   deployment-success:
-    description: 'Whether the deployment was successful'
-
+    description: Whether the deployment was successful
 runs:
-  using: 'node24'
-  main: '../dist/preview-deploy/index.js'
+  using: node24
+  main: ../dist/preview-deploy/index.js

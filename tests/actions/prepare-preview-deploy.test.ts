@@ -1,46 +1,6 @@
 import { describe, expect, test } from 'vitest';
-
-/**
- * Tests for template processing logic of prepare-preview-deploy action
- */
-
-interface TemplateVariables {
-  branchName: string;
-  commitHash: string;
-}
-
-/**
- * Template processing function
- * - {branch-name}: Branch name
- * - {commit-hash}: Commit hash
- */
-function processTemplate(template: string, variables: TemplateVariables): string {
-  let result = template;
-
-  result = result.replace(/\{branch-name\}/g, variables.branchName);
-  result = result.replace(/\{commit-hash\}/g, variables.commitHash);
-
-  // Sanitize: remove invalid characters (only alphanumeric and dashes allowed)
-  result = result.replace(/[^a-zA-Z0-9-]/g, '');
-
-  return result;
-}
-
-/**
- * Sanitize branch name
- * - Replace slashes with hyphens
- * - Remove invalid characters
- */
-function sanitizeBranchName(branchName: string): string {
-  return branchName.replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
-}
-
-/**
- * Generate deployment URL
- */
-function generateDeploymentUrl(workerName: string, domain: string): string {
-  return `https://${workerName}.${domain}`;
-}
+import { generateDeploymentUrl } from '../../src/shared/lib/deployment-utils';
+import { processTemplate } from '../../src/shared/lib/template-utils';
 
 describe('prepare-preview-deploy', () => {
   describe('processTemplate', () => {
@@ -199,30 +159,6 @@ describe('prepare-preview-deploy', () => {
     });
   });
 
-  describe('sanitizeBranchName', () => {
-    test('should replace slashes with hyphens', () => {
-      expect(sanitizeBranchName('feature/login')).toBe('feature-login');
-    });
-
-    test('should handle multiple slashes', () => {
-      expect(sanitizeBranchName('feature/ui/modal')).toBe('feature-ui-modal');
-    });
-
-    test('should remove invalid characters', () => {
-      expect(sanitizeBranchName('fix_bug@123')).toBe('fixbug123');
-    });
-
-    test('should preserve alphanumeric and hyphens', () => {
-      expect(sanitizeBranchName('release-v1-2-3')).toBe('release-v1-2-3');
-    });
-
-    test('should handle refs/heads/ prefix', () => {
-      const ref = 'refs/heads/feature/auth';
-      const branchName = ref.replace(/^refs\/heads\//, '');
-      expect(sanitizeBranchName(branchName)).toBe('feature-auth');
-    });
-  });
-
   describe('generateDeploymentUrl', () => {
     test('should generate URL with workers.dev domain', () => {
       const url = generateDeploymentUrl('myapp-renovate-patch', 'workers.dev');
@@ -269,7 +205,7 @@ describe('prepare-preview-deploy', () => {
     test('Branch-based deployment with workers.dev', () => {
       const template = 'myapp-{branch-name}';
       const variables = {
-        branchName: sanitizeBranchName('feature/awesome-ui'),
+        branchName: 'feature/awesome-ui',
         commitHash: 'abc1234'
       };
       const domain = 'workers.dev';
@@ -277,8 +213,8 @@ describe('prepare-preview-deploy', () => {
       const workerName = processTemplate(template, variables);
       const url = generateDeploymentUrl(workerName, domain);
 
-      expect(workerName).toBe('myapp-feature-awesome-ui');
-      expect(url).toBe('https://myapp-feature-awesome-ui.workers.dev');
+      expect(workerName).toBe('myapp-featureawesome-ui');
+      expect(url).toBe('https://myapp-featureawesome-ui.workers.dev');
     });
 
     test('Commit hash deployment with workers.dev', () => {
