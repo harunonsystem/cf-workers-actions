@@ -10,7 +10,11 @@ vi.mock('../../src/shared/lib/github-utils', () => ({
 }));
 
 import { getBranchName, getCommitSha } from '../../src/shared/lib/github-utils';
-import { createOrUpdatePreviewComment } from '../../src/shared/lib/pr-comment-utils';
+import {
+  buildPreviewComment,
+  createOrUpdatePreviewComment,
+  findExistingPreviewComment
+} from '../../src/shared/lib/pr-comment-utils';
 
 describe('pr-comment-utils', () => {
   let mockOctokit: any;
@@ -51,6 +55,35 @@ describe('pr-comment-utils', () => {
     // Reset mocked functions
     vi.mocked(getBranchName).mockReturnValue('feature-test');
     vi.mocked(getCommitSha).mockReturnValue('abc123d');
+  });
+
+  test('should render preview comment content through a pure policy function', () => {
+    const body = buildPreviewComment(
+      {
+        deploymentName: 'preview-worker',
+        deploymentSuccess: true,
+        deploymentUrl: 'https://preview.workers.dev'
+      },
+      {
+        branchName: 'feature-test',
+        commitSha: 'abc123d',
+        owner: 'test-owner',
+        repo: 'test-repo'
+      }
+    );
+
+    expect(body).toContain('https://preview.workers.dev');
+    expect(body).toContain('`feature-test`');
+    expect(body).toContain('abc123d');
+  });
+
+  test('should find only the GitHub Actions preview comment', () => {
+    const comment = findExistingPreviewComment([
+      { id: 1, user: { login: 'other-bot[bot]' }, body: '🚀 Preview Deployment' },
+      { id: 2, user: { login: 'github-actions[bot]' }, body: '## 🚀 Preview Deployment' }
+    ]);
+
+    expect(comment?.id).toBe(2);
   });
 
   describe('createOrUpdatePreviewComment', () => {

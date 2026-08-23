@@ -32,84 +32,61 @@ describe('CloudflareApi', () => {
     });
   });
 
-  describe('makeRequest', () => {
+  describe('request transport through worker operations', () => {
     test('should make successful GET request', async () => {
-      const mockResponse = {
-        success: true,
-        result: { id: 'test-worker' }
-      };
+      const mockWorkers = [{ id: 'test-worker' }];
 
       (fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: vi.fn().mockResolvedValueOnce(mockResponse)
+        json: vi.fn().mockResolvedValueOnce({ success: true, result: mockWorkers })
       });
 
-      const result = await api.makeRequest('GET', '/test-endpoint');
+      const result = await api.listWorkers();
 
-      expect(fetch).toHaveBeenCalledWith('https://api.cloudflare.com/client/v4/test-endpoint', {
-        method: 'GET',
-        headers: {
-          Authorization: 'Bearer test-token',
-          'Content-Type': 'application/json'
+      expect(fetch).toHaveBeenCalledWith(
+        'https://api.cloudflare.com/client/v4/accounts/test-account/workers/scripts',
+        {
+          method: 'GET',
+          headers: {
+            Authorization: 'Bearer test-token',
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
 
-      expect(result).toEqual(mockResponse);
-    });
-
-    test('should make successful POST request with data', async () => {
-      const mockResponse = { success: true };
-      const testData = { name: 'test' };
-
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValueOnce(mockResponse)
-      });
-
-      await api.makeRequest('POST', '/test-endpoint', testData);
-
-      expect(fetch).toHaveBeenCalledWith('https://api.cloudflare.com/client/v4/test-endpoint', {
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer test-token',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(testData)
-      });
+      expect(result).toEqual(mockWorkers);
     });
 
     test('should throw error for HTTP error response', async () => {
       (fetch as any).mockResolvedValueOnce({
         ok: false,
+        status: 401,
         statusText: 'Unauthorized',
         json: vi.fn().mockResolvedValueOnce({
           errors: [{ message: 'Invalid token' }]
         })
       });
 
-      await expect(api.makeRequest('GET', '/test-endpoint')).rejects.toThrow(
-        'Cloudflare API error: Invalid token'
-      );
+      await expect(api.listWorkers()).rejects.toThrow('Cloudflare API error: Invalid token');
     });
 
     test('should throw error for API error response', async () => {
       (fetch as any).mockResolvedValueOnce({
         ok: true,
+        status: 200,
         json: vi.fn().mockResolvedValueOnce({
           success: false,
           errors: [{ message: 'Worker not found' }]
         })
       });
 
-      await expect(api.makeRequest('GET', '/test-endpoint')).rejects.toThrow(
-        'Cloudflare API error: Worker not found'
-      );
+      await expect(api.listWorkers()).rejects.toThrow('Cloudflare API error: Worker not found');
     });
 
     test('should handle network error when fetch throws', async () => {
       (fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(api.makeRequest('GET', '/test-endpoint')).rejects.toThrow('Network error');
+      await expect(api.listWorkers()).rejects.toThrow('Network error');
     });
 
     test('should handle non-JSON response', async () => {
@@ -118,22 +95,36 @@ describe('CloudflareApi', () => {
         json: vi.fn().mockRejectedValueOnce(new Error('Unexpected token'))
       });
 
-      await expect(api.makeRequest('GET', '/test-endpoint')).rejects.toThrow('Unexpected token');
+      await expect(api.listWorkers()).rejects.toThrow('Unexpected token');
     });
 
     test('should handle malformed error response without errors array', async () => {
       (fetch as any).mockResolvedValueOnce({
         ok: false,
+        status: 500,
         statusText: 'Internal Server Error',
         json: vi.fn().mockResolvedValueOnce({
           success: false
         })
       });
 
-      await expect(api.makeRequest('GET', '/test-endpoint')).rejects.toThrow(
+      await expect(api.listWorkers()).rejects.toThrow(
         'Cloudflare API error: Internal Server Error'
       );
     });
+  });
+
+  test('should use an injected fetcher at the transport seam', async () => {
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ success: true, result: [] })
+    });
+    const injectedApi = new CloudflareApi(mockApiToken, mockAccountId, fetcher);
+
+    await injectedApi.listWorkers();
+
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   describe('listWorkers', () => {

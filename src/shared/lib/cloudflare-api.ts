@@ -2,6 +2,11 @@ import type { CloudflareApiResponse, CloudflareWorker } from '../schemas';
 import { getErrorMessage } from './error-handler';
 import { debug, error, info, warning } from './logger';
 
+export type CloudflareFetcher = (
+  input: string,
+  init?: RequestInit
+) => Promise<Pick<Response, 'ok' | 'status' | 'statusText' | 'json'>>;
+
 /**
  * Error thrown by CloudflareApi.makeRequest, carrying the HTTP status code
  * so callers can branch on status (e.g. 404 = not found) instead of message text.
@@ -16,30 +21,36 @@ export class CloudflareApiError extends Error {
   }
 }
 
+export function isCloudflareRateLimitError(error: unknown): boolean {
+  return error instanceof CloudflareApiError && error.status === 429;
+}
+
 /**
  * Cloudflare API client wrapper
  */
 export class CloudflareApi {
-  private apiToken: string;
-  private accountId: string;
-  private baseUrl = 'https://api.cloudflare.com/client/v4';
+  private readonly apiToken: string;
+  private readonly accountId: string;
+  private readonly baseUrl = 'https://api.cloudflare.com/client/v4';
+  private readonly fetcher: CloudflareFetcher;
 
-  constructor(apiToken: string, accountId: string) {
+  constructor(apiToken: string, accountId: string, fetcher: CloudflareFetcher = fetch) {
     if (!apiToken || !accountId) {
       throw new Error('API token and account ID are required');
     }
 
     this.apiToken = apiToken;
     this.accountId = accountId;
+    this.fetcher = fetcher;
   }
 
   /**
    * Make API request to Cloudflare
    */
-  async makeRequest<T = any>(
+  private async makeRequest<T>(
     method: string,
     endpoint: string,
-    data?: Record<string, any>
+    data?: Record<string, unknown>
   ): Promise<CloudflareApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
     const options: RequestInit = {
@@ -56,7 +67,7 @@ export class CloudflareApi {
 
     try {
       debug(`Making ${method} request to ${url}`);
-      const response = await fetch(url, options);
+      const response = await this.fetcher(url, options);
       const result: CloudflareApiResponse<T> = await response.json();
 
       if (!response.ok) {
