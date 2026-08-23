@@ -180,6 +180,50 @@ name = "my-app-preview"
     );
   });
 
+  test('should deploy a worker name resolved from the pull request number', async () => {
+    inputs = {
+      // GitHub resolves `myapp-pr-${{ github.event.pull_request.number }}` before the action runs.
+      'worker-name': 'myapp-pr-123',
+      environment: 'preview',
+      domain: 'username.workers.dev',
+      'cloudflare-api-token': 'fake-token',
+      'cloudflare-account-id': 'fake-account-id'
+    };
+
+    process.env.GITHUB_HEAD_REF = 'feature/awesome-feature';
+    process.env.GITHUB_REF = 'refs/pull/123/merge';
+    process.env.GITHUB_SHA = 'deadbeef1234567890abcdef1234567890abcdef';
+
+    Object.defineProperty(github, 'context', {
+      value: {
+        repo: { owner: 'test-owner', repo: 'test-repo' },
+        sha: 'deadbeef1234567890abcdef1234567890abcdef',
+        ref: 'refs/pull/123/merge',
+        payload: {
+          pull_request: {
+            number: 123,
+            head: {
+              ref: 'feature/awesome-feature'
+            }
+          }
+        }
+      },
+      writable: true
+    });
+
+    await runAction();
+
+    expect(outputs['deployment-name']).toBe('myapp-pr-123');
+    expect(outputs['deployment-url']).toBe('https://myapp-pr-123.username.workers.dev');
+    expect(outputs['deployment-success']).toBe('true');
+    expect(mockCreateComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        issue_number: 123,
+        body: expect.stringContaining('myapp-pr-123')
+      })
+    );
+  });
+
   test('should deploy with branch name on direct push (no comment posted)', async () => {
     inputs = {
       'worker-name': 'myapp-{branch-name}',
