@@ -34,5 +34,8 @@ export function processTemplate(template: string, variables: TemplateVariables):
     result = result.slice(0, MAX_WORKER_NAME_LENGTH);
   }
 
+  // workers.dev names are DNS labels and cannot start or end with a dash.
+  result = result.replace(/^-+|-+$/g, '');
+
   return result;
 }
