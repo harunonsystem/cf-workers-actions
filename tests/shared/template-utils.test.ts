@@ -178,6 +178,19 @@ describe('template-utils', () => {
         expect(result.length).toBe(54);
       });
 
+      test('should remove a trailing dash after truncation for workers.dev names', () => {
+        const template = 'cf-actions-e2e-{branch-name}';
+        const variables = {
+          branchName: 'renovate-1password-load-secrets-action-digest',
+          commitHash: 'abc1234'
+        };
+
+        const result = processTemplate(template, variables);
+
+        expect(result).toBe('cf-actions-e2e-renovate-1password-load-secrets-action');
+        expect(result).not.toMatch(/^-|-$/);
+      });
+
       test('should not truncate worker names within 54 characters', () => {
         const template = 'myapp-{branch-name}';
         const variables = {
