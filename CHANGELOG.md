@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.2
+
+### Patch Changes
+
+- d5dbabd: Fix preview Worker naming and improve deployment action behavior.
+
 ## 1.3.1
 
 ### Patch Changes
