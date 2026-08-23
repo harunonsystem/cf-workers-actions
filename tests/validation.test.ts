@@ -22,7 +22,7 @@ describe('Shared Validation Utilities', () => {
     it('should convert dash-case to camelCase', () => {
       mockGetInput.mockImplementation((name: string) => {
         const inputs: Record<string, string> = {
-          'worker-pattern': 'test-*',
+          'worker-name': 'test-worker',
           'api-token': 'token123',
           'account-id': 'account123'
         };
@@ -30,13 +30,13 @@ describe('Shared Validation Utilities', () => {
       });
 
       const result = mapInputs({
-        'worker-pattern': { required: false },
+        'worker-name': { required: false },
         'api-token': { required: true },
         'account-id': { required: true }
       });
 
       expect(result).toEqual({
-        workerPattern: 'test-*',
+        workerName: 'test-worker',
         apiToken: 'token123',
         accountId: 'account123'
       });

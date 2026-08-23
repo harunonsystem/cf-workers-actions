@@ -1,0 +1,8 @@
+overrides:
+  'js-yaml@^3': '^5.0.0'
+  'js-yaml@^4': '^4.2.0'
+  'picomatch@^2': '^2.3.2'
+  'picomatch@^4': '^4.0.4'
+
+allowBuilds:
+  esbuild: true
