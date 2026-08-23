@@ -10,9 +10,9 @@
   },
   "packageManager": "pnpm@11.22.0",
   "scripts": {
-    "build": "pnpm run generate:actions && pnpm run clean && node scripts/build.mjs",
+    "build": "pnpm run generate:actions && pnpm run clean:dist && node scripts/build.mjs",
     "build:watch": "tsc --watch",
-    "clean": "rm -rf dist",
+    "clean:dist": "rm -rf dist",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
