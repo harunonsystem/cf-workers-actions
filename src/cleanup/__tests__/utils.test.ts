@@ -25,9 +25,12 @@ describe('cleanup/utils', () => {
       ['worker-1, worker-2, worker-3', '', '', ['worker-1', 'worker-2', 'worker-3']],
       ['', '1, 2, 3', 'app-preview-', ['app-preview-1', 'app-preview-2', 'app-preview-3']],
       ['explicit-worker', '1, 2', 'prefix-', ['explicit-worker']]
-    ])('should parse "%s" with numbers "%s" and prefix "%s"', (workerNames, numbers, prefix, expected) => {
-      expect(parseWorkerNamesInput(workerNames, numbers, prefix)).toEqual(expected);
-    });
+    ])(
+      'should parse "%s" with numbers "%s" and prefix "%s"',
+      (workerNames, numbers, prefix, expected) => {
+        expect(parseWorkerNamesInput(workerNames, numbers, prefix)).toEqual(expected);
+      }
+    );
 
     it.each([
       ['', '', '', 'no valid input'],
