@@ -13,7 +13,7 @@ const preparedConfig: DeploymentConfig = {
 describe("executePreviewDeployment", () => {
   test("should prepare, deploy, and post a comment through its dependencies", async () => {
     const prepareDeployment = vi.fn().mockResolvedValue(preparedConfig);
-    const deployWorker = vi.fn().mockResolvedValue(true);
+    const deployWorker = vi.fn().mockResolvedValue(undefined);
     const onPrepared = vi.fn();
     const postComment = vi.fn().mockResolvedValue(undefined);
 
@@ -43,7 +43,7 @@ describe("executePreviewDeployment", () => {
 
   test("should not post a comment for a direct deployment without a PR", async () => {
     const prepareDeployment = vi.fn().mockResolvedValue({ ...preparedConfig, prNumber: undefined });
-    const deployWorker = vi.fn().mockResolvedValue(true);
+    const deployWorker = vi.fn().mockResolvedValue(undefined);
     const postComment = vi.fn();
 
     await executePreviewDeployment(
@@ -63,7 +63,10 @@ describe("executePreviewDeployment", () => {
 
   test("should stop before commenting when deployment fails", async () => {
     const prepareDeployment = vi.fn().mockResolvedValue(preparedConfig);
-    const deployWorker = vi.fn().mockResolvedValue(false);
+    const originalError = new Error("wrangler failed");
+    const deployWorker = vi
+      .fn()
+      .mockRejectedValue(new Error("Deployment failed: wrangler failed", { cause: originalError }));
     const postComment = vi.fn();
 
     await expect(
@@ -81,5 +84,29 @@ describe("executePreviewDeployment", () => {
     ).rejects.toThrow("Deployment failed");
 
     expect(postComment).not.toHaveBeenCalled();
+  });
+
+  test("should preserve deploy error cause", async () => {
+    const prepareDeployment = vi.fn().mockResolvedValue(preparedConfig);
+    const originalError = new Error("network error");
+    const deployError = new Error("Deployment failed: network error", { cause: originalError });
+    const deployWorker = vi.fn().mockRejectedValue(deployError);
+    const postComment = vi.fn();
+
+    await expect(
+      executePreviewDeployment(
+        {
+          cloudflareAccountId: "account",
+          cloudflareApiToken: "token",
+          domain: "workers.dev",
+          environment: "preview",
+          wranglerTomlPath: "./wrangler.toml",
+          workerNameTemplate: "preview-{branch-name}"
+        },
+        { deployWorker, postComment, prepareDeployment }
+      )
+    ).rejects.toSatisfy((err: unknown) => {
+      return err instanceof Error && (err as Error & { cause?: unknown }).cause === originalError;
+    });
   });
 });

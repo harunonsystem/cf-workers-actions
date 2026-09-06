@@ -6,12 +6,15 @@ import { updateWranglerToml } from "./wrangler-utils";
 /**
  * Deployment configuration result (internal use only)
  */
-export interface DeploymentConfig {
-  workerName: string;
-  deploymentUrl: string;
-  prNumber: number | undefined;
+export interface DeploymentContext {
   branchName: string;
   commitHash: string;
+  prNumber: number | undefined;
+}
+
+export interface DeploymentConfig extends DeploymentContext {
+  workerName: string;
+  deploymentUrl: string;
 }
 
 /**
@@ -26,6 +29,24 @@ export interface PrepareDeploymentOptions {
 
 export function generateDeploymentUrl(workerName: string, domain: string): string {
   return `https://${workerName}.${domain}`;
+}
+export function buildDeploymentConfig(
+  workerNameTemplate: string,
+  domain: string,
+  context: DeploymentContext,
+  processTemplateFn: typeof processTemplate = processTemplate
+): Pick<DeploymentConfig, "workerName" | "deploymentUrl"> {
+  const workerName = processTemplateFn(workerNameTemplate, {
+    branchName: context.branchName,
+    commitHash: context.commitHash
+  });
+  if (!workerName) {
+    throw new Error("Worker name is empty after template processing");
+  }
+  return {
+    workerName,
+    deploymentUrl: generateDeploymentUrl(workerName, domain)
+  };
 }
 
 export interface PrepareDeploymentDependencies {
@@ -56,41 +77,33 @@ export async function prepareDeployment(
 ): Promise<DeploymentConfig> {
   const { workerNameTemplate, environment, domain, wranglerTomlPath } = options;
 
-  // Get variables for template processing
-  const branchName = dependencies.getSanitizedBranchName();
-  const prNumber = dependencies.getPrNumber();
-  const commitHash = dependencies.getCommitSha();
+  const context: DeploymentContext = {
+    branchName: dependencies.getSanitizedBranchName(),
+    commitHash: dependencies.getCommitSha(),
+    prNumber: dependencies.getPrNumber()
+  };
 
-  dependencies.info(`Branch name (sanitized): ${branchName}`);
-  dependencies.info(`Commit hash: ${commitHash}`);
-  if (prNumber) {
-    dependencies.info(`PR number: ${prNumber}`);
+  dependencies.info(`Branch name (sanitized): ${context.branchName}`);
+  dependencies.info(`Commit hash: ${context.commitHash}`);
+  if (context.prNumber) {
+    dependencies.info(`PR number: ${context.prNumber}`);
   }
 
-  // Process template
-  const workerName = dependencies.processTemplate(workerNameTemplate, {
-    branchName,
-    commitHash
-  });
-
-  if (!workerName) {
-    throw new Error("Worker name is empty after template processing");
-  }
+  const { workerName, deploymentUrl } = buildDeploymentConfig(
+    workerNameTemplate,
+    domain,
+    context,
+    dependencies.processTemplate
+  );
 
   dependencies.info(`✅ Generated worker name: ${workerName}`);
-
-  // Generate URL
-  const deploymentUrl = generateDeploymentUrl(workerName, domain);
   dependencies.info(`✅ Generated URL: ${deploymentUrl}`);
 
-  // Update wrangler.toml
   await dependencies.updateWranglerToml(wranglerTomlPath, environment, workerName);
 
   return {
+    ...context,
     workerName,
-    deploymentUrl,
-    prNumber,
-    branchName,
-    commitHash
+    deploymentUrl
   };
 }

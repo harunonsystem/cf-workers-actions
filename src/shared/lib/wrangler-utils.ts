@@ -1,5 +1,4 @@
 import * as fs from "node:fs";
-import { env } from "./env";
 import { debug, error, info } from "./logger";
 
 export interface WranglerFileSystem {
@@ -91,23 +90,15 @@ export async function updateWranglerToml(
     const content = fileSystem.readFileSync(tomlPath, "utf8");
     const update = updateWranglerTomlDocument(content, environment, workerName);
 
+    fileSystem.writeFileSync(tomlPath, update.content);
+
+    debug(`Updated wrangler.toml:\n${update.content}`);
     if (update.operation === "updated") {
       info("✅ Updated existing name in wrangler.toml");
     } else {
       info("✅ Added name to wrangler.toml");
     }
-
-    // Write back
-    fileSystem.writeFileSync(tomlPath, update.content);
-
-    // Only show full contents in debug mode
-    const updatedContent = fileSystem.readFileSync(tomlPath, "utf8");
-    debug(`Updated wrangler.toml:\n${updatedContent}`);
-    if (!env.isDebug()) {
-      info("✅ Updated wrangler.toml for preview environment");
-    }
   } catch (err) {
-    // Restore backup on failure
     fileSystem.copyFileSync(backupPath, tomlPath);
     error("❌ Failed to update wrangler.toml, restored from backup");
     throw err;
