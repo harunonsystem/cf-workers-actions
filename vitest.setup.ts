@@ -1,7 +1,7 @@
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 // Mock @actions/core
-vi.mock('@actions/core', () => ({
+vi.mock("@actions/core", () => ({
   info: vi.fn(),
   debug: vi.fn(),
   warning: vi.fn(),
@@ -19,13 +19,13 @@ vi.mock('@actions/core', () => ({
 }));
 
 // Mock @actions/github
-vi.mock('@actions/github', () => ({
+vi.mock("@actions/github", () => ({
   context: {
-    eventName: 'pull_request',
-    ref: 'refs/pull/123/merge',
+    eventName: "pull_request",
+    ref: "refs/pull/123/merge",
     repo: {
-      owner: 'test-owner',
-      repo: 'test-repo'
+      owner: "test-owner",
+      repo: "test-repo"
     },
     payload: {
       pull_request: {

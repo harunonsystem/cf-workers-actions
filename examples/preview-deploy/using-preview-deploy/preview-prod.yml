@@ -30,6 +30,6 @@ jobs:
         with:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          worker-name: 'myapp-pr-{pr-number}'
-          environment: 'preview'
-          domain: 'preview.example.com'
+          worker-name: "myapp-pr-{pr-number}"
+          environment: "preview"
+          domain: "preview.example.com"

@@ -1,4 +1,4 @@
-import * as core from '@actions/core';
+import * as core from "@actions/core";
 
 /**
  * Extract error message from unknown error type
@@ -66,7 +66,7 @@ export async function handleActionError(
   // Create error summary
   await core.summary
     .addHeading(`❌ ${context.summaryTitle}`)
-    .addCodeBlock(errorMessage, 'text')
+    .addCodeBlock(errorMessage, "text")
     .write();
 
   // Mark action as failed
@@ -77,8 +77,8 @@ export async function handleActionError(
  * Standard error outputs for cleanup actions
  */
 export const CLEANUP_ERROR_OUTPUTS = {
-  'deleted-workers': '[]',
-  'deleted-count': '0',
-  'skipped-workers': '[]',
-  'dry-run-results': '[]'
+  "deleted-workers": "[]",
+  "deleted-count": "0",
+  "skipped-workers": "[]",
+  "dry-run-results": "[]"
 };

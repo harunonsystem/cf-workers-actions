@@ -1,8 +1,8 @@
-import * as core from '@actions/core';
-import { debug, info } from '../shared/lib/logger';
-import { parseCommaSeparatedList } from '../shared/lib/string-utils';
-import { setOutputsValidated } from '../shared/validation';
-import { CleanupOutputSchema } from './schemas';
+import * as core from "@actions/core";
+import { debug, info } from "../shared/lib/logger";
+import { parseCommaSeparatedList } from "../shared/lib/string-utils";
+import { setOutputsValidated } from "../shared/validation";
+import { CleanupOutputSchema } from "./schemas";
 
 /**
  * Parse worker names from various input formats
@@ -52,9 +52,9 @@ export function createExclusionFilter(excludeInput: string | undefined): Exclusi
   const patternStrings: string[] = [];
 
   for (const item of items) {
-    if (item.includes('*') || item.includes('?')) {
+    if (item.includes("*") || item.includes("?")) {
       patternStrings.push(item);
-      filter.patterns.push(new RegExp(`^${item.replace(/\*/g, '.*').replace(/\?/g, '.')}$`));
+      filter.patterns.push(new RegExp(`^${item.replace(/\*/g, ".*").replace(/\?/g, ".")}$`));
     } else {
       exactNames.push(item);
       filter.exactNames.add(item);
@@ -62,10 +62,10 @@ export function createExclusionFilter(excludeInput: string | undefined): Exclusi
   }
 
   if (exactNames.length > 0) {
-    info(`⏭️  Excluded workers (exact): ${exactNames.join(', ')}`);
+    info(`⏭️  Excluded workers (exact): ${exactNames.join(", ")}`);
   }
   if (patternStrings.length > 0) {
-    info(`⏭️  Excluded patterns: ${patternStrings.join(', ')}`);
+    info(`⏭️  Excluded patterns: ${patternStrings.join(", ")}`);
   }
 
   return filter;
@@ -153,13 +153,13 @@ export function setCleanupOutputs(result: CleanupResult, isDryRun: boolean): voi
  */
 export async function createDryRunSummary(workers: string[]): Promise<void> {
   await core.summary
-    .addHeading('🔍 Cloudflare Workers Cleanup (Dry Run)')
+    .addHeading("🔍 Cloudflare Workers Cleanup (Dry Run)")
     .addTable([
-      ['Property', 'Value'],
-      ['Workers Found', workers.length.toString()],
-      ['Mode', 'Dry Run (no deletion)']
+      ["Property", "Value"],
+      ["Workers Found", workers.length.toString()],
+      ["Mode", "Dry Run (no deletion)"]
     ])
-    .addHeading('Workers that would be deleted:')
+    .addHeading("Workers that would be deleted:")
     .addList(workers)
     .write();
 }
@@ -172,23 +172,25 @@ export async function createCleanupSummary(
   totalProcessed: number
 ): Promise<void> {
   const table = [
-    ['Property', 'Value'],
-    ['Workers Deleted', result.deletedWorkers.length.toString()],
-    ['Workers Skipped', result.skippedWorkers.length.toString()],
-    ['Total Processed', totalProcessed.toString()],
-    ['Success Rate', `${Math.round((result.deletedWorkers.length / totalProcessed) * 100)}%`]
+    ["Property", "Value"],
+    ["Workers Deleted", result.deletedWorkers.length.toString()],
+    ["Workers Skipped", result.skippedWorkers.length.toString()],
+    ["Total Processed", totalProcessed.toString()],
+    ["Success Rate", `${Math.round((result.deletedWorkers.length / totalProcessed) * 100)}%`]
   ];
 
-  let summaryBuilder = core.summary.addHeading('🗑️ Cloudflare Workers Cleanup').addTable(table);
+  let summaryBuilder = core.summary.addHeading("🗑️ Cloudflare Workers Cleanup").addTable(table);
 
   if (result.deletedWorkers.length > 0) {
     summaryBuilder = summaryBuilder
-      .addHeading('✅ Successfully Deleted Workers:')
+      .addHeading("✅ Successfully Deleted Workers:")
       .addList(result.deletedWorkers);
   }
 
   if (result.skippedWorkers.length > 0) {
-    summaryBuilder = summaryBuilder.addHeading('⚠️ Skipped Workers:').addList(result.skippedWorkers);
+    summaryBuilder = summaryBuilder
+      .addHeading("⚠️ Skipped Workers:")
+      .addList(result.skippedWorkers);
   }
 
   await summaryBuilder.write();

@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { CommonFields } from '../shared/schemas';
-import type { TypedInputConfig } from '../shared/validation';
+import { z } from "zod";
+import { CommonFields } from "../shared/schemas";
+import type { TypedInputConfig } from "../shared/validation";
 
 export const PrCommentInputSchema = z.object({
   deploymentUrl: CommonFields.deploymentUrl,
@@ -16,8 +16,8 @@ export type PrCommentInput = z.infer<typeof PrCommentInputSchema>;
  * Type-checked against PrCommentInputSchema
  */
 export const PrCommentInputConfig: TypedInputConfig<typeof PrCommentInputSchema> = {
-  'deployment-url': { required: true },
-  'deployment-success': { required: true },
-  'deployment-name': { required: true },
-  'github-token': { required: false }
+  "deployment-url": { required: true },
+  "deployment-success": { required: true },
+  "deployment-name": { required: true },
+  "github-token": { required: false }
 };

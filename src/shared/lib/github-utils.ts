@@ -1,5 +1,5 @@
-import * as github from '@actions/github';
-import { env } from './env';
+import * as github from "@actions/github";
+import { env } from "./env";
 
 /**
  * Get GitHub token from input or environment variable
@@ -11,7 +11,7 @@ export function getGithubToken(inputToken?: string): string {
   const token = inputToken || env.githubToken();
   if (!token) {
     throw new Error(
-      'GITHUB_TOKEN is required. Please provide it via github-token input or ensure it is available in the environment.'
+      "GITHUB_TOKEN is required. Please provide it via github-token input or ensure it is available in the environment."
     );
   }
   return token;
@@ -26,7 +26,7 @@ export function getBranchName(): string {
   const branchName =
     github.context.payload.pull_request?.head?.ref ||
     env.githubHeadRef() ||
-    github.context.ref.replace(/^refs\/heads\//, '');
+    github.context.ref.replace(/^refs\/heads\//, "");
 
   return branchName;
 }
@@ -38,7 +38,7 @@ export function getBranchName(): string {
 export function getSanitizedBranchName(): string {
   const branchName = getBranchName();
   // Replace / with - and remove invalid characters
-  return branchName.replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+  return branchName.replace(/\//g, "-").replace(/[^a-zA-Z0-9-]/g, "");
 }
 
 /**

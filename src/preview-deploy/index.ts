@@ -1,31 +1,31 @@
-import * as core from '@actions/core';
-import * as github from '@actions/github';
-import { env } from '../shared/lib/env';
-import { handleActionError } from '../shared/lib/error-handler';
-import { getGithubToken } from '../shared/lib/github-utils';
-import { info, warning } from '../shared/lib/logger';
-import { createOrUpdatePreviewComment } from '../shared/lib/pr-comment-utils';
-import { executePreviewDeployment } from '../shared/lib/preview-deployment';
-import { getActionInputs, setOutputsValidated } from '../shared/validation';
+import * as core from "@actions/core";
+import * as github from "@actions/github";
+import { env } from "../shared/lib/env";
+import { handleActionError } from "../shared/lib/error-handler";
+import { getGithubToken } from "../shared/lib/github-utils";
+import { info, warning } from "../shared/lib/logger";
+import { createOrUpdatePreviewComment } from "../shared/lib/pr-comment-utils";
+import { executePreviewDeployment } from "../shared/lib/preview-deployment";
+import { getActionInputs, setOutputsValidated } from "../shared/validation";
 import {
   DeployPreviewInputConfig,
   DeployPreviewInputSchema,
   DeployPreviewOutputSchema
-} from './schemas.js';
+} from "./schemas.js";
 
 async function run(): Promise<void> {
   // Variables to hold outputs for error handling
-  let workerName = '';
-  let deploymentUrl = '';
+  let workerName = "";
+  let deploymentUrl = "";
 
   try {
     // Get and validate inputs
     const inputs = getActionInputs(DeployPreviewInputSchema, DeployPreviewInputConfig);
     if (!inputs) {
-      throw new Error('Input validation failed');
+      throw new Error("Input validation failed");
     }
 
-    info('🚀 Starting deploy preview...');
+    info("🚀 Starting deploy preview...");
     info(`Worker name template: ${inputs.workerName}`);
     info(`Environment: ${inputs.environment}`);
 
@@ -42,7 +42,7 @@ async function run(): Promise<void> {
         onPrepared: (config) => {
           workerName = config.workerName;
           deploymentUrl = config.deploymentUrl;
-          info('✅ Updated wrangler.toml');
+          info("✅ Updated wrangler.toml");
         },
         postComment: async (config) => {
           if (!config.prNumber) {
@@ -50,7 +50,7 @@ async function run(): Promise<void> {
           }
 
           try {
-            const token = getGithubToken(core.getInput('github-token'));
+            const token = getGithubToken(core.getInput("github-token"));
             const octokit = github.getOctokit(token);
             await createOrUpdatePreviewComment(octokit, {
               prNumber: config.prNumber,
@@ -58,9 +58,9 @@ async function run(): Promise<void> {
               deploymentName: config.workerName,
               deploymentSuccess: true
             });
-            info('✅ PR comment posted');
+            info("✅ PR comment posted");
           } catch {
-            warning('GITHUB_TOKEN not found, skipping PR comment');
+            warning("GITHUB_TOKEN not found, skipping PR comment");
           }
         }
       }
@@ -69,17 +69,17 @@ async function run(): Promise<void> {
     setOutputsValidated(DeployPreviewOutputSchema, {
       deploymentUrl,
       deploymentName: workerName,
-      deploymentSuccess: 'true'
+      deploymentSuccess: "true"
     });
 
-    info('✅ Deploy preview completed');
+    info("✅ Deploy preview completed");
   } catch (err) {
     await handleActionError(err, {
-      summaryTitle: 'Deploy Preview Failed',
+      summaryTitle: "Deploy Preview Failed",
       outputs: {
-        'deployment-url': deploymentUrl,
-        'deployment-name': workerName,
-        'deployment-success': 'false'
+        "deployment-url": deploymentUrl,
+        "deployment-name": workerName,
+        "deployment-success": "false"
       }
     });
   }

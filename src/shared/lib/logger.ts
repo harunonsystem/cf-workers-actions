@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
-import { env } from './env';
+import * as core from "@actions/core";
+import { env } from "./env";
 
 /**
  * Check if debug mode is enabled (ACTIONS_STEP_DEBUG === 'true')

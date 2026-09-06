@@ -1,10 +1,10 @@
-name: 'CF Workers Actions'
-description: 'Complete suite for Cloudflare Workers deployment, PR commenting, and cleanup'
-author: 'harunonsystem'
+name: "CF Workers Actions"
+description: "Complete suite for Cloudflare Workers deployment, PR commenting, and cleanup"
+author: "harunonsystem"
 
 branding:
-  icon: 'cloud'
-  color: 'orange'
+  icon: "cloud"
+  color: "orange"
 
 # This is a composite action that provides access to all sub-actions
 # Users can access individual actions via:
@@ -14,9 +14,9 @@ branding:
 # - harunonsystem/cf-workers-actions/pr-comment@v1
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
-    - name: 'Information'
+    - name: "Information"
       shell: bash
       run: |
         echo "🚀 CF Workers Actions Suite"

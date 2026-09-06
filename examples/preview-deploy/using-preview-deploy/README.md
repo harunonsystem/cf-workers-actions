@@ -5,6 +5,7 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
 ## 🎯 Action Used
 
 **`preview-deploy`** - All-in-one action that combines:
+
 - URL generation
 - Cloudflare Workers deployment
 - Automatic PR commenting
@@ -12,25 +13,31 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
 ## 📋 Workflows
 
 ### Preview + Production
+
 👉 [`preview-prod.yml`](./preview-prod.yml)
 
 **Simple two-environment pattern:**
+
 - Pull Request → Preview (`myapp-pr-123`)
 - Push to main → Production (`myapp`)
 
 ### Multi-Environment
+
 👉 [`multi-env.yml`](./multi-env.yml)
 
 **Multi-environment with dynamic + static deployments (GitFlow):**
+
 - Pull Request → **Preview (DYNAMIC)** (`myapp-pr-123`)
 - Push to dev → **Dev (STATIC)** (`myapp-dev`)
 - Push to stg → **Staging (STATIC)** (`myapp-stg`)
 - Push to release/** → **Release (STATIC)** (`myapp-release-v1.0`)
 
 ### Production Only
+
 👉 [`prod-deploy.yml`](../prod-deploy.yml)
 
 **Production deployment with approval workflow:**
+
 - Push to main → Production (`myapp`)
 - Uses GitHub Environment protection for manual approval
 - Perfect companion to `multi-env.yml` for GitFlow
@@ -44,8 +51,8 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    worker-name: 'myapp-pr-{pr-number}'
-    environment: 'preview'
+    worker-name: "myapp-pr-{pr-number}"
+    environment: "preview"
 ```
 
 ### With Custom Domain
@@ -55,9 +62,9 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    environment: 'preview'
-    worker-name: 'myapp-pr-{pr-number}'
-    domain: 'preview.example.com'
+    environment: "preview"
+    worker-name: "myapp-pr-{pr-number}"
+    domain: "preview.example.com"
 ```
 
 ## ✨ Benefits
@@ -70,24 +77,26 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
 ## 🔄 Comparison with Modular Approach
 
 ### All-in-one (Deploy Preview)
+
 ```yaml
 # Just one step!
 - uses: harunonsystem/cf-workers-actions/preview-deploy@v1
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    worker-name: 'myapp-pr-{pr-number}'
-    environment: 'preview'
+    worker-name: "myapp-pr-{pr-number}"
+    environment: "preview"
 ```
 
 ### Modular (Wrangler Action)
+
 ```yaml
 # Three separate steps
 - uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
   id: prepare
   with:
-    worker-name: 'myapp-pr-{pr-number}'
-    environment: 'preview'
+    worker-name: "myapp-pr-{pr-number}"
+    environment: "preview"
 
 - uses: cloudflare/wrangler-action@v3
   id: deploy
@@ -104,11 +113,13 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
 ```
 
 **Choose modular approach if:**
+
 - You need custom deployment logic
 - You want to add steps between URL generation and deployment
 - You need fine-grained control over each step
 
 **Choose all-in-one approach if:**
+
 - You want simplicity and fewer lines of code
 - Standard deployment flow is sufficient
 - You prefer opinionated, streamlined workflows

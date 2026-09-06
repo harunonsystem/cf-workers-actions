@@ -8,25 +8,31 @@ Modular GitHub Actions for Cloudflare Workers preview deployments, PR comments, 
 Use this suite to ship preview environments to Cloudflare Workers, keep PR comments fresh, and clean up safely.
 
 ## What this suite solves
+
 - Generate consistent preview URLs and worker names per PR/branch
 - Deploy previews with one step or modular steps
 - Keep PR comments up to date with deployment results
 - Clean up old preview workers safely
 
 ## Actions (quick reference)
+
 These four actions are provided by this repository:
+
 - **prepare-preview-deploy** — Generate worker name/URL and update `wrangler.toml` for a preview env. Docs: [prepare-preview-deploy/](prepare-preview-deploy/)
 - **preview-deploy** — All-in-one prepare + deploy + PR comment. Docs: [preview-deploy/](preview-deploy/)
 - **pr-comment** — Post or update a PR comment with deployment info. Docs: [pr-comment/](pr-comment/)
 - **cleanup** — Delete preview workers by explicit names or prefix plus numbers. Docs: [cleanup/](cleanup/)
 
 External action used in examples:
+
 - **cloudflare/wrangler-action** — Official Cloudflare action for deploying with Wrangler.
 
 Boolean inputs: GitHub Actions passes inputs as strings. Use `'true'` / `'false'`.
 
 ## Flow at a glance
+
 ### Modular preview (prepare → wrangler-action → pr-comment)
+
 ```mermaid
 flowchart TD
   PR[Pull Request opened/updated] --> Prepare[cf-workers-actions/prepare-preview-deploy]
@@ -37,6 +43,7 @@ flowchart TD
 ```
 
 ### All-in-one preview + cleanup
+
 ```mermaid
 flowchart TD
   PR2["Pull Request opened/updated"] --> Preview["cf-workers-actions/preview-deploy (all-in-one)"]
@@ -45,25 +52,28 @@ flowchart TD
 ```
 
 ## Minimal usage
+
 ### All-in-one
+
 ```yaml
 - uses: harunonsystem/cf-workers-actions/preview-deploy@v1
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    worker-name: 'myapp-pr-${{ github.event.pull_request.number }}'
-    domain: 'example.workers.dev'
+    worker-name: "myapp-pr-${{ github.event.pull_request.number }}"
+    domain: "example.workers.dev"
 ```
 
 ### Modular (prepare + wrangler + comment)
+
 ```yaml
 - name: Prepare preview
   id: prepare
   uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
   with:
-    worker-name: 'myapp-pr-${{ github.event.pull_request.number }}'
-    environment: 'preview'
-    domain: 'example.workers.dev'
+    worker-name: "myapp-pr-${{ github.event.pull_request.number }}"
+    environment: "preview"
+    domain: "example.workers.dev"
 
 - name: Deploy with Wrangler
   id: deploy
@@ -83,26 +93,30 @@ flowchart TD
 ```
 
 ### Cleanup previews on PR close
+
 ```yaml
 - uses: harunonsystem/cf-workers-actions/cleanup@v1
   with:
-    worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
+    worker-names: "myapp-pr-${{ github.event.pull_request.number }}"
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    dry-run: 'true'
+    dry-run: "true"
 ```
 
 ## Secrets & permissions (quick)
+
 - Cloudflare API token: use the "Workers:Edit" template; add `Zone:Read` only if deploying to custom domains.
 - GitHub token: prefer the workflow-provided `GITHUB_TOKEN`; limit permissions (e.g., `contents: read`, `pull-requests: write` when commenting).
 - For forked PRs, require approval before secrets run; keep `permissions:` minimal per job.
 
 ## Troubleshooting (fast)
+
 - wrangler.toml edits are text replacements—validate in CI if your file is complex.
 - Boolean-like inputs must be strings (`'true'` / `'false'`).
 - If dist/ is stale, run `pnpm run build` and commit updated `dist/` (CI checks this).
 
 ## Docs & references
+
 - Examples overview: [examples/README.md](examples/README.md)
 - Modular (Wrangler action) example: [examples/preview-deploy/using-wrangler-action/README.md](examples/preview-deploy/using-wrangler-action/README.md)
 - All-in-one example: [examples/preview-deploy/using-preview-deploy/README.md](examples/preview-deploy/using-preview-deploy/README.md)
@@ -115,4 +129,5 @@ flowchart TD
 - Official Cloudflare Wrangler action docs: [cloudflare/wrangler-action](https://github.com/cloudflare/wrangler-action)
 
 ## License
+
 MIT License. See [LICENSE](LICENSE).

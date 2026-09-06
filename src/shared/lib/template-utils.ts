@@ -24,7 +24,7 @@ export function processTemplate(template: string, variables: TemplateVariables):
   result = result.replace(/\{commit-hash\}/g, variables.commitHash);
 
   // Sanitize: remove invalid characters (only alphanumeric and dashes allowed)
-  result = result.replace(/[^a-zA-Z0-9-]/g, '');
+  result = result.replace(/[^a-zA-Z0-9-]/g, "");
 
   // Lowercase: Cloudflare worker names must be lowercase
   result = result.toLowerCase();
@@ -35,7 +35,7 @@ export function processTemplate(template: string, variables: TemplateVariables):
   }
 
   // workers.dev names are DNS labels and cannot start or end with a dash.
-  result = result.replace(/^-+|-+$/g, '');
+  result = result.replace(/^-+|-+$/g, "");
 
   return result;
 }

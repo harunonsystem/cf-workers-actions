@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { describe, expect, test } from 'vitest';
-import { parse } from 'yaml';
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, test } from "vitest";
+import { parse } from "yaml";
 
 /**
  * GitHub Actions YAML validation tests
@@ -46,13 +46,13 @@ interface ActionStep {
  * Load action file
  */
 function loadAction(actionName: string): ActionDefinition {
-  const actionPath = join(process.cwd(), '.github', 'actions', actionName, 'action.yml');
+  const actionPath = join(process.cwd(), ".github", "actions", actionName, "action.yml");
 
   if (!existsSync(actionPath)) {
     throw new Error(`Action file not found: ${actionPath}`);
   }
 
-  const content = readFileSync(actionPath, 'utf-8');
+  const content = readFileSync(actionPath, "utf-8");
   return parse(content) as ActionDefinition;
 }
 
@@ -60,26 +60,26 @@ function loadAction(actionName: string): ActionDefinition {
  * Get available actions
  */
 function getAvailableActions(): string[] {
-  const actionsDir = join(process.cwd(), '.github', 'actions');
+  const actionsDir = join(process.cwd(), ".github", "actions");
   if (!existsSync(actionsDir)) {
     return [];
   }
 
-  const { readdirSync } = require('node:fs');
+  const { readdirSync } = require("node:fs");
   return readdirSync(actionsDir, { withFileTypes: true })
     .filter((dirent: any) => dirent.isDirectory())
     .map((dirent: any) => dirent.name);
 }
 
-describe('GitHub Actions Validation', () => {
+describe("GitHub Actions Validation", () => {
   const actions = getAvailableActions();
 
-  describe('Action File Structure', () => {
-    test.each(actions)('should have valid YAML structure: %s', (actionName) => {
+  describe("Action File Structure", () => {
+    test.each(actions)("should have valid YAML structure: %s", (actionName) => {
       expect(() => loadAction(actionName)).not.toThrow();
     });
 
-    test.each(actions)('should have required fields: %s', (actionName) => {
+    test.each(actions)("should have required fields: %s", (actionName) => {
       const action = loadAction(actionName);
 
       expect(action.name).toBeDefined();
@@ -90,8 +90,8 @@ describe('GitHub Actions Validation', () => {
     });
   });
 
-  describe('Input Validation', () => {
-    test.each(actions)('should have proper input descriptions: %s', (actionName) => {
+  describe("Input Validation", () => {
+    test.each(actions)("should have proper input descriptions: %s", (actionName) => {
       const action = loadAction(actionName);
 
       if (action.inputs) {
@@ -104,17 +104,17 @@ describe('GitHub Actions Validation', () => {
     });
   });
 
-  describe('Runs Configuration', () => {
-    test.each(actions)('should use composite runs: %s', (actionName) => {
+  describe("Runs Configuration", () => {
+    test.each(actions)("should use composite runs: %s", (actionName) => {
       const action = loadAction(actionName);
 
-      expect(action.runs.using).toBe('composite');
+      expect(action.runs.using).toBe("composite");
       expect(action.runs.steps).toBeDefined();
       expect(Array.isArray(action.runs.steps)).toBe(true);
       expect(action.runs.steps?.length).toBeGreaterThan(0);
     });
 
-    test.each(actions)('should have valid step structure: %s', (actionName) => {
+    test.each(actions)("should have valid step structure: %s", (actionName) => {
       const action = loadAction(actionName);
 
       action.runs.steps?.forEach((step, _index) => {
@@ -135,16 +135,16 @@ describe('GitHub Actions Validation', () => {
     });
   });
 
-  describe('Security Validation', () => {
-    test.each(actions)('should use pinned action versions: %s', (actionName) => {
+  describe("Security Validation", () => {
+    test.each(actions)("should use pinned action versions: %s", (actionName) => {
       const action = loadAction(actionName);
 
       action.runs.steps?.forEach((step) => {
-        if (step.uses?.includes('@')) {
+        if (step.uses?.includes("@")) {
           // GitHub Actions should be pinned to specific commit SHAs or versions
-          const [actionRef, version] = step.uses.split('@');
+          const [actionRef, version] = step.uses.split("@");
 
-          if (actionRef.startsWith('actions/') || actionRef.includes('/')) {
+          if (actionRef.startsWith("actions/") || actionRef.includes("/")) {
             // External actions require version specification
             expect(version).toBeDefined();
             expect(version).toBeTruthy();
@@ -153,7 +153,7 @@ describe('GitHub Actions Validation', () => {
       });
     });
 
-    test.each(actions)('should not expose secrets in run commands: %s', (actionName) => {
+    test.each(actions)("should not expose secrets in run commands: %s", (actionName) => {
       const action = loadAction(actionName);
 
       action.runs.steps?.forEach((step) => {
@@ -167,8 +167,8 @@ describe('GitHub Actions Validation', () => {
     });
   });
 
-  describe('Best Practices', () => {
-    test.each(actions)('should have meaningful step names: %s', (actionName) => {
+  describe("Best Practices", () => {
+    test.each(actions)("should have meaningful step names: %s", (actionName) => {
       const action = loadAction(actionName);
 
       action.runs.steps?.forEach((step) => {
@@ -177,7 +177,7 @@ describe('GitHub Actions Validation', () => {
       });
     });
 
-    test('actions should follow consistent naming', () => {
+    test("actions should follow consistent naming", () => {
       actions.forEach((actionName) => {
         // Action name should be lowercase and hyphens only
         expect(actionName).toMatch(/^[a-z-]+$/);
@@ -189,7 +189,7 @@ describe('GitHub Actions Validation', () => {
       });
     });
 
-    test('input and output names should be consistent', () => {
+    test("input and output names should be consistent", () => {
       actions.forEach((actionName) => {
         const action = loadAction(actionName);
 

@@ -19,11 +19,13 @@ Choose the approach that best fits your needs:
 ### [Using Wrangler Action](./preview-deploy/using-wrangler-action/) (Modular)
 
 **Three separate actions for maximum flexibility:**
+
 - `prepare-preview-deploy` - Generate URLs and update wrangler.toml
 - `cloudflare/wrangler-action` - Official deployment
 - `pr-comment` - PR status updates
 
 **Best for:**
+
 - Teams wanting full control over deployment steps
 - Custom deployment logic between steps
 - Fine-grained workflow customization
@@ -31,9 +33,11 @@ Choose the approach that best fits your needs:
 ### [Using Preview Deploy](./preview-deploy/using-preview-deploy/) (All-in-one)
 
 **Single action handles everything:**
+
 - URL generation + deployment + PR commenting in one step
 
 **Best for:**
+
 - Simple, streamlined workflows
 - Quick setup with less boilerplate
 - Standard deployment patterns
@@ -43,10 +47,12 @@ Choose the approach that best fits your needs:
 Both approaches support common Git workflows:
 
 ### Preview + Production (GitHub Flow)
+
 - **Preview** (PRs) → `myapp-pr-123`
 - **Production** (main) → `myapp`
 
 ### Multi-Environment (GitFlow)
+
 - **Preview** (PRs) → `myapp-pr-123` (dynamic)
 - **Dev** (dev) → `myapp-dev` (static)
 - **Staging** (stg) → `myapp-stg` (static)

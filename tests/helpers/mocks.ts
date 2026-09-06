@@ -1,5 +1,5 @@
-import * as github from '@actions/github';
-import { vi } from 'vitest';
+import * as github from "@actions/github";
+import { vi } from "vitest";
 
 /**
  * Create a mock for core.summary with all chained methods
@@ -19,7 +19,7 @@ export function createCoreSummaryMock() {
     addEOL: vi.fn().mockReturnThis(),
     write: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockReturnThis(),
-    stringify: vi.fn().mockReturnValue(''),
+    stringify: vi.fn().mockReturnValue(""),
     isEmptyBuffer: vi.fn().mockReturnValue(true),
     emptyBuffer: vi.fn().mockReturnThis()
   };
@@ -50,17 +50,17 @@ export interface GitHubContextConfig {
  */
 export function setGitHubContext(config: GitHubContextConfig): void {
   const defaultConfig: Required<GitHubContextConfig> = {
-    owner: 'test-owner',
-    repo: 'test-repo',
-    sha: 'test-sha',
-    ref: 'refs/heads/main',
-    eventName: 'push',
+    owner: "test-owner",
+    repo: "test-repo",
+    sha: "test-sha",
+    ref: "refs/heads/main",
+    eventName: "push",
     payload: {}
   };
 
   const mergedConfig = { ...defaultConfig, ...config };
 
-  Object.defineProperty(github, 'context', {
+  Object.defineProperty(github, "context", {
     value: {
       repo: {
         owner: mergedConfig.owner,

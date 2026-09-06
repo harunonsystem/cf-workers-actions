@@ -1,5 +1,5 @@
-import * as github from '@actions/github';
-import { getBranchName, getCommitSha } from './github-utils';
+import * as github from "@actions/github";
+import { getBranchName, getCommitSha } from "./github-utils";
 
 export interface PreviewCommentContext {
   branchName: string;
@@ -38,8 +38,8 @@ export function buildPreviewComment(
   details: PreviewCommentDetails,
   context: PreviewCommentContext
 ): string {
-  const statusIcon = details.deploymentSuccess ? '✅' : '❌';
-  const statusText = details.deploymentSuccess ? 'Success' : 'Failed';
+  const statusIcon = details.deploymentSuccess ? "✅" : "❌";
+  const statusText = details.deploymentSuccess ? "Success" : "Failed";
 
   return `## 🚀 Preview Deployment
 
@@ -50,7 +50,7 @@ export function buildPreviewComment(
 **Commit:** ${context.commitSha}
 **Branch:** \`${context.branchName}\`
 
-${details.deploymentSuccess ? 'This preview will be automatically updated when you push new commits to this PR.' : 'Please check the workflow logs for details.'}`;
+${details.deploymentSuccess ? "This preview will be automatically updated when you push new commits to this PR." : "Please check the workflow logs for details."}`;
 }
 
 export function findExistingPreviewComment(
@@ -58,8 +58,8 @@ export function findExistingPreviewComment(
 ): PreviewCommentRecord | undefined {
   return comments.find(
     (comment) =>
-      comment.user?.login === 'github-actions[bot]' &&
-      comment.body?.includes('🚀 Preview Deployment')
+      comment.user?.login === "github-actions[bot]" &&
+      comment.body?.includes("🚀 Preview Deployment")
   );
 }
 
@@ -87,7 +87,7 @@ export async function createOrUpdatePreviewComment(
   deploymentSuccess?: boolean
 ): Promise<number> {
   const request: PreviewCommentRequest =
-    typeof requestOrPrNumber === 'number'
+    typeof requestOrPrNumber === "number"
       ? {
           prNumber: requestOrPrNumber,
           deploymentUrl: deploymentUrlOrContext as string,
@@ -96,7 +96,7 @@ export async function createOrUpdatePreviewComment(
         }
       : requestOrPrNumber;
   const resolvedContext =
-    typeof deploymentUrlOrContext === 'object' && deploymentUrlOrContext
+    typeof deploymentUrlOrContext === "object" && deploymentUrlOrContext
       ? deploymentUrlOrContext
       : getPreviewCommentContext();
   const body = buildPreviewComment(request, resolvedContext);

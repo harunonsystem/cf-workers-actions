@@ -1,7 +1,7 @@
-import { isCloudflareRateLimitError } from '../shared/lib/cloudflare-api';
-import { getErrorMessage } from '../shared/lib/error-handler';
-import { debug, error, info, warning } from '../shared/lib/logger';
-import { sleep as defaultSleep } from '../shared/lib/string-utils';
+import { isCloudflareRateLimitError } from "../shared/lib/cloudflare-api";
+import { getErrorMessage } from "../shared/lib/error-handler";
+import { debug, error, info, warning } from "../shared/lib/logger";
+import { sleep as defaultSleep } from "../shared/lib/string-utils";
 
 const RATE_LIMIT_DELAY = 500;
 const MAX_RETRIES = 3;
@@ -30,7 +30,7 @@ export interface CleanupPolicyResult {
   skippedWorkers: string[];
 }
 
-const defaultDependencies: Omit<CleanupPolicyDependencies, 'deleteWorker'> = {
+const defaultDependencies: Omit<CleanupPolicyDependencies, "deleteWorker"> = {
   logger: { debug, error, info, warning },
   sleep: defaultSleep
 };
@@ -45,7 +45,7 @@ async function deleteWithRetry(
   } catch (err) {
     const errorMessage = getErrorMessage(err);
     const isRateLimited =
-      isCloudflareRateLimitError(err) || errorMessage.toLowerCase().includes('rate limit');
+      isCloudflareRateLimitError(err) || errorMessage.toLowerCase().includes("rate limit");
 
     if (isRateLimited && retryCount < MAX_RETRIES) {
       const backoffDelay = 2 ** retryCount * 30000;
@@ -110,7 +110,7 @@ export async function executeCleanupPolicy(
 }
 
 export function createDefaultCleanupPolicyDependencies(
-  deleteWorker: CleanupPolicyDependencies['deleteWorker']
+  deleteWorker: CleanupPolicyDependencies["deleteWorker"]
 ): CleanupPolicyDependencies {
   return {
     deleteWorker,

@@ -20,16 +20,15 @@ jobs:
         with:
           # Delete worker matching PR number
           # Example: PR #123 -> deletes "myapp-pr-123"
-          worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
+          worker-names: "myapp-pr-${{ github.event.pull_request.number }}"
 
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
           # Set to 'false' to actually delete (default is 'true' for safety)
-          dry-run: 'false'
+          dry-run: "false"
 
       - name: Show result
         run: |
           echo "✅ Deleted: ${{ steps.cleanup.outputs.deleted-count }} worker(s)"
           echo "Workers: ${{ steps.cleanup.outputs.deleted-workers }}"
-

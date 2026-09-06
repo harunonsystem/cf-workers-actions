@@ -11,9 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       worker-names:
-        description: 'Worker names to delete (comma separated)'
+        description: "Worker names to delete (comma separated)"
         required: false
-        default: 'myapp-pr-1'
+        default: "myapp-pr-1"
       worker-prefix:
         description: 'Worker prefix (e.g., "myapp-pr-")'
         required: false
@@ -21,15 +21,14 @@ on:
         description: 'Worker numbers to delete (e.g., "1,2,3")'
         required: false
       dry-run:
-        description: 'Dry run mode (true=preview only, false=actual deletion)'
+        description: "Dry run mode (true=preview only, false=actual deletion)"
         required: false
-        default: 'true'
+        default: "true"
 
 permissions:
   contents: read
 
 jobs:
-
   pr-cleanup:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
@@ -39,10 +38,10 @@ jobs:
         id: cleanup
         uses: harunonsystem/cf-workers-actions/cleanup@v1
         with:
-          worker-names: 'myapp-pr-${{ github.event.pull_request.number }}'
+          worker-names: "myapp-pr-${{ github.event.pull_request.number }}"
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          dry-run: 'false'
+          dry-run: "false"
 
       - name: Log result
         run: |
@@ -60,7 +59,7 @@ jobs:
           worker-names: ${{ github.event.inputs.worker-names }}
           worker-prefix: ${{ github.event.inputs.worker-prefix }}
           worker-numbers: ${{ github.event.inputs.worker-numbers }}
-          exclude: 'myapp,myapp-dev,myapp-stg,*-production,*-prod'
+          exclude: "myapp,myapp-dev,myapp-stg,*-production,*-prod"
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           dry-run: ${{ github.event.inputs.dry-run }}

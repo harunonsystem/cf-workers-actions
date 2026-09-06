@@ -1,11 +1,11 @@
-import type { CloudflareApiResponse, CloudflareWorker } from '../schemas';
-import { getErrorMessage } from './error-handler';
-import { debug, error, info, warning } from './logger';
+import type { CloudflareApiResponse, CloudflareWorker } from "../schemas";
+import { getErrorMessage } from "./error-handler";
+import { debug, error, info, warning } from "./logger";
 
 export type CloudflareFetcher = (
   input: string,
   init?: RequestInit
-) => Promise<Pick<Response, 'ok' | 'status' | 'statusText' | 'json'>>;
+) => Promise<Pick<Response, "ok" | "status" | "statusText" | "json">>;
 
 /**
  * Error thrown by CloudflareApi.makeRequest, carrying the HTTP status code
@@ -16,7 +16,7 @@ export class CloudflareApiError extends Error {
 
   constructor(message: string, status: number) {
     super(message);
-    this.name = 'CloudflareApiError';
+    this.name = "CloudflareApiError";
     this.status = status;
   }
 }
@@ -31,12 +31,12 @@ export function isCloudflareRateLimitError(error: unknown): boolean {
 export class CloudflareApi {
   private readonly apiToken: string;
   private readonly accountId: string;
-  private readonly baseUrl = 'https://api.cloudflare.com/client/v4';
+  private readonly baseUrl = "https://api.cloudflare.com/client/v4";
   private readonly fetcher: CloudflareFetcher;
 
   constructor(apiToken: string, accountId: string, fetcher: CloudflareFetcher = fetch) {
     if (!apiToken || !accountId) {
-      throw new Error('API token and account ID are required');
+      throw new Error("API token and account ID are required");
     }
 
     this.apiToken = apiToken;
@@ -57,7 +57,7 @@ export class CloudflareApi {
       method,
       headers: {
         Authorization: `Bearer ${this.apiToken}`,
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json"
       }
     };
 
@@ -76,7 +76,7 @@ export class CloudflareApi {
       }
 
       if (!result.success) {
-        const errorMessage = result.errors?.[0]?.message || 'Unknown error';
+        const errorMessage = result.errors?.[0]?.message || "Unknown error";
         throw new CloudflareApiError(`Cloudflare API error: ${errorMessage}`, response.status);
       }
 
@@ -92,7 +92,7 @@ export class CloudflareApi {
    */
   async listWorkers(): Promise<CloudflareWorker[]> {
     const response = await this.makeRequest<CloudflareWorker[]>(
-      'GET',
+      "GET",
       `/accounts/${this.accountId}/workers/scripts`
     );
     return response.result || [];
@@ -104,7 +104,7 @@ export class CloudflareApi {
   async getWorker(workerName: string): Promise<CloudflareWorker | null> {
     try {
       const response = await this.makeRequest<CloudflareWorker>(
-        'GET',
+        "GET",
         `/accounts/${this.accountId}/workers/scripts/${workerName}`
       );
       return response.result || null;
@@ -121,7 +121,7 @@ export class CloudflareApi {
    */
   async deleteWorker(workerName: string): Promise<boolean> {
     try {
-      await this.makeRequest('DELETE', `/accounts/${this.accountId}/workers/scripts/${workerName}`);
+      await this.makeRequest("DELETE", `/accounts/${this.accountId}/workers/scripts/${workerName}`);
       info(`Successfully deleted worker: ${workerName}`);
       return true;
     } catch (err) {
