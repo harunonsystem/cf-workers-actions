@@ -29,9 +29,9 @@ jobs:
         id: prepare
         uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
         with:
-          worker-name: 'myapp-pr-{pr-number}'
-          environment: 'preview'
-          domain: 'preview.example.com'
+          worker-name: "myapp-pr-{pr-number}"
+          environment: "preview"
+          domain: "preview.example.com"
 
       # Deploy to Cloudflare Workers using preview environment
       - name: Deploy to Preview

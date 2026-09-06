@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "typescript/no-explicit-any": "off"
+  },
+  "ignorePatterns": ["dist/**", "coverage/**", "node_modules/**", ".gemini/**"],
+  "overrides": [
+    {
+      "files": ["tests/**/*.ts", "vitest.setup.ts", "scripts/**"],
+      "rules": {
+        "eslint/no-import-assign": "off",
+        "eslint/no-unused-vars": "off"
+      }
+    }
+  ]
+}

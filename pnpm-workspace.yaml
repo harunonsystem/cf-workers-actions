@@ -1,10 +1,10 @@
 overrides:
-  'js-yaml@^3': '^3.14.1'
-  'js-yaml@^4': '^4.3.1'
-  'picomatch@^2': '^2.3.2'
-  'picomatch@^4': '^4.0.4'
-  undici: '^6.28.0'
-  postcss: '>=8.5.23'
+  "js-yaml@^3": "^3.14.1"
+  "js-yaml@^4": "^4.3.1"
+  "picomatch@^2": "^2.3.2"
+  "picomatch@^4": "^4.0.4"
+  undici: "^6.28.0"
+  postcss: ">=8.5.23"
 
 allowBuilds:
   esbuild: true

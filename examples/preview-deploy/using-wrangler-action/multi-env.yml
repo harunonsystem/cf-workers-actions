@@ -16,12 +16,12 @@ on:
     branches: [dev, stg, main]
     types: [opened, synchronize, reopened]
   push:
-    branches: 
+    branches:
       - dev
       - stg
-      - 'release/**'
-      - 'feature/**'
-      - 'hotfix/**'
+      - "release/**"
+      - "feature/**"
+      - "hotfix/**"
 
 jobs:
   # Preview deployment for Pull Requests (DYNAMIC)
@@ -41,9 +41,9 @@ jobs:
         id: prepare
         uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
         with:
-          worker-name: 'myapp-pr-{pr-number}'
-          environment: 'preview'
-          domain: 'preview.example.com'
+          worker-name: "myapp-pr-{pr-number}"
+          environment: "preview"
+          domain: "preview.example.com"
 
       # Deploy to Cloudflare Workers using preview environment
       - name: Deploy to Preview
@@ -124,8 +124,8 @@ jobs:
       - name: Prepare Release Deployment
         uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
         with:
-          worker-name: 'myapp-release-${{ steps.version.outputs.version }}'
-          environment: 'release'
+          worker-name: "myapp-release-${{ steps.version.outputs.version }}"
+          environment: "release"
 
       # Deploy to release environment
       - name: Deploy to Release

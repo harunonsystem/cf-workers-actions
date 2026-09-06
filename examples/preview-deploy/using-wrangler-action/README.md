@@ -11,25 +11,31 @@ Modular deployment approach using three separate actions for maximum flexibility
 ## 📋 Workflows
 
 ### Preview + Production
+
 👉 [`preview-prod.yml`](./preview-prod.yml)
 
 **Simple two-environment pattern (GitHub Flow):**
+
 - Pull Request → Preview (`myapp-pr-123`)
 - Push to main → Production (`myapp`)
 
 ### Multi-Environment
+
 👉 [`multi-env.yml`](./multi-env.yml)
 
 **Multi-environment with dynamic + static deployments (GitFlow):**
+
 - Pull Request → **Preview (DYNAMIC)** (`myapp-pr-123`)
 - Push to dev → **Dev (STATIC)** (`myapp-dev`)
 - Push to stg → **Staging (STATIC)** (`myapp-stg`)
 - Push to release/** → **Release (STATIC)** (`myapp-release-v1.0`)
 
 ### Production Only
+
 👉 [`prod-deploy.yml`](../prod-deploy.yml)
 
 **Production deployment with approval workflow:**
+
 - Push to main → Production (`myapp`)
 - Uses GitHub Environment protection for manual approval
 - Perfect companion to `multi-env.yml` for GitFlow
@@ -69,9 +75,9 @@ To use custom domains, specify the `domain` input:
 ```yaml
 - uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
   with:
-    worker-name: 'myapp-pr-{pr-number}'
-    environment: 'preview'
-    domain: 'preview.example.com'  # Custom domain
+    worker-name: "myapp-pr-{pr-number}"
+    environment: "preview"
+    domain: "preview.example.com" # Custom domain
     pr-number: ${{ github.event.pull_request.number }}
 ```
 
@@ -88,6 +94,7 @@ routes = [
 ## 💡 Key Differences: Dynamic vs Static
 
 ### Dynamic Preview (PR-based)
+
 - Uses `prepare-preview-deploy` to generate worker names and update wrangler.toml
 - Updates `wrangler.toml` `[env.preview]` section with `name = "myapp-pr-123"`
 - Deployed with `-e` flag: `wrangler deploy -e preview`
@@ -95,6 +102,7 @@ routes = [
 - **Uses wrangler.toml env config (dynamically updated)**
 
 ### Static Environments (Branch-based)
+
 - Uses `wrangler.toml` env configuration (static)
 - Deployed with `-e` flag: `wrangler deploy -e dev`
 - Worker name is always the same: `myapp-dev`, `myapp-stg`

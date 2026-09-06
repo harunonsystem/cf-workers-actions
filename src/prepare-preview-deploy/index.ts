@@ -1,13 +1,13 @@
-import { prepareDeployment } from '../shared/lib/deployment-utils';
-import { env } from '../shared/lib/env';
-import { handleActionError } from '../shared/lib/error-handler';
-import { info } from '../shared/lib/logger';
-import { getActionInputs, setOutputsValidated } from '../shared/validation';
+import { prepareDeployment } from "../shared/lib/deployment-utils";
+import { env } from "../shared/lib/env";
+import { handleActionError } from "../shared/lib/error-handler";
+import { info } from "../shared/lib/logger";
+import { getActionInputs, setOutputsValidated } from "../shared/validation";
 import {
   PreparePreviewDeployInputConfig,
   PreparePreviewDeployInputSchema,
   PreparePreviewDeployOutputSchema
-} from './schemas.js';
+} from "./schemas.js";
 
 async function run(): Promise<void> {
   try {
@@ -17,10 +17,10 @@ async function run(): Promise<void> {
       PreparePreviewDeployInputConfig
     );
     if (!inputs) {
-      throw new Error('Input validation failed');
+      throw new Error("Input validation failed");
     }
 
-    info('🚀 Preparing preview deployment...');
+    info("🚀 Preparing preview deployment...");
     info(`Worker name template: ${inputs.workerName}`);
     info(`Environment: ${inputs.environment}`);
 
@@ -38,13 +38,13 @@ async function run(): Promise<void> {
       deploymentUrl: config.deploymentUrl
     });
 
-    info('✅ Prepare preview deployment completed');
+    info("✅ Prepare preview deployment completed");
   } catch (err) {
     await handleActionError(err, {
-      summaryTitle: 'Prepare Preview Deploy Failed',
+      summaryTitle: "Prepare Preview Deploy Failed",
       outputs: {
-        'deployment-name': '',
-        'deployment-url': ''
+        "deployment-name": "",
+        "deployment-url": ""
       }
     });
   }

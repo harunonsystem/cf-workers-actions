@@ -1,10 +1,10 @@
-import * as exec from '@actions/exec';
+import * as exec from "@actions/exec";
 import {
   type DeploymentConfig,
   type PrepareDeploymentOptions,
   prepareDeployment
-} from './deployment-utils';
-import { error } from './logger';
+} from "./deployment-utils";
+import { error } from "./logger";
 
 export interface PreviewDeploymentOptions extends PrepareDeploymentOptions {
   cloudflareAccountId: string;
@@ -41,8 +41,8 @@ async function deployWorker(
     };
 
     await exec.exec(
-      'npx',
-      ['wrangler', 'deploy', '-e', environment, '--config', wranglerTomlPath],
+      "npx",
+      ["wrangler", "deploy", "-e", environment, "--config", wranglerTomlPath],
       { env: envVars }
     );
     return true;
@@ -82,7 +82,7 @@ export async function executePreviewDeployment(
   );
 
   if (!deploymentSuccess) {
-    throw new Error('Deployment failed');
+    throw new Error("Deployment failed");
   }
 
   if (config.prNumber && resolvedDependencies.postComment) {

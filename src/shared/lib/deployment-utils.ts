@@ -1,7 +1,7 @@
-import { getCommitSha, getPrNumber, getSanitizedBranchName } from './github-utils';
-import { info } from './logger';
-import { processTemplate } from './template-utils';
-import { updateWranglerToml } from './wrangler-utils';
+import { getCommitSha, getPrNumber, getSanitizedBranchName } from "./github-utils";
+import { info } from "./logger";
+import { processTemplate } from "./template-utils";
+import { updateWranglerToml } from "./wrangler-utils";
 
 /**
  * Deployment configuration result (internal use only)
@@ -74,7 +74,7 @@ export async function prepareDeployment(
   });
 
   if (!workerName) {
-    throw new Error('Worker name is empty after template processing');
+    throw new Error("Worker name is empty after template processing");
   }
 
   dependencies.info(`✅ Generated worker name: ${workerName}`);

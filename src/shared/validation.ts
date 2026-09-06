@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
-import type { z } from 'zod';
+import * as core from "@actions/core";
+import type { z } from "zod";
 
 // ================================
 // Type-level Utilities for Schema/Config Consistency
@@ -111,8 +111,8 @@ export function parseInputs<T>(schema: z.ZodType<T>, raw: unknown): T | null {
 
   if (!result.success) {
     const msg = result.error.issues
-      .map((e: z.ZodIssue) => `${e.path.join('.')} - ${e.message}`)
-      .join('; ');
+      .map((e: z.ZodIssue) => `${e.path.join(".")} - ${e.message}`)
+      .join("; ");
     core.setFailed(`Input validation failed: ${msg}`);
     return null;
   }
@@ -138,8 +138,8 @@ export function getActionInputs<T>(
 
   if (!result.success) {
     const msg = result.error.issues
-      .map((e: z.ZodIssue) => `${e.path.join('.')} - ${e.message}`)
-      .join('; ');
+      .map((e: z.ZodIssue) => `${e.path.join(".")} - ${e.message}`)
+      .join("; ");
     core.setFailed(`Input validation failed: ${msg}`);
     return null;
   }
@@ -162,7 +162,7 @@ export function setOutputsValidated<T>(schema: z.ZodType<T>, outputs: T) {
   const result = schema.safeParse(outputs);
 
   if (!result.success) {
-    const message = result.error.issues.map((e: z.ZodIssue) => e.message).join('; ');
+    const message = result.error.issues.map((e: z.ZodIssue) => e.message).join("; ");
     core.setFailed(`Output validation failed: ${message}`);
     return;
   }
@@ -172,8 +172,8 @@ export function setOutputsValidated<T>(schema: z.ZodType<T>, outputs: T) {
   for (const [k, v] of Object.entries(validated)) {
     const dashKey = camelToDash(k);
     if (v === undefined || v === null) {
-      core.setOutput(dashKey, '');
-    } else if (typeof v === 'object') {
+      core.setOutput(dashKey, "");
+    } else if (typeof v === "object") {
       core.setOutput(dashKey, JSON.stringify(v));
     } else {
       core.setOutput(dashKey, String(v));

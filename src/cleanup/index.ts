@@ -1,11 +1,11 @@
-import * as core from '@actions/core';
-import { CloudflareApi } from '../shared/lib/cloudflare-api';
-import { env } from '../shared/lib/env';
-import { CLEANUP_ERROR_OUTPUTS, handleActionError } from '../shared/lib/error-handler';
-import { info } from '../shared/lib/logger';
-import { getActionInputs } from '../shared/validation';
-import { createDefaultCleanupPolicyDependencies, executeCleanupPolicy } from './cleanup-policy';
-import { CleanupInputConfig, CleanupInputSchema } from './schemas';
+import * as core from "@actions/core";
+import { CloudflareApi } from "../shared/lib/cloudflare-api";
+import { env } from "../shared/lib/env";
+import { CLEANUP_ERROR_OUTPUTS, handleActionError } from "../shared/lib/error-handler";
+import { info } from "../shared/lib/logger";
+import { getActionInputs } from "../shared/validation";
+import { createDefaultCleanupPolicyDependencies, executeCleanupPolicy } from "./cleanup-policy";
+import { CleanupInputConfig, CleanupInputSchema } from "./schemas";
 import {
   createCleanupSummary,
   createDryRunSummary,
@@ -14,7 +14,7 @@ import {
   parseWorkerNamesInput,
   setCleanupOutputs,
   setEmptyCleanupOutputs
-} from './utils';
+} from "./utils";
 
 async function run(): Promise<void> {
   try {
@@ -22,18 +22,18 @@ async function run(): Promise<void> {
     const inputs = getActionInputs(CleanupInputSchema, CleanupInputConfig, (raw) => {
       // Parse worker names from various input formats
       const workerNames = parseWorkerNamesInput(
-        core.getInput('worker-names'),
-        core.getInput('worker-numbers'),
-        core.getInput('worker-prefix')
+        core.getInput("worker-names"),
+        core.getInput("worker-numbers"),
+        core.getInput("worker-prefix")
       );
       return {
         ...raw,
         workerNames,
-        dryRun: raw.dryRun === 'true'
+        dryRun: raw.dryRun === "true"
       };
     });
     if (!inputs) {
-      throw new Error('Input validation failed');
+      throw new Error("Input validation failed");
     }
 
     // Initialize Cloudflare API client
@@ -43,7 +43,7 @@ async function run(): Promise<void> {
     let workersToProcess: string[] = [];
     if (inputs.workerNames && inputs.workerNames.length > 0) {
       workersToProcess = inputs.workerNames;
-      info(`Processing specific workers: ${inputs.workerNames.join(', ')}`);
+      info(`Processing specific workers: ${inputs.workerNames.join(", ")}`);
     }
 
     // Apply exclusion filter
@@ -52,7 +52,7 @@ async function run(): Promise<void> {
 
     // Early exit if no workers to process
     if (workersToProcess.length === 0) {
-      info('No workers found to process');
+      info("No workers found to process");
       setEmptyCleanupOutputs();
       return;
     }
@@ -74,7 +74,7 @@ async function run(): Promise<void> {
     }
   } catch (err) {
     await handleActionError(err, {
-      summaryTitle: 'Cloudflare Workers Cleanup Failed',
+      summaryTitle: "Cloudflare Workers Cleanup Failed",
       outputs: CLEANUP_ERROR_OUTPUTS
     });
   }

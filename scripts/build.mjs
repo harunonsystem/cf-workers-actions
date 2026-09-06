@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import { execSync } from 'node:child_process';
-import { readdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { execSync } from "node:child_process";
+import { readdirSync, rmSync } from "node:fs";
+import { join } from "node:path";
 
-const actions = ['cleanup', 'pr-comment', 'prepare-preview-deploy', 'preview-deploy'];
+const actions = ["cleanup", "pr-comment", "prepare-preview-deploy", "preview-deploy"];
 
-console.log('🔨 Building actions with ncc...\n');
+console.log("🔨 Building actions with ncc...\n");
 
 for (const action of actions) {
   const srcPath = `src/${action}/index.ts`;
@@ -14,14 +14,14 @@ for (const action of actions) {
   console.log(`📦 Building ${action}...`);
   try {
     execSync(`ncc build ${srcPath} -o ${outDir} -m --no-source-map-register`, {
-      stdio: 'inherit',
+      stdio: "inherit",
       cwd: process.cwd()
     });
 
     // GitHub Actions run only the bundled index.js — drop every other ncc byproduct (.d.ts, chunk files, subdirectories)
     const distPath = join(process.cwd(), outDir);
     for (const item of readdirSync(distPath)) {
-      if (item !== 'index.js') {
+      if (item !== "index.js") {
         rmSync(join(distPath, item), { recursive: true, force: true });
       }
     }
@@ -32,6 +32,6 @@ for (const action of actions) {
 }
 
 // ncc also emits declaration trees outside the per-action output dirs
-rmSync(join(process.cwd(), 'dist/shared'), { recursive: true, force: true });
+rmSync(join(process.cwd(), "dist/shared"), { recursive: true, force: true });
 
-console.log('\n✅ All actions built successfully!');
+console.log("\n✅ All actions built successfully!");

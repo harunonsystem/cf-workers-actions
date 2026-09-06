@@ -6,7 +6,7 @@
 export function parseCommaSeparatedList(input: string): string[] {
   if (!input) return [];
   return input
-    .split(',')
+    .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
 }

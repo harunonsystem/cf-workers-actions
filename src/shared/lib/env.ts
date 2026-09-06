@@ -10,12 +10,12 @@ export const env = {
   /**
    * Check if running in test environment
    */
-  isTest: () => process.env.NODE_ENV === 'test',
+  isTest: () => process.env.NODE_ENV === "test",
 
   /**
    * Check if debug mode is enabled (ACTIONS_STEP_DEBUG)
    */
-  isDebug: () => process.env.ACTIONS_STEP_DEBUG === 'true',
+  isDebug: () => process.env.ACTIONS_STEP_DEBUG === "true",
 
   /**
    * Get GitHub token from environment

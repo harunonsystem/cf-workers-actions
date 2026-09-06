@@ -1,18 +1,18 @@
 ---
-name: 'CI Checks'
-description: 'Run common CI checks: install dependencies, build, type check, lint, and test'
+name: "CI Checks"
+description: "Run common CI checks: install dependencies, build, type check, lint, and test"
 
 inputs:
   node-version:
-    description: 'Node.js version to use'
+    description: "Node.js version to use"
     required: true
   run-quality:
-    description: 'Run build, type checking, and linting in addition to tests'
+    description: "Run build, type checking, and linting in addition to tests"
     required: false
-    default: 'true'
+    default: "true"
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Setup environment
       uses: ./.github/actions/setup
@@ -29,7 +29,12 @@ runs:
       run: pnpm run typecheck
       shell: bash
 
-    - name: Run linter (Biome)
+    - name: Check formatting (oxfmt)
+      if: inputs.run-quality == 'true'
+      run: pnpm run format:check
+      shell: bash
+
+    - name: Run linter (oxlint)
       if: inputs.run-quality == 'true'
       run: pnpm run lint
       shell: bash

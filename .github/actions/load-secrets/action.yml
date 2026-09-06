@@ -1,22 +1,22 @@
 ---
-name: 'Load Secrets'
-description: 'Load Cloudflare secrets from 1Password'
+name: "Load Secrets"
+description: "Load Cloudflare secrets from 1Password"
 
 inputs:
   op-service-account-token:
-    description: '1Password Service Account Token'
+    description: "1Password Service Account Token"
     required: true
 
 outputs:
   cloudflare-api-token:
-    description: 'Cloudflare API Token'
+    description: "Cloudflare API Token"
     value: ${{ steps.secrets.outputs.CLOUDFLARE_API_TOKEN }}
   cloudflare-account-id:
-    description: 'Cloudflare Account ID'
+    description: "Cloudflare Account ID"
     value: ${{ steps.secrets.outputs.CLOUDFLARE_ACCOUNT_ID }}
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Load secrets from 1Password
       id: secrets

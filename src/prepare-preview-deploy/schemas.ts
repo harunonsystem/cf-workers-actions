@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { CommonFields } from '../shared/schemas';
-import type { TypedInputConfig } from '../shared/validation';
+import { z } from "zod";
+import { CommonFields } from "../shared/schemas";
+import type { TypedInputConfig } from "../shared/validation";
 
 export const PreparePreviewDeployInputSchema = z.object({
   workerName: CommonFields.workerName,
@@ -18,10 +18,10 @@ export type PreparePreviewDeployInput = z.infer<typeof PreparePreviewDeployInput
 export const PreparePreviewDeployInputConfig: TypedInputConfig<
   typeof PreparePreviewDeployInputSchema
 > = {
-  'worker-name': { required: true },
+  "worker-name": { required: true },
   environment: { required: true },
-  domain: { required: false, default: 'workers.dev' },
-  'wrangler-toml-path': { required: false, default: './wrangler.toml' }
+  domain: { required: false, default: "workers.dev" },
+  "wrangler-toml-path": { required: false, default: "./wrangler.toml" }
 };
 
 export const PreparePreviewDeployOutputSchema = z.object({

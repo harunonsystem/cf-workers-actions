@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { env } from '../../src/shared/lib/env';
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { env } from "../../src/shared/lib/env";
 
-describe('env', () => {
+describe("env", () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
@@ -16,12 +16,12 @@ describe('env', () => {
     process.env = { ...originalEnv };
   });
 
-  describe('isTest', () => {
+  describe("isTest", () => {
     it.each([
-      ['test', true],
-      ['production', false],
+      ["test", true],
+      ["production", false],
       [undefined, false]
-    ])('should return %s when NODE_ENV is %s', (value, expected) => {
+    ])("should return %s when NODE_ENV is %s", (value, expected) => {
       if (value === undefined) {
         delete process.env.NODE_ENV;
       } else {
@@ -31,13 +31,13 @@ describe('env', () => {
     });
   });
 
-  describe('isDebug', () => {
+  describe("isDebug", () => {
     it.each([
-      ['true', true],
-      ['false', false],
-      ['1', false],
+      ["true", true],
+      ["false", false],
+      ["1", false],
       [undefined, false]
-    ])('should return %s when ACTIONS_STEP_DEBUG is %s', (value, expected) => {
+    ])("should return %s when ACTIONS_STEP_DEBUG is %s", (value, expected) => {
       if (value === undefined) {
         delete process.env.ACTIONS_STEP_DEBUG;
       } else {
@@ -47,11 +47,11 @@ describe('env', () => {
     });
   });
 
-  describe('githubToken', () => {
+  describe("githubToken", () => {
     it.each([
-      ['ghp_test123', 'ghp_test123'],
+      ["ghp_test123", "ghp_test123"],
       [undefined, undefined]
-    ])('should return %s when GITHUB_TOKEN is %s', (value, expected) => {
+    ])("should return %s when GITHUB_TOKEN is %s", (value, expected) => {
       if (value === undefined) {
         delete process.env.GITHUB_TOKEN;
       } else {
@@ -61,11 +61,11 @@ describe('env', () => {
     });
   });
 
-  describe('githubHeadRef', () => {
+  describe("githubHeadRef", () => {
     it.each([
-      ['feature/awesome', 'feature/awesome'],
+      ["feature/awesome", "feature/awesome"],
       [undefined, undefined]
-    ])('should return %s when GITHUB_HEAD_REF is %s', (value, expected) => {
+    ])("should return %s when GITHUB_HEAD_REF is %s", (value, expected) => {
       if (value === undefined) {
         delete process.env.GITHUB_HEAD_REF;
       } else {
@@ -75,12 +75,12 @@ describe('env', () => {
     });
   });
 
-  describe('githubRef', () => {
+  describe("githubRef", () => {
     it.each([
-      ['refs/heads/main', 'refs/heads/main'],
-      ['refs/pull/123/merge', 'refs/pull/123/merge'],
+      ["refs/heads/main", "refs/heads/main"],
+      ["refs/pull/123/merge", "refs/pull/123/merge"],
       [undefined, undefined]
-    ])('should return %s when GITHUB_REF is %s', (value, expected) => {
+    ])("should return %s when GITHUB_REF is %s", (value, expected) => {
       if (value === undefined) {
         delete process.env.GITHUB_REF;
       } else {

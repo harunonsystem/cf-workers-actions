@@ -1,8 +1,8 @@
-import * as core from '@actions/core';
-import { beforeEach, describe, expect, it, test, vi } from 'vitest';
+import * as core from "@actions/core";
+import { beforeEach, describe, expect, it, test, vi } from "vitest";
 
 // @actions/core is mocked in vitest.setup.ts
-vi.mock('../../shared/lib/logger', () => ({
+vi.mock("../../shared/lib/logger", () => ({
   debug: vi.fn(),
   info: vi.fn()
 }));
@@ -13,18 +13,18 @@ import {
   parseWorkerNamesInput,
   setCleanupOutputs,
   setEmptyCleanupOutputs
-} from '../utils';
+} from "../utils";
 
-describe('cleanup/utils', () => {
+describe("cleanup/utils", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('parseWorkerNamesInput', () => {
+  describe("parseWorkerNamesInput", () => {
     it.each([
-      ['worker-1, worker-2, worker-3', '', '', ['worker-1', 'worker-2', 'worker-3']],
-      ['', '1, 2, 3', 'app-preview-', ['app-preview-1', 'app-preview-2', 'app-preview-3']],
-      ['explicit-worker', '1, 2', 'prefix-', ['explicit-worker']]
+      ["worker-1, worker-2, worker-3", "", "", ["worker-1", "worker-2", "worker-3"]],
+      ["", "1, 2, 3", "app-preview-", ["app-preview-1", "app-preview-2", "app-preview-3"]],
+      ["explicit-worker", "1, 2", "prefix-", ["explicit-worker"]]
     ])(
       'should parse "%s" with numbers "%s" and prefix "%s"',
       (workerNames, numbers, prefix, expected) => {
@@ -33,122 +33,122 @@ describe('cleanup/utils', () => {
     );
 
     it.each([
-      ['', '', '', 'no valid input'],
-      ['', '', 'prefix-', 'only prefix without numbers'],
-      ['', '1, 2, 3', '', 'only numbers without prefix']
-    ])('should return undefined when %s', (workerNames, numbers, prefix, _description) => {
+      ["", "", "", "no valid input"],
+      ["", "", "prefix-", "only prefix without numbers"],
+      ["", "1, 2, 3", "", "only numbers without prefix"]
+    ])("should return undefined when %s", (workerNames, numbers, prefix, _description) => {
       expect(parseWorkerNamesInput(workerNames, numbers, prefix)).toBeUndefined();
     });
   });
 
-  describe('createExclusionFilter', () => {
-    test('should return empty filter for undefined input', () => {
+  describe("createExclusionFilter", () => {
+    test("should return empty filter for undefined input", () => {
       const filter = createExclusionFilter(undefined);
       expect(filter.exactNames.size).toBe(0);
       expect(filter.patterns.length).toBe(0);
     });
 
-    test('should return empty filter for empty string', () => {
-      const filter = createExclusionFilter('');
+    test("should return empty filter for empty string", () => {
+      const filter = createExclusionFilter("");
       expect(filter.exactNames.size).toBe(0);
       expect(filter.patterns.length).toBe(0);
     });
 
-    test('should parse exact names', () => {
-      const filter = createExclusionFilter('worker-1, worker-2');
-      expect(filter.exactNames.has('worker-1')).toBe(true);
-      expect(filter.exactNames.has('worker-2')).toBe(true);
+    test("should parse exact names", () => {
+      const filter = createExclusionFilter("worker-1, worker-2");
+      expect(filter.exactNames.has("worker-1")).toBe(true);
+      expect(filter.exactNames.has("worker-2")).toBe(true);
       expect(filter.patterns.length).toBe(0);
     });
 
-    test('should parse glob patterns with *', () => {
-      const filter = createExclusionFilter('prod-*, staging-*');
+    test("should parse glob patterns with *", () => {
+      const filter = createExclusionFilter("prod-*, staging-*");
       expect(filter.exactNames.size).toBe(0);
       expect(filter.patterns.length).toBe(2);
-      expect(filter.patterns[0].test('prod-worker')).toBe(true);
-      expect(filter.patterns[1].test('staging-api')).toBe(true);
+      expect(filter.patterns[0].test("prod-worker")).toBe(true);
+      expect(filter.patterns[1].test("staging-api")).toBe(true);
     });
 
-    test('should parse glob patterns with ?', () => {
-      const filter = createExclusionFilter('worker-?');
+    test("should parse glob patterns with ?", () => {
+      const filter = createExclusionFilter("worker-?");
       expect(filter.patterns.length).toBe(1);
-      expect(filter.patterns[0].test('worker-1')).toBe(true);
-      expect(filter.patterns[0].test('worker-12')).toBe(false);
+      expect(filter.patterns[0].test("worker-1")).toBe(true);
+      expect(filter.patterns[0].test("worker-12")).toBe(false);
     });
 
-    test('should handle mixed exact and patterns', () => {
-      const filter = createExclusionFilter('exact-name, pattern-*');
-      expect(filter.exactNames.has('exact-name')).toBe(true);
+    test("should handle mixed exact and patterns", () => {
+      const filter = createExclusionFilter("exact-name, pattern-*");
+      expect(filter.exactNames.has("exact-name")).toBe(true);
       expect(filter.patterns.length).toBe(1);
     });
   });
 
-  describe('filterWorkersByExclusion', () => {
-    test('should return empty array for empty workers', () => {
-      const filter = createExclusionFilter('exclude-me');
+  describe("filterWorkersByExclusion", () => {
+    test("should return empty array for empty workers", () => {
+      const filter = createExclusionFilter("exclude-me");
       const result = filterWorkersByExclusion([], filter);
       expect(result).toEqual([]);
     });
 
-    test('should filter by exact names', () => {
-      const filter = createExclusionFilter('worker-2');
-      const result = filterWorkersByExclusion(['worker-1', 'worker-2', 'worker-3'], filter);
-      expect(result).toEqual(['worker-1', 'worker-3']);
+    test("should filter by exact names", () => {
+      const filter = createExclusionFilter("worker-2");
+      const result = filterWorkersByExclusion(["worker-1", "worker-2", "worker-3"], filter);
+      expect(result).toEqual(["worker-1", "worker-3"]);
     });
 
-    test('should filter by patterns', () => {
-      const filter = createExclusionFilter('prod-*');
-      const result = filterWorkersByExclusion(['prod-api', 'prod-web', 'staging-api'], filter);
-      expect(result).toEqual(['staging-api']);
+    test("should filter by patterns", () => {
+      const filter = createExclusionFilter("prod-*");
+      const result = filterWorkersByExclusion(["prod-api", "prod-web", "staging-api"], filter);
+      expect(result).toEqual(["staging-api"]);
     });
 
-    test('should filter by both exact and patterns', () => {
-      const filter = createExclusionFilter('exact-worker, temp-*');
+    test("should filter by both exact and patterns", () => {
+      const filter = createExclusionFilter("exact-worker, temp-*");
       const result = filterWorkersByExclusion(
-        ['exact-worker', 'temp-1', 'temp-2', 'keep-this'],
+        ["exact-worker", "temp-1", "temp-2", "keep-this"],
         filter
       );
-      expect(result).toEqual(['keep-this']);
+      expect(result).toEqual(["keep-this"]);
     });
 
-    test('should return all workers if no exclusions match', () => {
-      const filter = createExclusionFilter('non-existent');
-      const result = filterWorkersByExclusion(['worker-1', 'worker-2'], filter);
-      expect(result).toEqual(['worker-1', 'worker-2']);
+    test("should return all workers if no exclusions match", () => {
+      const filter = createExclusionFilter("non-existent");
+      const result = filterWorkersByExclusion(["worker-1", "worker-2"], filter);
+      expect(result).toEqual(["worker-1", "worker-2"]);
     });
   });
 
-  describe('setEmptyCleanupOutputs', () => {
-    test('should set all outputs to empty values', () => {
+  describe("setEmptyCleanupOutputs", () => {
+    test("should set all outputs to empty values", () => {
       setEmptyCleanupOutputs();
 
-      expect(core.setOutput).toHaveBeenCalledWith('deleted-workers', '[]');
-      expect(core.setOutput).toHaveBeenCalledWith('deleted-count', '0');
-      expect(core.setOutput).toHaveBeenCalledWith('skipped-workers', '[]');
-      expect(core.setOutput).toHaveBeenCalledWith('dry-run-results', '[]');
+      expect(core.setOutput).toHaveBeenCalledWith("deleted-workers", "[]");
+      expect(core.setOutput).toHaveBeenCalledWith("deleted-count", "0");
+      expect(core.setOutput).toHaveBeenCalledWith("skipped-workers", "[]");
+      expect(core.setOutput).toHaveBeenCalledWith("dry-run-results", "[]");
     });
   });
 
-  describe('setCleanupOutputs', () => {
-    test('should set outputs for dry run mode', () => {
-      setCleanupOutputs({ deletedWorkers: ['worker-1', 'worker-2'], skippedWorkers: [] }, true);
+  describe("setCleanupOutputs", () => {
+    test("should set outputs for dry run mode", () => {
+      setCleanupOutputs({ deletedWorkers: ["worker-1", "worker-2"], skippedWorkers: [] }, true);
 
-      expect(core.setOutput).toHaveBeenCalledWith('deleted-workers', '[]');
-      expect(core.setOutput).toHaveBeenCalledWith('deleted-count', '0');
-      expect(core.setOutput).toHaveBeenCalledWith('skipped-workers', '[]');
+      expect(core.setOutput).toHaveBeenCalledWith("deleted-workers", "[]");
+      expect(core.setOutput).toHaveBeenCalledWith("deleted-count", "0");
+      expect(core.setOutput).toHaveBeenCalledWith("skipped-workers", "[]");
       expect(core.setOutput).toHaveBeenCalledWith(
-        'dry-run-results',
-        JSON.stringify(['worker-1', 'worker-2'])
+        "dry-run-results",
+        JSON.stringify(["worker-1", "worker-2"])
       );
     });
 
-    test('should set outputs for actual deletion mode', () => {
-      setCleanupOutputs({ deletedWorkers: ['worker-1'], skippedWorkers: ['worker-2'] }, false);
+    test("should set outputs for actual deletion mode", () => {
+      setCleanupOutputs({ deletedWorkers: ["worker-1"], skippedWorkers: ["worker-2"] }, false);
 
-      expect(core.setOutput).toHaveBeenCalledWith('deleted-workers', JSON.stringify(['worker-1']));
-      expect(core.setOutput).toHaveBeenCalledWith('deleted-count', '1');
-      expect(core.setOutput).toHaveBeenCalledWith('skipped-workers', JSON.stringify(['worker-2']));
-      expect(core.setOutput).toHaveBeenCalledWith('dry-run-results', '[]');
+      expect(core.setOutput).toHaveBeenCalledWith("deleted-workers", JSON.stringify(["worker-1"]));
+      expect(core.setOutput).toHaveBeenCalledWith("deleted-count", "1");
+      expect(core.setOutput).toHaveBeenCalledWith("skipped-workers", JSON.stringify(["worker-2"]));
+      expect(core.setOutput).toHaveBeenCalledWith("dry-run-results", "[]");
     });
   });
 });

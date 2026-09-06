@@ -129,13 +129,13 @@ E2E tests are automatically skipped for PRs from forks (no access to secrets).
 ### Test Structure
 
 ```typescript
-describe('feature-name', () => {
-  describe('specific-function', () => {
-    test('should do something specific', () => {
+describe("feature-name", () => {
+  describe("specific-function", () => {
+    test("should do something specific", () => {
       // Test implementation
     });
 
-    test('should handle error cases', () => {
+    test("should handle error cases", () => {
       // Error handling test
     });
   });
@@ -213,26 +213,26 @@ cf-workers-actions/
 2. Add `action.yml` with proper metadata:
 
    ```yaml
-   name: 'Action Name'
-   description: 'Clear description of what the action does'
-   author: 'harunonsystem'
+   name: "Action Name"
+   description: "Clear description of what the action does"
+   author: "harunonsystem"
 
    branding:
-     icon: 'appropriate-icon'
-     color: 'color-name'
+     icon: "appropriate-icon"
+     color: "color-name"
 
    inputs:
      required-input:
-       description: 'Description'
+       description: "Description"
        required: true
 
    outputs:
      output-name:
-       description: 'Description'
+       description: "Description"
 
    runs:
-     using: 'node20'
-     main: 'index.js'
+     using: "node20"
+     main: "index.js"
    ```
 
 3. Create `src/action-name/index.ts` following the existing TypeScript pattern
