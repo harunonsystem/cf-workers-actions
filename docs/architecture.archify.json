@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Preview deployment action stack",
+    "output": "architecture.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "viewBox": [1380, 620],
+    "views": [
+      { "id": "actions", "label": "Four Actions", "focus": ["prepare", "preview", "comment", "cleanup"], "note": "Compare the four public Actions and their shared runtime." },
+      { "id": "delivery", "label": "Build and delivery", "focus": ["workflows", "build", "prepare", "preview", "comment", "cleanup"], "note": "Follow workflow orchestration through the bundled Action entrypoints." },
+      { "id": "providers", "label": "Provider boundaries", "focus": ["prepare", "preview", "comment", "cleanup", "github", "cloudflare"], "note": "See the external GitHub and Cloudflare side effects." }
+    ]
+  },
+  "components": [
+    { "id": "workflows", "type": "cloud", "label": ".github/workflows", "sublabel": "CI, E2E, release orchestration", "pos": [50, 40], "size": [250, 86], "tag": "workflow entrypoints" },
+    { "id": "build", "type": "backend", "label": "scripts/build.mjs", "sublabel": "bundle all four Actions", "pos": [400, 40], "size": [220, 86], "tag": "pnpm run build" },
+    { "id": "shared", "type": "backend", "label": "src/shared", "sublabel": "API clients, config, helpers", "pos": [800, 40], "size": [270, 86], "tag": "shared runtime" },
+    { "id": "prepare", "type": "backend", "label": "prepare-preview-deploy", "sublabel": "name + wrangler.toml", "pos": [50, 190], "size": [250, 86], "tag": "Action" },
+    { "id": "preview", "type": "backend", "label": "preview-deploy", "sublabel": "deploy preview environment", "pos": [380, 190], "size": [250, 86], "tag": "Action" },
+    { "id": "comment", "type": "backend", "label": "pr-comment", "sublabel": "create / update PR status", "pos": [700, 190], "size": [250, 86], "tag": "Action" },
+    { "id": "cleanup", "type": "backend", "label": "cleanup", "sublabel": "dry-run or delete Workers", "pos": [980, 190], "size": [250, 86], "tag": "Action" },
+    { "id": "github", "type": "external", "label": "GitHub", "sublabel": "Actions context and PR API", "pos": [50, 430], "size": [250, 82], "tag": "external API" },
+    { "id": "cloudflare", "type": "cloud", "label": "Cloudflare", "sublabel": "Workers deployment resources", "pos": [980, 430], "size": [250, 82], "tag": "external API" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Repository: cloudflare-actions", "wraps": ["workflows", "build", "shared", "prepare", "preview", "comment", "cleanup"] },
+    { "kind": "security-group", "label": "Action implementation boundary", "wraps": ["prepare", "preview", "comment", "cleanup", "shared"] }
+  ],
+  "connections": [
+    { "id": "workflow-build", "from": "workflows", "to": "build", "label": "invoke build", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "build-shared", "from": "build", "to": "shared", "label": "ncc bundles shared imports", "variant": "dashed", "fromSide": "right", "toSide": "left" },
+    { "id": "workflow-prepare", "from": "workflows", "to": "prepare", "label": "run", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "shared-actions", "from": "shared", "to": "prepare", "label": "all Actions import shared runtime", "fromSide": "left", "toSide": "top", "via": [[760, 83], [760, 140], [175, 140]], "labelDy": 40 },
+    { "id": "prepare-preview", "from": "prepare", "to": "preview", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "comment-github", "from": "comment", "to": "github", "label": "Octokit PR comment", "variant": "security", "fromSide": "bottom", "toSide": "top", "via": [[825, 340], [340, 340], [340, 390], [175, 390]], "labelDy": -18 },
+    { "id": "preview-cloudflare", "from": "preview", "to": "cloudflare", "label": "wrangler deploy", "variant": "emphasis", "fromSide": "top", "toSide": "top", "via": [[505, 150], [1340, 150], [1340, 390], [1105, 390]], "labelDy": 18 },
+    { "id": "cleanup-cloudflare", "from": "cleanup", "to": "cloudflare", "label": "deleteWorker", "variant": "security", "fromSide": "right", "toSide": "right", "via": [[1300, 233], [1300, 471]], "labelDy": 50, "labelDx": 30 }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Action surface", "items": ["Four node24 entrypoints expose preview preparation, deployment, PR commenting, and cleanup", "scripts/build.mjs runs ncc once per Action and removes non-index byproducts"] },
+    { "dot": "emerald", "title": "Shared runtime", "items": ["src/shared centralizes validation, environment, logging, GitHub, Wrangler, and Cloudflare helpers", "prepareDeployment is reused by prepare-preview-deploy and preview-deploy"] },
+    { "dot": "rose", "title": "External boundaries", "items": ["GitHub supplies context and receives the PR status comment", "Cloudflare receives Wrangler deploys and cleanup deletions"] }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Preview deployment action sequence",
+    "subtitle": "Build once, deploy a PR preview, report status, and always clean up",
+    "output": "sequence.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "column_fit": "spread",
+    "viewBox": [1700, 1020],
+    "views": [
+      { "id": "package-and-prepare", "label": "Package and prepare", "focus": ["workflow", "build", "shared", "prepare"], "note": "The workflow builds all four Action bundles before preparing a branch-scoped Worker name and URL." },
+      { "id": "deploy-and-report", "label": "Deploy and report", "focus": ["prepare", "preview", "github", "cloudflare"], "note": "Preview deployment uses Wrangler, then updates the pull request comment when a PR context exists." },
+      { "id": "always-cleanup", "label": "Always clean up", "focus": ["workflow", "cleanup", "cloudflare"], "note": "The E2E cleanup job runs after the preview path, first in dry-run mode and then against Cloudflare." }
+    ]
+  },
+  "participants": [
+    { "id": "workflow", "type": "external", "label": "GitHub Actions" },
+    { "id": "build", "type": "backend", "label": "Build script" },
+    { "id": "shared", "type": "backend", "label": "Shared runtime" },
+    { "id": "prepare", "type": "backend", "label": "Prepare action" },
+    { "id": "preview", "type": "backend", "label": "Preview action" },
+    { "id": "github", "type": "external", "label": "GitHub API" },
+    { "id": "cloudflare", "type": "cloud", "label": "Cloudflare" },
+    { "id": "cleanup", "type": "backend", "label": "Cleanup action" }
+  ],
+  "segments": [
+    { "from": 160, "to": 286, "label": "Package" },
+    { "from": 304, "to": 454, "label": "Prepare" },
+    { "from": 472, "to": 670, "label": "Deploy + report" },
+    { "from": 688, "to": 860, "label": "Always clean up" }
+  ],
+  "messages": [
+    { "id": "workflow-build", "from": "workflow", "to": "build", "y": 180, "label": "pnpm run build", "variant": "emphasis" },
+    { "id": "build-shared", "from": "build", "to": "shared", "y": 222, "label": "bundle shared imports", "variant": "default" },
+    { "id": "shared-build", "from": "shared", "to": "build", "y": 264, "label": "runtime modules", "variant": "return" },
+    { "id": "build-workflow", "from": "build", "to": "workflow", "y": 306, "label": "dist/ four entrypoints", "variant": "return" },
+    { "id": "workflow-prepare", "from": "workflow", "to": "prepare", "y": 342, "label": "run prepare action", "variant": "emphasis" },
+    { "id": "prepare-github", "from": "prepare", "to": "github", "y": 372, "label": "read branch + PR context", "variant": "default" },
+    { "id": "github-prepare", "from": "github", "to": "prepare", "y": 414, "label": "sanitized name inputs", "variant": "return" },
+    { "id": "prepare-workflow", "from": "prepare", "to": "workflow", "y": 456, "label": "deployment URL + name", "variant": "return" },
+    { "id": "workflow-preview", "from": "workflow", "to": "preview", "y": 492, "label": "run preview-deploy", "variant": "emphasis" },
+    { "id": "preview-cloudflare", "from": "preview", "to": "cloudflare", "y": 522, "label": "npx wrangler deploy", "variant": "emphasis" },
+    { "id": "cloudflare-preview", "from": "cloudflare", "to": "preview", "y": 564, "label": "Worker URL + status", "variant": "return" },
+    { "id": "preview-github", "from": "preview", "to": "github", "y": 606, "label": "create/update PR comment", "variant": "security" },
+    { "id": "github-preview", "from": "github", "to": "preview", "y": 648, "label": "comment id", "variant": "return" },
+    { "id": "workflow-cleanup", "from": "workflow", "to": "cleanup", "y": 696, "label": "always: cleanup dry-run", "variant": "security" },
+    { "id": "cleanup-cloudflare", "from": "cleanup", "to": "cloudflare", "y": 738, "label": "list + delete Workers", "variant": "security" },
+    { "id": "cloudflare-cleanup", "from": "cloudflare", "to": "cleanup", "y": 780, "label": "delete result / rate limit", "variant": "return" },
+    { "id": "cleanup-workflow", "from": "cleanup", "to": "workflow", "y": 822, "label": "outputs + summary", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "workflow", "from": 174, "to": 836, "type": "external" },
+    { "participant": "build", "from": 174, "to": 318, "type": "backend" },
+    { "participant": "shared", "from": 216, "to": 270, "type": "backend" },
+    { "participant": "prepare", "from": 336, "to": 482, "type": "backend" },
+    { "participant": "preview", "from": 486, "to": 656, "type": "backend" },
+    { "participant": "github", "from": 366, "to": 656, "type": "external" },
+    { "participant": "cloudflare", "from": 516, "to": 788, "type": "cloud" },
+    { "participant": "cleanup", "from": 690, "to": 830, "type": "backend" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "One build artifact", "items": ["scripts/build.mjs bundles cleanup, PR comment, prepare, and preview entrypoints", "ncc follows imports into src/shared", "The workflow downloads dist/ before running Actions"] },
+    { "dot": "orange", "title": "PR-aware deployment", "items": ["Branch and commit inputs become a sanitized Worker name", "Wrangler deploys with Cloudflare credentials and returns the preview URL", "Octokit creates or updates the managed PR comment when a token and PR number exist"] },
+    { "dot": "emerald", "title": "Bounded cleanup", "items": ["The E2E cleanup job runs with always() after preview", "Dry-run and actual deletion share the cleanup policy", "Cloudflare rate limits retry with a bounded delay"] }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "GitHub Actions preview lifecycle",
+    "output": "workflow.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "viewBox": [1500, 1100],
+    "views": [
+      { "id": "build-and-preview", "label": "Build to preview", "focus": ["trigger", "build", "dist", "prepare", "preview"], "note": "Build the four bundled Actions once, then prepare and deploy a preview." },
+      { "id": "comment-and-cleanup", "label": "Report and clean up", "focus": ["preview", "comment", "cleanupDry", "cleanupActual", "github", "cloudflare"], "note": "PR reporting branches from deployment while cleanup always runs after the E2E path." },
+      { "id": "shared-runtime", "label": "Shared runtime", "focus": ["build", "shared", "prepare", "preview", "comment", "cleanupDry", "cleanupActual"], "note": "scripts/build.mjs bundles every Action entrypoint with src/shared imports." }
+    ]
+  },
+  "lanes": [
+    { "id": "githubWorkflow", "label": ".github/workflows" },
+    { "id": "packaging", "label": "Build + shared" },
+    { "id": "actionLifecycle", "label": "Action lifecycle" },
+    { "id": "cleanup", "label": "Cleanup action" },
+    { "id": "providers", "label": "GitHub / Cloudflare" },
+    { "id": "reporting", "label": "PR reporting" },
+    { "id": "exceptions", "label": "Failure paths", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "orchestrate", "label": "Orchestrate", "fromCol": 0, "toCol": 0 },
+    { "id": "package", "label": "Package", "fromCol": 1, "toCol": 1, "variant": "emphasis" },
+    { "id": "preview", "label": "Preview", "fromCol": 3, "toCol": 3, "variant": "emphasis" },
+    { "id": "report", "label": "Report + cleanup", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "sharedImports", "label": "Shared imports bundled into each Action", "lane": "packaging", "fromCol": 1, "toCol": 3, "variant": "emphasis" },
+    { "id": "alwaysCleanup", "label": "Cleanup runs even when preview fails", "lane": "cleanup", "fromCol": 4, "toCol": 5, "variant": "security" }
+  ],
+  "mainPath": ["trigger", "build", "dist", "prepare", "preview", "cleanupDry", "cleanupActual"],
+  "semanticChecks": {
+    "allowedRoots": ["trigger"],
+    "allowedTerminals": ["cleanupActual", "comment", "cloudflare", "failure"],
+    "requiredEdges": [
+      { "from": "trigger", "to": "build" },
+      { "from": "build", "to": "dist" },
+      { "from": "dist", "to": "prepare" },
+      { "from": "prepare", "to": "preview" },
+      { "from": "preview", "to": "cleanupDry" },
+      { "from": "cleanupDry", "to": "cleanupActual" }
+    ],
+    "requiredPaths": [
+      { "from": "trigger", "to": "cleanupActual" },
+      { "from": "preview", "to": "comment" }
+    ]
+  },
+  "nodes": [
+    { "id": "trigger", "lane": "githubWorkflow", "col": 0, "type": "frontend", "label": "PR / dispatch", "tag": "PR | dispatch" },
+    { "id": "build", "lane": "packaging", "col": 1, "type": "backend", "label": "Build Actions", "tag": "pnpm build" },
+    { "id": "shared", "lane": "packaging", "col": 2, "type": "backend", "label": "src/shared", "tag": "ncc dependency" },
+    { "id": "dist", "lane": "packaging", "col": 3, "type": "messagebus", "label": "dist artifact", "tag": "retention: 1 day" },
+    { "id": "prepare", "lane": "actionLifecycle", "col": 3, "type": "backend", "label": "prepare", "tag": "Action" },
+    { "id": "preview", "lane": "actionLifecycle", "col": 4, "type": "cloud", "label": "preview-deploy", "tag": "Action" },
+    { "id": "comment", "lane": "reporting", "col": 5, "type": "backend", "label": "pr-comment", "tag": "PR only" },
+    { "id": "cleanupDry", "lane": "cleanup", "col": 4, "type": "backend", "label": "cleanup dry", "tag": "always" },
+    { "id": "cleanupActual", "lane": "cleanup", "col": 5, "type": "backend", "label": "cleanup actual", "tag": "always" },
+    { "id": "github", "lane": "providers", "col": 0, "type": "external", "label": "GitHub context" },
+    { "id": "cloudflare", "lane": "providers", "col": 4, "type": "cloud", "label": "Cloudflare API" },
+    { "id": "failure", "lane": "exceptions", "col": 4, "type": "security", "label": "Action failed", "tag": "error handler" }
+  ],
+  "edges": [
+    { "id": "trigger-build", "from": "trigger", "to": "build", "label": "start", "role": "main", "variant": "emphasis" },
+    { "id": "build-shared", "from": "build", "to": "shared", "label": "bundle imports", "role": "branch", "variant": "dashed" },
+    { "id": "shared-dist", "from": "shared", "to": "dist", "label": "four entrypoints", "role": "main", "variant": "emphasis" },
+    { "id": "build-dist", "from": "build", "to": "dist", "label": "ncc output", "role": "main" },
+    { "id": "dist-prepare", "from": "dist", "to": "prepare", "label": "download", "role": "main" },
+    { "id": "prepare-preview", "from": "prepare", "to": "preview", "label": "deployment name + URL", "role": "main", "variant": "emphasis" },
+    { "id": "preview-comment", "from": "preview", "to": "comment", "label": "if PR", "role": "branch", "variant": "dashed" },
+    { "id": "preview-cleanup", "from": "preview", "to": "cleanupDry", "label": "always", "role": "main", "variant": "security" },
+    { "id": "cleanup-dry-actual", "from": "cleanupDry", "to": "cleanupActual", "label": "dry-run then delete", "role": "main", "variant": "security" },
+    { "id": "preview-cloudflare", "from": "preview", "to": "cloudflare", "label": "wrangler deploy", "role": "branch", "variant": "emphasis", "route": "outside-right", "fromSide": "right", "toSide": "right", "channelX": 1080 },
+    { "id": "cleanup-cloudflare", "from": "cleanupActual", "to": "cloudflare", "label": "deleteWorker", "role": "branch", "variant": "security", "route": "outside-right", "fromSide": "right", "toSide": "right", "channelX": 1180 },
+    { "id": "github-trigger", "from": "github", "to": "trigger", "label": "event context", "role": "branch", "variant": "dashed" },
+    { "id": "comment-github", "from": "comment", "to": "github", "label": "Octokit comment", "role": "branch", "variant": "security", "route": "return-left", "fromSide": "left", "toSide": "left", "channelX": 20 },
+    { "id": "preview-failure", "from": "preview", "to": "failure", "label": "errors", "role": "error", "variant": "security" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "One build artifact", "items": ["e2e.yml builds all four entrypoints once with pnpm build", "dist/ is uploaded and downloaded by dependent jobs", "ncc bundles src/shared into each Action output"] },
+    { "dot": "emerald", "title": "Preview lifecycle", "items": ["prepare-preview-deploy derives a worker name and updates wrangler.toml", "preview-deploy deploys with Wrangler and may post a PR comment", "cleanup dry-run precedes actual deletion"] },
+    { "dot": "rose", "title": "Failure and guarantees", "items": ["Each Action funnels failures through handleActionError", "E2E cleanup is guarded by needs and if: always()", "GitHub and Cloudflare credentials stay at provider boundaries"] }
+  ]
+}
