@@ -115,12 +115,17 @@ flowchart TD
 - Boolean-like inputs must be strings (`'true'` / `'false'`).
 - If dist/ is stale, run `pnpm run build` and commit updated `dist/` (CI checks this).
 
-## Docs & references
+## Architecture & lifecycle (interactive)
 
-- Examples overview: [examples/README.md](examples/README.md)
-- Modular (Wrangler action) example: [examples/preview-deploy/using-wrangler-action/README.md](examples/preview-deploy/using-wrangler-action/README.md)
-- All-in-one example: [examples/preview-deploy/using-preview-deploy/README.md](examples/preview-deploy/using-preview-deploy/README.md)
-- Cleanup examples: [examples/cleanup/README.md](examples/cleanup/README.md)
+Static HTML diagrams generated from repo sources (no build step needed — open locally or via GitHub Pages):
+
+- **Architecture** — four Actions (`prepare-preview-deploy`, `preview-deploy`, `pr-comment`, `cleanup`), shared runtime (`src/shared`), CI/E2E workflows, and external boundaries (GitHub API, Cloudflare API, Wrangler). → [docs/architecture.html](docs/architecture.html)
+- **Workflow** — build → `dist/` bundle → `prepare` → `preview`/Wrangler → `pr-comment` / `cleanup` (incl. dry-run). → [docs/workflow.html](docs/workflow.html)
+- **Sequence** — runner → `scripts/build.mjs` → shared libs → GitHub & Cloudflare APIs over time. → [docs/sequence.html](docs/sequence.html)
+
+Sources: `docs/*.archify.json` (spec) → `docs/*.html` (standalone, dark/light, searchable). Regenerate with the `archify` skill.
+
+## Docs & references
 - Inputs/outputs (source of truth):
   - [prepare-preview-deploy schema](src/prepare-preview-deploy/schemas.ts)
   - [preview-deploy schema](src/preview-deploy/schemas.ts)
