@@ -91,13 +91,12 @@ describe("pr-comment-utils", () => {
       mockListComments.mockResolvedValue({ data: [] });
       mockCreateComment.mockResolvedValue({ data: { id: 123 } });
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        42,
-        "https://test-worker.workers.dev",
-        "test-worker",
-        true
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 42,
+        deploymentUrl: "https://test-worker.workers.dev",
+        deploymentName: "test-worker",
+        deploymentSuccess: true
+      });
 
       expect(mockListComments).toHaveBeenCalledWith({
         owner: "test-owner",
@@ -125,13 +124,12 @@ describe("pr-comment-utils", () => {
       mockListComments.mockResolvedValue({ data: [existingComment] });
       mockUpdateComment.mockResolvedValue({ data: existingComment });
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        42,
-        "https://test-worker.workers.dev",
-        "test-worker",
-        true
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 42,
+        deploymentUrl: "https://test-worker.workers.dev",
+        deploymentName: "test-worker",
+        deploymentSuccess: true
+      });
 
       expect(mockUpdateComment).toHaveBeenCalledWith({
         owner: "test-owner",
@@ -147,13 +145,12 @@ describe("pr-comment-utils", () => {
       mockListComments.mockResolvedValue({ data: [] });
       mockCreateComment.mockResolvedValue({ data: { id: 123 } });
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        42,
-        "https://myapp-pr-79.workers.dev",
-        "myapp-pr-79",
-        true
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 42,
+        deploymentUrl: "https://myapp-pr-79.workers.dev",
+        deploymentName: "myapp-pr-79",
+        deploymentSuccess: true
+      });
 
       const createCall = mockCreateComment.mock.calls[0][0];
       expect(createCall.body).toContain("https://myapp-pr-79.workers.dev");
@@ -164,13 +161,12 @@ describe("pr-comment-utils", () => {
       mockListComments.mockResolvedValue({ data: [] });
       mockCreateComment.mockResolvedValue({ data: { id: 123 } });
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        42,
-        "https://test.workers.dev",
-        "test-worker-name",
-        true
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 42,
+        deploymentUrl: "https://test.workers.dev",
+        deploymentName: "test-worker-name",
+        deploymentSuccess: true
+      });
 
       const createCall = mockCreateComment.mock.calls[0][0];
       expect(createCall.body).toContain("`test-worker-name`");
@@ -182,13 +178,12 @@ describe("pr-comment-utils", () => {
 
       vi.mocked(getCommitSha).mockReturnValue("bbebc72");
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        79,
-        "https://test.workers.dev",
-        "test-worker",
-        true
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 79,
+        deploymentUrl: "https://test.workers.dev",
+        deploymentName: "test-worker",
+        deploymentSuccess: true
+      });
 
       const createCall = mockCreateComment.mock.calls[0][0];
       expect(createCall.body).toContain("bbebc72");
@@ -201,13 +196,12 @@ describe("pr-comment-utils", () => {
 
       vi.mocked(getBranchName).mockReturnValue("feature-new-ui");
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        79,
-        "https://test.workers.dev",
-        "test-worker",
-        true
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 79,
+        deploymentUrl: "https://test.workers.dev",
+        deploymentName: "test-worker",
+        deploymentSuccess: true
+      });
 
       const createCall = mockCreateComment.mock.calls[0][0];
       expect(createCall.body).toContain("`feature-new-ui`");
@@ -218,13 +212,12 @@ describe("pr-comment-utils", () => {
       mockListComments.mockResolvedValue({ data: [] });
       mockCreateComment.mockResolvedValue({ data: { id: 123 } });
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        42,
-        "https://test.workers.dev",
-        "test-worker",
-        true
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 42,
+        deploymentUrl: "https://test.workers.dev",
+        deploymentName: "test-worker",
+        deploymentSuccess: true
+      });
 
       const createCall = mockCreateComment.mock.calls[0][0];
       expect(createCall.body).toContain("✅ Success");
@@ -234,13 +227,12 @@ describe("pr-comment-utils", () => {
       mockListComments.mockResolvedValue({ data: [] });
       mockCreateComment.mockResolvedValue({ data: { id: 123 } });
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        42,
-        "https://test.workers.dev",
-        "test-worker",
-        false
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 42,
+        deploymentUrl: "https://test.workers.dev",
+        deploymentName: "test-worker",
+        deploymentSuccess: false
+      });
 
       const createCall = mockCreateComment.mock.calls[0][0];
       expect(createCall.body).toContain("❌ Failed");
@@ -250,13 +242,12 @@ describe("pr-comment-utils", () => {
       mockListComments.mockResolvedValue({ data: [] });
       mockCreateComment.mockResolvedValue({ data: { id: 123 } });
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        42,
-        "https://test.workers.dev",
-        "test-worker",
-        false
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 42,
+        deploymentUrl: "https://test.workers.dev",
+        deploymentName: "test-worker",
+        deploymentSuccess: false
+      });
 
       const createCall = mockCreateComment.mock.calls[0][0];
       expect(createCall.body).toContain("https://github.com/test-owner/test-repo/actions");
@@ -267,13 +258,12 @@ describe("pr-comment-utils", () => {
       mockListComments.mockResolvedValue({ data: [] });
       mockCreateComment.mockResolvedValue({ data: { id: 123 } });
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        42,
-        "https://test.workers.dev",
-        "test-worker",
-        true
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 42,
+        deploymentUrl: "https://test.workers.dev",
+        deploymentName: "test-worker",
+        deploymentSuccess: true
+      });
 
       const createCall = mockCreateComment.mock.calls[0][0];
       expect(createCall.body).toContain("automatically updated when you push new commits");
@@ -283,13 +273,12 @@ describe("pr-comment-utils", () => {
       mockListComments.mockResolvedValue({ data: [] });
       mockCreateComment.mockResolvedValue({ data: { id: 123 } });
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        42,
-        "https://test.workers.dev",
-        "test-worker",
-        false
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 42,
+        deploymentUrl: "https://test.workers.dev",
+        deploymentName: "test-worker",
+        deploymentSuccess: false
+      });
 
       const createCall = mockCreateComment.mock.calls[0][0];
       expect(createCall.body).toContain("check the workflow logs");
@@ -305,13 +294,12 @@ describe("pr-comment-utils", () => {
       mockListComments.mockResolvedValue({ data: [otherBotComment] });
       mockCreateComment.mockResolvedValue({ data: { id: 123 } });
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        42,
-        "https://test.workers.dev",
-        "test-worker",
-        true
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 42,
+        deploymentUrl: "https://test.workers.dev",
+        deploymentName: "test-worker",
+        deploymentSuccess: true
+      });
 
       // Should create new comment, not update the other bot's comment
       expect(mockCreateComment).toHaveBeenCalled();
@@ -340,13 +328,12 @@ describe("pr-comment-utils", () => {
       mockListComments.mockResolvedValue({ data: comments });
       mockUpdateComment.mockResolvedValue({ data: comments[1] });
 
-      await createOrUpdatePreviewComment(
-        mockOctokit,
-        42,
-        "https://test.workers.dev",
-        "test-worker",
-        true
-      );
+      await createOrUpdatePreviewComment(mockOctokit, {
+        prNumber: 42,
+        deploymentUrl: "https://test.workers.dev",
+        deploymentName: "test-worker",
+        deploymentSuccess: true
+      });
 
       expect(mockUpdateComment).toHaveBeenCalledWith({
         owner: "test-owner",

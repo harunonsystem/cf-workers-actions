@@ -24,6 +24,30 @@ export interface PreviewCommentRecord {
   user?: { login?: string | null } | null;
 }
 
+export interface PreviewCommentOctokit {
+  rest: {
+    issues: {
+      listComments(params: {
+        owner: string;
+        repo: string;
+        issue_number: number;
+      }): Promise<{ data: PreviewCommentRecord[] }>;
+      createComment(params: {
+        owner: string;
+        repo: string;
+        issue_number: number;
+        body: string;
+      }): Promise<{ data: { id: number } }>;
+      updateComment(params: {
+        owner: string;
+        repo: string;
+        comment_id: number;
+        body: string;
+      }): Promise<unknown>;
+    };
+  };
+}
+
 export function getPreviewCommentContext(): PreviewCommentContext {
   const { owner, repo } = github.context.repo;
   return {
@@ -67,66 +91,35 @@ export function findExistingPreviewComment(
  * Create or update PR comment with deployment status
  * @returns The comment ID of the created or updated comment
  */
-export function createOrUpdatePreviewComment(
-  octokit: ReturnType<typeof github.getOctokit>,
-  request: PreviewCommentRequest,
-  context?: PreviewCommentContext
-): Promise<number>;
-export function createOrUpdatePreviewComment(
-  octokit: ReturnType<typeof github.getOctokit>,
-  prNumber: number,
-  deploymentUrl: string,
-  deploymentName: string,
-  deploymentSuccess: boolean
-): Promise<number>;
 export async function createOrUpdatePreviewComment(
-  octokit: ReturnType<typeof github.getOctokit>,
-  requestOrPrNumber: PreviewCommentRequest | number,
-  deploymentUrlOrContext?: string | PreviewCommentContext,
-  deploymentName?: string,
-  deploymentSuccess?: boolean
+  octokit: PreviewCommentOctokit,
+  request: PreviewCommentRequest,
+  context: PreviewCommentContext = getPreviewCommentContext()
 ): Promise<number> {
-  const request: PreviewCommentRequest =
-    typeof requestOrPrNumber === "number"
-      ? {
-          prNumber: requestOrPrNumber,
-          deploymentUrl: deploymentUrlOrContext as string,
-          deploymentName: deploymentName as string,
-          deploymentSuccess: deploymentSuccess as boolean
-        }
-      : requestOrPrNumber;
-  const resolvedContext =
-    typeof deploymentUrlOrContext === "object" && deploymentUrlOrContext
-      ? deploymentUrlOrContext
-      : getPreviewCommentContext();
-  const body = buildPreviewComment(request, resolvedContext);
+  const body = buildPreviewComment(request, context);
 
-  // Find existing comment
   const { data: comments } = await octokit.rest.issues.listComments({
-    owner: resolvedContext.owner,
-    repo: resolvedContext.repo,
+    owner: context.owner,
+    repo: context.repo,
     issue_number: request.prNumber
   });
 
   const existingComment = findExistingPreviewComment(comments);
 
   if (existingComment) {
-    // Update existing comment
     await octokit.rest.issues.updateComment({
-      owner: resolvedContext.owner,
-      repo: resolvedContext.repo,
+      owner: context.owner,
+      repo: context.repo,
       comment_id: existingComment.id,
       body
     });
     return existingComment.id;
-  } else {
-    // Create new comment
-    const { data: newComment } = await octokit.rest.issues.createComment({
-      owner: resolvedContext.owner,
-      repo: resolvedContext.repo,
-      issue_number: request.prNumber,
-      body
-    });
-    return newComment.id;
   }
+  const { data: newComment } = await octokit.rest.issues.createComment({
+    owner: context.owner,
+    repo: context.repo,
+    issue_number: request.prNumber,
+    body
+  });
+  return newComment.id;
 }
