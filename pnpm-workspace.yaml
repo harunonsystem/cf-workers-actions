@@ -1,6 +1,6 @@
 overrides:
   "js-yaml@^3": "^5.4.3"
-  "js-yaml@^4": "^4.3.1"
+  "js-yaml@^4": "^5.4.3"
   "picomatch@^2": "^4.0.7"
   "picomatch@^4": "^4.0.4"
   undici: "^6.28.0"
