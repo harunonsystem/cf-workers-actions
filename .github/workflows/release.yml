@@ -29,10 +29,10 @@ jobs:
         id: changesets
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          title: "🚀 Release Preview"
-          commit: "chore: release"
-          publish: pnpm exec changeset tag
-          createGithubReleases: false
+          pr-title: "🚀 Release Preview"
+          commit-message: "chore: release"
+          publish-script: pnpm exec changeset tag
+          create-github-releases: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
