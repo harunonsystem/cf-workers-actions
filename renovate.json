@@ -9,12 +9,12 @@
   "packageRules": [
     {
       "groupName": "vitest packages",
-      "matchPackagePatterns": ["^vitest$", "^@vitest/"],
+      "matchPackageNames": ["/^vitest$/", "/^@vitest//"],
       "schedule": ["before 3am on Monday"]
     },
     {
       "groupName": "GitHub Actions dependencies",
-      "matchPackagePatterns": ["^@actions/"],
+      "matchPackageNames": ["/^@actions//"],
       "schedule": ["before 3am on Monday"]
     }
   ],
