@@ -86,9 +86,7 @@ And configure routes in `wrangler.toml`:
 ```toml
 [env.production]
 name = "myapp"
-routes = [
-  { pattern = "example.com/*", zone_name = "example.com" }
-]
+routes = [{ pattern = "example.com/*", zone_name = "example.com" }]
 ```
 
 ## 💡 Key Differences: Dynamic vs Static
