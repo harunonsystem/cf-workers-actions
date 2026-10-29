@@ -36,6 +36,4 @@ export const CleanupOutputSchema = z.object({
   skippedWorkers: z.array(z.string()).optional(),
   dryRunResults: z.array(z.string()).optional()
 });
-
-export type CleanupInputs = z.infer<typeof CleanupInputSchema>;
 export type CleanupOutputs = z.infer<typeof CleanupOutputSchema>;

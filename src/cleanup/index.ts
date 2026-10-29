@@ -39,16 +39,11 @@ async function run(): Promise<void> {
     // Initialize Cloudflare API client
     const cf = new CloudflareApi(inputs.cloudflareApiToken, inputs.cloudflareAccountId);
 
-    // Get workers to process
-    let workersToProcess: string[] = [];
-    if (inputs.workerNames && inputs.workerNames.length > 0) {
-      workersToProcess = inputs.workerNames;
-      info(`Processing specific workers: ${inputs.workerNames.join(", ")}`);
-    }
-
-    // Apply exclusion filter
-    const exclusionFilter = createExclusionFilter(inputs.exclude);
-    workersToProcess = filterWorkersByExclusion(workersToProcess, exclusionFilter);
+    info(`Processing specific workers: ${inputs.workerNames.join(", ")}`);
+    const workersToProcess = filterWorkersByExclusion(
+      inputs.workerNames,
+      createExclusionFilter(inputs.exclude)
+    );
 
     // Early exit if no workers to process
     if (workersToProcess.length === 0) {

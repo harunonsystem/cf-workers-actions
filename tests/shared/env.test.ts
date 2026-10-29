@@ -74,19 +74,4 @@ describe("env", () => {
       expect(env.githubHeadRef()).toBe(expected);
     });
   });
-
-  describe("githubRef", () => {
-    it.each([
-      ["refs/heads/main", "refs/heads/main"],
-      ["refs/pull/123/merge", "refs/pull/123/merge"],
-      [undefined, undefined]
-    ])("should return %s when GITHUB_REF is %s", (value, expected) => {
-      if (value === undefined) {
-        delete process.env.GITHUB_REF;
-      } else {
-        process.env.GITHUB_REF = value;
-      }
-      expect(env.githubRef()).toBe(expected);
-    });
-  });
 });

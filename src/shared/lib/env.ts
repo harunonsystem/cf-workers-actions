@@ -26,10 +26,5 @@ export const env = {
    * Get the head ref (branch name) for pull requests
    * Only set during pull_request events
    */
-  githubHeadRef: () => process.env.GITHUB_HEAD_REF,
-
-  /**
-   * Get the full ref (e.g., refs/heads/main or refs/pull/123/merge)
-   */
-  githubRef: () => process.env.GITHUB_REF
+  githubHeadRef: () => process.env.GITHUB_HEAD_REF
 } as const;

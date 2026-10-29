@@ -23,11 +23,6 @@ interface ActionErrorContext {
    * Key-value pairs where empty string represents no value
    */
   outputs?: Record<string, string>;
-
-  /**
-   * Optional additional context to include in error message
-   */
-  context?: string;
 }
 
 /**
@@ -50,11 +45,7 @@ export async function handleActionError(
   const errorMessage = getErrorMessage(error);
 
   // Log the error
-  const fullMessage = context.context
-    ? `${context.summaryTitle}: ${errorMessage} (Context: ${context.context})`
-    : `${context.summaryTitle}: ${errorMessage}`;
-
-  core.error(fullMessage);
+  core.error(`${context.summaryTitle}: ${errorMessage}`);
 
   // Set outputs if specified
   if (context.outputs) {

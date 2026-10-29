@@ -9,8 +9,6 @@ export const PreparePreviewDeployInputSchema = z.object({
   wranglerTomlPath: CommonFields.wranglerTomlPath
 });
 
-export type PreparePreviewDeployInput = z.infer<typeof PreparePreviewDeployInputSchema>;
-
 /**
  * Input field configuration for GitHub Actions
  * Type-checked against PreparePreviewDeployInputSchema
@@ -28,5 +26,3 @@ export const PreparePreviewDeployOutputSchema = z.object({
   deploymentUrl: z.string(),
   deploymentName: z.string()
 });
-
-export type PreparePreviewDeployOutput = z.infer<typeof PreparePreviewDeployOutputSchema>;

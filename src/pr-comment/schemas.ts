@@ -9,8 +9,6 @@ export const PrCommentInputSchema = z.object({
   githubToken: CommonFields.githubToken
 });
 
-export type PrCommentInput = z.infer<typeof PrCommentInputSchema>;
-
 /**
  * Input field configuration for GitHub Actions
  * Type-checked against PrCommentInputSchema
