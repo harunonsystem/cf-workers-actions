@@ -6,21 +6,6 @@ import type { z } from "zod";
 // ================================
 
 /**
- * Convert dash-case string literal to camelCase at type level
- * e.g., 'worker-name' -> 'workerName'
- */
-type DashToCamel<S extends string> = S extends `${infer Head}-${infer Tail}`
-  ? `${Head}${Capitalize<DashToCamel<Tail>>}`
-  : S;
-
-/**
- * Convert InputConfig keys (dash-case) to camelCase keys
- */
-type ConfigKeysToCamel<T extends Record<string, unknown>> = {
-  [K in keyof T as K extends string ? DashToCamel<K> : never]: unknown;
-};
-
-/**
  * Type-safe InputConfig that enforces key consistency with a Zod schema.
  * Compile error if InputConfig keys don't match Schema keys after camelCase conversion.
  *
@@ -59,19 +44,6 @@ type CamelToDash<S extends string> = S extends `${infer Head}${infer Tail}`
     ? `-${Lowercase<Head>}${CamelToDash<Tail>}`
     : `${Head}${CamelToDash<Tail>}`
   : S;
-
-/**
- * Validate that InputConfig keys match Schema keys (for use in tests)
- * Returns true type if valid, never if mismatch
- */
-export type ValidateConfigKeys<
-  TSchema extends z.ZodType,
-  TConfig extends Record<string, unknown>
-> = keyof ConfigKeysToCamel<TConfig> extends keyof z.input<TSchema>
-  ? keyof z.input<TSchema> extends keyof ConfigKeysToCamel<TConfig>
-    ? true
-    : never
-  : never;
 
 // ================================
 // Runtime Types
@@ -133,18 +105,7 @@ export function getActionInputs<T>(
   transform?: (raw: Record<string, unknown>) => Record<string, unknown>
 ): T | null {
   const raw = mapInputs(inputConfig);
-  const transformed = transform ? transform(raw) : raw;
-  const result = schema.safeParse(transformed);
-
-  if (!result.success) {
-    const msg = result.error.issues
-      .map((e: z.ZodIssue) => `${e.path.join(".")} - ${e.message}`)
-      .join("; ");
-    core.setFailed(`Input validation failed: ${msg}`);
-    return null;
-  }
-
-  return result.data;
+  return parseInputs(schema, transform ? transform(raw) : raw);
 }
 
 /**

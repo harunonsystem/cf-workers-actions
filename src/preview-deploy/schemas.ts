@@ -12,8 +12,6 @@ export const DeployPreviewInputSchema = z.object({
   githubToken: CommonFields.githubToken
 });
 
-export type DeployPreviewInput = z.infer<typeof DeployPreviewInputSchema>;
-
 /**
  * Input field configuration for GitHub Actions
  * Type-checked against DeployPreviewInputSchema
@@ -33,5 +31,3 @@ export const DeployPreviewOutputSchema = z.object({
   deploymentName: z.string(),
   deploymentSuccess: z.string() // core.setOutput converts boolean to string
 });
-
-export type DeployPreviewOutput = z.infer<typeof DeployPreviewOutputSchema>;

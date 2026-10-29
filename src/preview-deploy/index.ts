@@ -1,4 +1,3 @@
-import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { env } from "../shared/lib/env";
 import { handleActionError } from "../shared/lib/error-handler";
@@ -50,7 +49,7 @@ async function run(): Promise<void> {
           }
 
           try {
-            const token = getGithubToken(core.getInput("github-token"));
+            const token = getGithubToken(inputs.githubToken);
             const octokit = github.getOctokit(token);
             await createOrUpdatePreviewComment(octokit, {
               prNumber: config.prNumber,

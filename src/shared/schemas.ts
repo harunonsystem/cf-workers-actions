@@ -54,17 +54,3 @@ export interface CloudflareApiResponse<T = unknown> {
     message: string;
   }>;
 }
-
-// Cloudflare API Response Schema - for runtime validation
-export const CloudflareApiResponseSchema = z.object({
-  success: z.boolean(),
-  result: z.any().optional(),
-  errors: z
-    .array(
-      z.object({
-        code: z.number(),
-        message: z.string()
-      })
-    )
-    .optional()
-});

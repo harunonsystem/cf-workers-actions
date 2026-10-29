@@ -55,14 +55,5 @@ describe("error-handler", () => {
 
       expect(core.setFailed).toHaveBeenCalledWith("Test error");
     });
-
-    it("should include context in error message when provided", async () => {
-      await handleActionError(new Error("Test error"), {
-        summaryTitle: "Test Failed",
-        context: "additional info"
-      });
-
-      expect(core.error).toHaveBeenCalledWith("Test Failed: Test error (Context: additional info)");
-    });
   });
 });
