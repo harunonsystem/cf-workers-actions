@@ -16,6 +16,11 @@
       "groupName": "GitHub Actions dependencies",
       "matchPackageNames": ["/^@actions//"],
       "schedule": ["before 3am on Monday"]
+    },
+    {
+      "description": "@vercel/ncc's ts-loader needs the JS compiler API that TypeScript 7 removed; lift once ncc supports it",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7"
     }
   ],
   "vulnerabilityAlerts": {
