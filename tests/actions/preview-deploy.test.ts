@@ -304,4 +304,50 @@ name = "my-app-preview"
       })
     );
   });
+
+  test("should warn and still succeed when GITHUB_TOKEN is missing during PR deploy", async () => {
+    delete process.env.GITHUB_TOKEN;
+
+    inputs = {
+      "worker-name": "myapp-pr-79",
+      environment: "preview",
+      domain: "workers.dev",
+      "cloudflare-api-token": "fake-token",
+      "cloudflare-account-id": "fake-account-id"
+    };
+
+    Object.defineProperty(github, "context", {
+      value: {
+        repo: { owner: "test-owner", repo: "test-repo" },
+        sha: "bbebc72",
+        ref: "refs/pull/79/merge",
+        payload: {
+          pull_request: {
+            number: 79,
+            head: {
+              ref: "feature/new-ui"
+            }
+          }
+        }
+      },
+      writable: true
+    });
+
+    await runAction();
+
+    expect(failed).toBe(false);
+    expect(outputs["deployment-success"]).toBe("true");
+    expect(core.warning).toHaveBeenCalledWith("GITHUB_TOKEN not found, skipping PR comment");
+  });
+
+  test("should set deployment-success to false when input validation fails", async () => {
+    inputs = {};
+
+    await runAction();
+
+    expect(failed).toBe(true);
+    expect(outputs["deployment-success"]).toBe("false");
+    expect(outputs["deployment-name"]).toBe("");
+    expect(outputs["deployment-url"]).toBe("");
+  });
 });

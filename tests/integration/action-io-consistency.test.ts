@@ -9,7 +9,11 @@ import {
   CleanupInputSchema,
   CleanupOutputSchema
 } from "../../src/cleanup/schemas";
-import { PrCommentInputConfig, PrCommentInputSchema } from "../../src/pr-comment/schemas";
+import {
+  PrCommentInputConfig,
+  PrCommentInputSchema,
+  PrCommentOutputSchema
+} from "../../src/pr-comment/schemas";
 import {
   PreparePreviewDeployInputConfig,
   PreparePreviewDeployInputSchema,
@@ -165,6 +169,7 @@ describe("Action I/O Consistency Tests", () => {
   describe("pr-comment", () => {
     const actionDef = loadActionDefinition("pr-comment");
     const schemaInputKeys = getSchemaInputKeys(PrCommentInputSchema);
+    const schemaOutputKeys = getSchemaOutputKeys(PrCommentOutputSchema);
     const configKeys = getConfigKeys(PrCommentInputConfig);
 
     test("action.yml inputs should match InputConfig keys", () => {
@@ -177,9 +182,9 @@ describe("Action I/O Consistency Tests", () => {
       expect(actionInputs).toEqual(schemaInputKeys.sort());
     });
 
-    test("action.yml outputs should be defined", () => {
-      expect(actionDef.outputs).toBeDefined();
-      expect(Object.keys(actionDef.outputs).length).toBeGreaterThan(0);
+    test("action.yml outputs should match OutputSchema keys (dash-case)", () => {
+      const actionOutputs = Object.keys(actionDef.outputs).sort();
+      expect(actionOutputs).toEqual(schemaOutputKeys.sort());
     });
   });
 
@@ -211,6 +216,23 @@ describe("Action I/O Consistency Tests", () => {
   });
 
   describe("Cross-action consistency", () => {
+    test("all actions should have matching required flags between action.yml and InputConfig", () => {
+      const actionConfigs: Array<[string, InputConfig]> = [
+        ["prepare-preview-deploy", PreparePreviewDeployInputConfig],
+        ["preview-deploy", DeployPreviewInputConfig],
+        ["pr-comment", PrCommentInputConfig],
+        ["cleanup", CleanupInputConfig]
+      ];
+
+      for (const [actionName, inputConfig] of actionConfigs) {
+        const actionDef = loadActionDefinition(actionName);
+
+        for (const [inputName, configDef] of Object.entries(inputConfig)) {
+          expect(Boolean(actionDef.inputs[inputName]?.required)).toBe(Boolean(configDef.required));
+        }
+      }
+    });
+
     test("all actions with cloudflare credentials should use same input names", () => {
       const actionsWithCreds = ["preview-deploy", "cleanup"];
       const expectedCredInputs = ["cloudflare-api-token", "cloudflare-account-id"];

@@ -7,8 +7,8 @@ Thank you for your interest in contributing to cf-workers-actions! This document
 ### Prerequisites
 
 - mise
-- Node.js 22.12.0 or higher (managed by mise)
-- pnpm 11.22.0 or higher (managed by mise)
+- Node.js 24.22.1 or higher (managed by mise)
+- pnpm 12.15.0 or higher (managed by mise)
 - Git
 
 ### Setup
@@ -48,10 +48,11 @@ Thank you for your interest in contributing to cf-workers-actions! This document
 4. Ensure all checks pass:
 
    ```bash
-   pnpm run typecheck  # TypeScript type checking
-   pnpm run lint       # Run Biome (linting and checking)
-   pnpm test           # Run Vitest (ultra-fast testing)
-   pnpm build          # Build TypeScript to JavaScript
+   pnpm run typecheck     # TypeScript type checking
+   pnpm run format:check  # Check code formatting (oxfmt)
+   pnpm run lint          # Run linter (oxlint)
+   pnpm test              # Run Vitest (ultra-fast testing)
+   pnpm build             # Bundle TypeScript actions to dist/
    ```
 
 5. Commit your changes:
@@ -81,9 +82,9 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Code Style
 
-- We use Biome for both linting and code formatting
-- Run `pnpm run lint` to check code quality (10-100x faster than ESLint)
-- Run `pnpm run format` to format code
+- We use `oxlint` for linting and `oxfmt` for code formatting
+- Run `pnpm run lint` to check code quality
+- Run `pnpm run format` to format code (`pnpm run format:check` to verify)
 
 ## 🧪 Testing
 
@@ -121,7 +122,7 @@ E2E tests are automatically skipped for PRs from forks (no access to secrets).
 ### Writing Tests
 
 - All new functionality should have corresponding tests
-- Tests are located in `tests/` directory
+- Tests are located in `tests/` and `src/**/__tests__/`
 - Use Vitest for testing (50-100x faster than Jest)
 - Write tests in TypeScript (`.test.ts` files)
 - Aim for >90% code coverage
@@ -154,22 +155,21 @@ pnpm run typecheck  # Check types without emitting files
 
 ### Building
 
-Compile TypeScript to JavaScript for GitHub Actions:
+Bundle TypeScript actions into standalone JavaScript for GitHub Actions:
 
 ```bash
-pnpm build  # Compile src/ to dist/
+pnpm build  # Bundle src/<action>/index.ts into dist/<action>/index.js via @vercel/ncc
 ```
 
 The build process:
 
-1. Compiles TypeScript files from `src/` to JavaScript in `dist/`
-2. Generates type declaration files (`.d.ts`)
-3. Supports Node.js 22.12+ during development and CI; published Actions run on the `node24` runtime
-4. Maintains source maps for debugging
+1. Bundles each action entry point from `src/<action>/index.ts` into a single `dist/<action>/index.js` using `@vercel/ncc`
+2. Removes intermediate `.d.ts` and chunk byproducts so `dist/` contains only the runtime bundles
+3. Supports Node.js 24+ during development and CI; published Actions run on the `node24` runtime
 
 ### TypeScript Best Practices
 
-- **Interface Definitions**: Define interfaces for all input/output data structures in `shared/types.ts`
+- **Schema & Type Definitions**: Define Zod schemas and shared interfaces in `src/shared/schemas.ts` and per-action `schemas.ts`
 - **Strict Mode**: All TypeScript code uses strict type checking
 - **Import/Export**: Use ES6 imports/exports consistently
 - **Error Types**: Use proper error typing with union types for error handling
@@ -179,30 +179,40 @@ The build process:
 
 ```
 cf-workers-actions/
-├── src/                   # TypeScript source code (development)
-│   ├── deploy/           # Deploy action TypeScript source
-│   │   └── index.ts      # Deploy action entry point
-│   ├── comment/          # Comment action TypeScript source
-│   │   └── index.ts      # Comment action entry point
-│   ├── cleanup/          # Cleanup action TypeScript source
-│   │   └── index.ts      # Cleanup action entry point
-│   └── shared/           # Shared TypeScript libraries
-│       ├── types.ts           # TypeScript type definitions
-│       └── lib/               # Reusable TypeScript modules
-├── dist/                  # Compiled JavaScript (auto-generated for GitHub Actions)
-│   ├── deploy/
-│   │   └── index.js      # Compiled deploy action
-│   ├── comment/
-│   │   └── index.js      # Compiled comment action
-│   ├── cleanup/
-│   │   └── index.js      # Compiled cleanup action
-│   └── shared/           # Compiled shared libraries
-├── tests/                 # Test files (TypeScript)
-├── deploy/                # Deploy action metadata
-│   └── action.yml        # Action definition (references dist/deploy/index.js)
-├── comment/               # Comment action metadata
-├── cleanup/               # Cleanup action metadata
-└── .github/               # GitHub workflows and CI/CD
+├── src/                        # TypeScript source code (development)
+│   ├── prepare-preview-deploy/ # Prepare preview deploy action source
+│   │   ├── index.ts
+│   │   └── schemas.ts
+│   ├── preview-deploy/         # All-in-one preview deploy action source
+│   │   ├── index.ts
+│   │   └── schemas.ts
+│   ├── pr-comment/             # PR comment action source
+│   │   ├── index.ts
+│   │   └── schemas.ts
+│   ├── cleanup/                # Cleanup action source
+│   │   ├── index.ts
+│   │   ├── cleanup-policy.ts
+│   │   ├── schemas.ts
+│   │   └── utils.ts
+│   └── shared/                 # Shared TypeScript libraries
+│       ├── schemas.ts          # Shared Zod schemas and types
+│       ├── validation.ts       # Action input/output validation helpers
+│       └── lib/                # Reusable TypeScript modules
+├── dist/                       # Bundled JavaScript (auto-generated for GitHub Actions)
+│   ├── prepare-preview-deploy/
+│   │   └── index.js
+│   ├── preview-deploy/
+│   │   └── index.js
+│   ├── pr-comment/
+│   │   └── index.js
+│   └── cleanup/
+│       └── index.js
+├── tests/                      # Test files (TypeScript)
+├── prepare-preview-deploy/     # Prepare preview deploy action metadata (action.yml)
+├── preview-deploy/             # Preview deploy action metadata (action.yml)
+├── pr-comment/                 # PR comment action metadata (action.yml)
+├── cleanup/                    # Cleanup action metadata (action.yml)
+└── .github/                    # GitHub workflows and CI/CD
 ```
 
 ## 🔧 Action Development Guidelines
@@ -231,29 +241,29 @@ cf-workers-actions/
        description: "Description"
 
    runs:
-     using: "node20"
-     main: "index.js"
+     using: "node24"
+     main: "../dist/action-name/index.js"
    ```
 
-3. Create `src/action-name/index.ts` following the existing TypeScript pattern
-4. Run `pnpm build` to compile TypeScript to JavaScript
+3. Create `src/action-name/index.ts` and `src/action-name/schemas.ts` following the existing TypeScript pattern
+4. Add the action to `scripts/build.mjs` and run `pnpm build`
 5. Add comprehensive tests
 6. Update documentation
 
 ### Best Practices
 
-- **Type Safety**: Use TypeScript interfaces for all data structures and function parameters
-- **Error Handling**: Always provide meaningful error messages with proper typing
-- **Logging**: Use `core.info()`, `core.debug()`, `core.warning()`, and `core.error()`
+- **Type Safety**: Use TypeScript interfaces and Zod schemas for all data structures and action inputs/outputs
+- **Error Handling**: Always provide meaningful error messages with `handleActionError`
+- **Logging**: Use `info()`, `debug()`, `warning()`, and `error()` from `src/shared/lib/logger.ts`
 - **Outputs**: Set all declared outputs, even on failure (empty strings)
-- **Validation**: Validate all inputs early in the action with type guards
+- **Validation**: Validate all inputs early in the action with `getActionInputs` and `TypedInputConfig`
 - **Documentation**: Document all parameters and use cases with TSDoc comments
 
 ### Shared Libraries
 
 When adding functionality that could be reused:
 
-1. Add it to `shared/lib/`
+1. Add it to `src/shared/lib/`
 2. Export functions clearly
 3. Add comprehensive tests
 4. Document the API
@@ -275,12 +285,12 @@ Use TSDoc for function documentation in TypeScript:
 
 ```typescript
 /**
- * Generate worker name from pattern and PR number
- * @param pattern - Worker name pattern (e.g., "project-pr-{pr_number}")
- * @param prNumber - Pull request number
- * @returns Generated worker name
+ * Process template variables in worker name
+ * @param template - Worker name template (e.g., "myapp-{branch-name}")
+ * @param variables - Template variables ({ branchName, commitHash })
+ * @returns Sanitized worker name
  */
-function generateWorkerName(pattern: string, prNumber: number): string {
+function processTemplate(template: string, variables: TemplateVariables): string {
   // Implementation
 }
 ```

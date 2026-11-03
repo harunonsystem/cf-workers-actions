@@ -73,7 +73,7 @@ jobs:
 
           if [ "${{ github.event.inputs.dry-run }}" = "true" ]; then
             echo "⚠️ DRY-RUN MODE - No actual deletion"
-            echo "Would delete: ${{ steps.dryrun.outputs.dry-run-results }}"
+            echo "Would delete: ${{ steps.cleanup.outputs.dry-run-results }}"
           else
             echo "✅ Deleted: ${{ steps.cleanup.outputs.deleted-count }} workers"
             echo "Workers: ${{ steps.cleanup.outputs.deleted-workers }}"

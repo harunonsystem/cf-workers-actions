@@ -19,3 +19,7 @@ export const PrCommentInputConfig: TypedInputConfig<typeof PrCommentInputSchema>
   "deployment-name": { required: true },
   "github-token": { required: false }
 };
+
+export const PrCommentOutputSchema = z.object({
+  commentId: z.string()
+});

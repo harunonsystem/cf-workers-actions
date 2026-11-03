@@ -1,8 +1,94 @@
-import { describe, expect, test } from "vitest";
+import * as fs from "node:fs";
+import * as core from "@actions/core";
+import * as github from "@actions/github";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import { run } from "../../src/prepare-preview-deploy/index";
 import { generateDeploymentUrl } from "../../src/shared/lib/deployment-utils";
 import { processTemplate } from "../../src/shared/lib/template-utils";
 
+vi.mock("node:fs");
+
 describe("prepare-preview-deploy", () => {
+  describe("run()", () => {
+    let inputs: Record<string, string> = {};
+    let outputs: Record<string, string> = {};
+    let failedMessage: string | Error | undefined;
+
+    beforeEach(() => {
+      inputs = {};
+      outputs = {};
+      failedMessage = undefined;
+
+      vi.clearAllMocks();
+
+      vi.mocked(core.getInput).mockImplementation((name) => inputs[name] || "");
+      vi.mocked(core.setOutput).mockImplementation((name, value) => {
+        outputs[name] = value;
+      });
+      vi.mocked(core.setFailed).mockImplementation((message) => {
+        failedMessage = message;
+      });
+
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(
+        'name = "myapp"\n\n[env.preview]\nname = "myapp-preview"\n'
+      );
+      vi.mocked(fs.writeFileSync).mockImplementation(() => {});
+      vi.mocked(fs.copyFileSync).mockImplementation(() => {});
+
+      Object.defineProperty(github, "context", {
+        value: {
+          repo: { owner: "test-owner", repo: "test-repo" },
+          sha: "deadbeef1234567",
+          ref: "refs/pull/42/merge",
+          payload: {
+            pull_request: {
+              number: 42,
+              head: {
+                ref: "feature/awesome"
+              }
+            }
+          }
+        },
+        writable: true,
+        configurable: true
+      });
+    });
+
+    test("should validate inputs, update wrangler.toml, and set deployment outputs", async () => {
+      inputs = {
+        "worker-name": "myapp-{branch-name}",
+        environment: "preview",
+        domain: "example.workers.dev",
+        "wrangler-toml-path": "./wrangler.toml"
+      };
+
+      await run();
+
+      expect(failedMessage).toBeUndefined();
+      expect(outputs["deployment-name"]).toBe("myapp-feature-awesome");
+      expect(outputs["deployment-url"]).toBe("https://myapp-feature-awesome.example.workers.dev");
+      expect(fs.writeFileSync).toHaveBeenCalledWith(
+        "./wrangler.toml",
+        expect.stringContaining('name = "myapp-feature-awesome"')
+      );
+    });
+
+    test("should fail and set empty outputs when required inputs are missing", async () => {
+      inputs = {
+        "worker-name": "",
+        environment: "preview",
+        domain: ""
+      };
+
+      await run();
+
+      expect(failedMessage).toBeDefined();
+      expect(outputs["deployment-name"]).toBe("");
+      expect(outputs["deployment-url"]).toBe("");
+    });
+  });
+
   describe("processTemplate", () => {
     describe("Branch name pattern", () => {
       test("should use branch name when available", () => {

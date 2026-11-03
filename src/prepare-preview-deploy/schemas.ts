@@ -18,7 +18,7 @@ export const PreparePreviewDeployInputConfig: TypedInputConfig<
 > = {
   "worker-name": { required: true },
   environment: { required: true },
-  domain: { required: false, default: "workers.dev" },
+  domain: { required: true },
   "wrangler-toml-path": { required: false, default: "./wrangler.toml" }
 };
 
