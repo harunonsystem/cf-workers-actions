@@ -51,8 +51,9 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    worker-name: "myapp-pr-{pr-number}"
+    worker-name: "myapp-pr-${{ github.event.pull_request.number }}"
     environment: "preview"
+    domain: "example.workers.dev"
 ```
 
 ### With Custom Domain
@@ -63,7 +64,7 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     environment: "preview"
-    worker-name: "myapp-pr-{pr-number}"
+    worker-name: "myapp-pr-${{ github.event.pull_request.number }}"
     domain: "preview.example.com"
 ```
 
@@ -84,8 +85,9 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
   with:
     cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    worker-name: "myapp-pr-{pr-number}"
+    worker-name: "myapp-pr-${{ github.event.pull_request.number }}"
     environment: "preview"
+    domain: "example.workers.dev"
 ```
 
 ### Modular (Wrangler Action)
@@ -95,8 +97,9 @@ All-in-one deployment action that handles URL generation, deployment, and PR com
 - uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
   id: prepare
   with:
-    worker-name: "myapp-pr-{pr-number}"
+    worker-name: "myapp-pr-${{ github.event.pull_request.number }}"
     environment: "preview"
+    domain: "example.workers.dev"
 
 - uses: cloudflare/wrangler-action@v3
   id: deploy

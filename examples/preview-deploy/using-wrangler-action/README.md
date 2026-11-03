@@ -75,10 +75,9 @@ To use custom domains, specify the `domain` input:
 ```yaml
 - uses: harunonsystem/cf-workers-actions/prepare-preview-deploy@v1
   with:
-    worker-name: "myapp-pr-{pr-number}"
+    worker-name: "myapp-pr-${{ github.event.pull_request.number }}"
     environment: "preview"
     domain: "preview.example.com" # Custom domain
-    pr-number: ${{ github.event.pull_request.number }}
 ```
 
 And configure routes in `wrangler.toml`:

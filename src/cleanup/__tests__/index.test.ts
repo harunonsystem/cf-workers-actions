@@ -29,6 +29,15 @@ vi.mock("@actions/core", () => coreMocks);
 // Mock CloudflareApi
 vi.mock("../../shared/lib/cloudflare-api");
 
+// Mock sleep to keep tests fast
+vi.mock("../../shared/lib/string-utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../shared/lib/string-utils")>();
+  return {
+    ...actual,
+    sleep: vi.fn().mockResolvedValue(undefined)
+  };
+});
+
 describe("cleanup action integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,7 +47,6 @@ describe("cleanup action integration", () => {
     const mockCf = {
       deleteWorker: vi.fn()
     };
-    // biome-ignore lint/complexity/useArrowFunction: Mock implementation must be a function to support 'new' operator
     (CloudflareApi as any).mockImplementation(function () {
       return mockCf;
     });
@@ -60,7 +68,6 @@ describe("cleanup action integration", () => {
     const mockCf = {
       deleteWorker: vi.fn()
     };
-    // biome-ignore lint/complexity/useArrowFunction: Mock implementation must be a function to support 'new' operator
     (CloudflareApi as any).mockImplementation(function () {
       return mockCf;
     });
@@ -88,7 +95,6 @@ describe("cleanup action integration", () => {
     const mockCf = {
       deleteWorker: vi.fn()
     };
-    // biome-ignore lint/complexity/useArrowFunction: Mock implementation must be a function to support 'new' operator
     (CloudflareApi as any).mockImplementation(function () {
       return mockCf;
     });
@@ -117,12 +123,10 @@ describe("cleanup action integration", () => {
     const mockCf = {
       deleteWorker: vi.fn()
     };
-    // biome-ignore lint/complexity/useArrowFunction: Mock implementation must be a function to support 'new' operator
     (CloudflareApi as any).mockImplementation(function () {
       return mockCf;
     });
 
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: test mock setup
     coreMocks.getInput.mockImplementation((name: string) => {
       if (name === "worker-names") return "custom-worker-1,custom-worker-2";
       if (name === "worker-numbers") return "1,2,3"; // Should be ignored
@@ -142,5 +146,61 @@ describe("cleanup action integration", () => {
       "dry-run-results",
       JSON.stringify(["custom-worker-1", "custom-worker-2"])
     );
+  });
+
+  test("should set empty outputs and exit early when all workers are excluded", async () => {
+    const mockCf = {
+      deleteWorker: vi.fn()
+    };
+    (CloudflareApi as any).mockImplementation(function () {
+      return mockCf;
+    });
+
+    coreMocks.getInput.mockImplementation((name: string) => {
+      if (name === "worker-names") return "myapp-prod";
+      if (name === "exclude") return "*-prod";
+      if (name === "cloudflare-api-token") return "token";
+      if (name === "cloudflare-account-id") return "account";
+      if (name === "dry-run") return "false";
+      return "";
+    });
+
+    await run();
+
+    expect(coreMocks.info).toHaveBeenCalledWith("No workers found to process");
+    expect(mockCf.deleteWorker).not.toHaveBeenCalled();
+    expect(coreMocks.setOutput).toHaveBeenCalledWith("deleted-workers", "[]");
+    expect(coreMocks.setOutput).toHaveBeenCalledWith("deleted-count", "0");
+  });
+
+  test("should delete workers and write cleanup summary when dry-run is false", async () => {
+    const mockCf = {
+      deleteWorker: vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+    };
+    (CloudflareApi as any).mockImplementation(function () {
+      return mockCf;
+    });
+
+    coreMocks.getInput.mockImplementation((name: string) => {
+      if (name === "worker-names") return "myapp-pr-1,myapp-pr-2";
+      if (name === "cloudflare-api-token") return "token";
+      if (name === "cloudflare-account-id") return "account";
+      if (name === "dry-run") return "false";
+      return "";
+    });
+
+    await run();
+
+    expect(mockCf.deleteWorker).toHaveBeenCalledTimes(2);
+    expect(coreMocks.setOutput).toHaveBeenCalledWith(
+      "deleted-workers",
+      JSON.stringify(["myapp-pr-1"])
+    );
+    expect(coreMocks.setOutput).toHaveBeenCalledWith("deleted-count", "1");
+    expect(coreMocks.setOutput).toHaveBeenCalledWith(
+      "skipped-workers",
+      JSON.stringify(["myapp-pr-2"])
+    );
+    expect(coreMocks.summary.write).toHaveBeenCalled();
   });
 });

@@ -21,7 +21,7 @@ export const DeployPreviewInputConfig: TypedInputConfig<typeof DeployPreviewInpu
   "cloudflare-account-id": { required: true },
   "worker-name": { required: true },
   environment: { required: false, default: "preview" },
-  domain: { required: false, default: "workers.dev" },
+  domain: { required: true },
   "wrangler-toml-path": { required: false, default: "./wrangler.toml" },
   "github-token": { required: false }
 };

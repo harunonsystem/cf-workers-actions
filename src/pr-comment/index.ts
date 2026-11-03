@@ -5,8 +5,8 @@ import { handleActionError } from "../shared/lib/error-handler";
 import { getGithubToken, getPrNumber } from "../shared/lib/github-utils";
 import { info } from "../shared/lib/logger";
 import { createOrUpdatePreviewComment } from "../shared/lib/pr-comment-utils";
-import { getActionInputs } from "../shared/validation";
-import { PrCommentInputConfig, PrCommentInputSchema } from "./schemas.js";
+import { getActionInputs, setOutputsValidated } from "../shared/validation";
+import { PrCommentInputConfig, PrCommentInputSchema, PrCommentOutputSchema } from "./schemas.js";
 
 async function run(): Promise<void> {
   try {
@@ -47,7 +47,9 @@ async function run(): Promise<void> {
     });
 
     // Set output
-    core.setOutput("comment-id", commentId.toString());
+    setOutputsValidated(PrCommentOutputSchema, {
+      commentId: commentId.toString()
+    });
 
     info("✅ PR comment completed");
 
@@ -65,7 +67,9 @@ async function run(): Promise<void> {
   } catch (err) {
     await handleActionError(err, {
       summaryTitle: "PR Comment Failed",
-      outputs: {}
+      outputs: {
+        "comment-id": ""
+      }
     });
   }
 }
