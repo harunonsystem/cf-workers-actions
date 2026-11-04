@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.3
+
+### Patch Changes
+
+- 1353090: Align action input/output schemas with `action.yml`, validate `pr-comment` outputs, update `@actions/*` runtime dependencies, and fix example workflows and documentation.
+
 ## 1.3.2
 
 ### Patch Changes
