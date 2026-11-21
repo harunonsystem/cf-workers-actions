@@ -1,9 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "local>harunonsystem/.github:renovate-config",
+    "local>harunonsystem/.github:renovate-config.jsonc",
+    "local>harunonsystem/.github:renovate-npm-lockfile.jsonc",
     ":dependencyDashboard",
-    ":semanticCommits",
     ":separateMajorReleases"
   ],
   "packageRules": [
@@ -34,9 +34,5 @@
   "prHourlyLimit": 2,
   "minimumReleaseAge": "3 days",
   "commitMessagePrefix": "chore(deps):",
-  "semanticCommits": "enabled",
-  "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["before 3am on the first day of the month"]
-  }
+  "semanticCommits": "enabled"
 }
