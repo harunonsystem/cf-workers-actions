@@ -9,46 +9,27 @@
   "packageRules": [
     {
       "groupName": "vitest packages",
-      "matchPackageNames": [
-        "/^vitest$/",
-        "/^@vitest//"
-      ],
-      "schedule": [
-        "before 3am on Monday"
-      ]
+      "matchPackageNames": ["/^vitest$/", "/^@vitest//"],
+      "schedule": ["before 3am on Monday"]
     },
     {
       "groupName": "GitHub Actions dependencies",
-      "matchPackageNames": [
-        "/^@actions//"
-      ],
-      "schedule": [
-        "before 3am on Monday"
-      ]
+      "matchPackageNames": ["/^@actions//"],
+      "schedule": ["before 3am on Monday"]
     },
     {
       "description": "@vercel/ncc's ts-loader needs the JS compiler API that TypeScript 7 removed; lift once ncc supports it",
-      "matchPackageNames": [
-        "typescript"
-      ],
+      "matchPackageNames": ["typescript"],
       "allowedVersions": "<7"
     }
   ],
   "vulnerabilityAlerts": {
-    "labels": [
-      "security"
-    ],
-    "assignees": [
-      "@harunonsystem"
-    ]
+    "labels": ["security"],
+    "assignees": ["@harunonsystem"]
   },
-  "labels": [
-    "dependencies"
-  ],
+  "labels": ["dependencies"],
   "timezone": "Asia/Tokyo",
-  "schedule": [
-    "before 3am on Monday"
-  ],
+  "schedule": ["before 3am on Monday"],
   "prConcurrentLimit": 3,
   "prHourlyLimit": 2,
   "minimumReleaseAge": "3 days",
